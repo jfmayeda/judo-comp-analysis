@@ -1,8 +1,8 @@
 # Silicon Valley Judo - Competitor Analysis Dashboard
 
-**Local-first coach scouting notes + printable offline tournament-day profiles.**
+**Premium coach-tool with matside scouting fields and dojo-native design.**
 
-Privacy-first competitor analysis tool for judo coaches. Track athlete development and opponent scouting notes with printable tournament-day profiles. All data stored locally in your browser for complete privacy and offline access.
+Privacy-first competitor analysis tool for judo coaches. Track athlete development and opponent scouting notes with printable tournament-day profiles. Features comprehensive scouting fields for stance, grip style (kumi-kata), ground game (ne-waza), and tactical analysis.
 
 ## 🚀 Quick Start
 
@@ -26,9 +26,9 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the app.
+Open [http://localhost:3000](http://localhost:3000) and you'll be taken to the login page. For development, enter any email/password to access the app.
 
-On your first visit, the app automatically seeds 3 sample athletes with opponent notes so you can explore the features right away.
+On your first visit after login, the app automatically seeds 3 sample athletes with opponent notes so you can explore the features right away.
 
 ### Production Build
 
@@ -40,31 +40,97 @@ npm run build
 npm start
 ```
 
-## 🎯 What's In This Slice (v1)
+## 🎨 Design System
 
-This is the **first slice** of the Silicon Valley Judo Competitor Analysis Dashboard — a focused, working prototype with local-first architecture.
+This app follows the **Silicon Valley Judo brand specification** for a premium, dojo-native aesthetic.
 
-### Features Included
+### Design Tokens
+
+All design tokens are defined as CSS variables in `app/globals.css`:
+
+**Colors:**
+- Brand Blue: `#005e9b` (primary), hover `#00497a`
+- Navy Field (radial gradient): `#163e5d` / `#0f273a` / `#0b1e2e`
+- Paper: `#f5f7f9`, Gray-100: `#e8ecef`, White: `#ffffff`
+- Tatami washes (quiet backgrounds): `#ffb1a4` / `#e6e7d9` / `#d1c6c2`
+
+**Typography:**
+- Logo/Wordmark: Michroma
+- Headings/Buttons/Nav: Archivo Bold, UPPERCASE, 0.04em tracking
+- Eyebrow: 13px Archivo Semibold, 0.22em tracking, brand blue
+- Body: Source Sans 3, 17px / 1.62 line height
+
+**Surfaces:**
+- Card radius: 8px
+- Button radius: 999px (pill shape)
+- Card shadow: `0 1px 2px rgba(11,30,46,.06), 0 8px 24px rgba(11,30,46,.08)`
+- Hover shadow: elevated with 2px rise
+
+**Motion:**
+- Duration: 120ms (fast), 200ms (base), 420ms (slow)
+- Easing: `cubic-bezier(0.2, 0.6, 0.2, 1)`
+- Transitions: fades and 2px translations only (no bounce/spring)
+
+**CSS Utility Classes:**
+- `.eyebrow` - 13px Archivo Semibold, uppercase, brand blue
+- `.wordmark` - Michroma font for logo text
+- `.navy-field` - Radial gradient background
+- `.card` - White card with shadow and hover effect
+- `.btn-primary` - Solid blue pill button
+- `.btn-secondary` - Outline button that inverts on hover
+- `.app-header` - Sticky 76px navy header
+
+### Design Philosophy
+
+- **One blue** on a field of navy - no secondary brand hue
+- No emoji, no colored left borders, no multi-hue gradients
+- Prefer `•` and `→` typographic marks over icons
+- ALL CAPS for headings, eyebrows, and buttons
+- Warm, plain, slightly formal voice
+- Judo vocabulary used and glossed (tokui-waza, kumi-kata, ne-waza)
+
+## 🎯 Features
+
+### Core Features
+
+✅ **Coach Authentication**
+- Navy-field login page with brand wordmark
+- Password and magic link authentication (simulated for local dev)
+- Auth gate protects all athlete and opponent data
 
 ✅ **Athlete Management (CRUD)**
 - Add, edit, and delete athletes
 - Track tokui-waza (favorite techniques)
 - Document development areas
-- Add general notes
 - Privacy-enforced: first name + last initial only
 
+✅ **Matside Scouting Fields**
+- **Stance**: left, right, or unknown
+- **Kumi-kata**: grip style and preferences
+- **Ne-waza**: ground game notes
+- **Weight Class**: e.g. -57kg, -66kg
+- **Age Division**: Juvenile, Cadet, Junior, etc.
+
 ✅ **Opponent Scouting Notes**
-- Link scouting notes to specific athletes
-- Track opponent details (name, club, tournament)
-- Add strategic notes for matchup preparation
+- Link detailed notes to specific athletes
+- Track opponent stance, grip style, ground game
+- **Common Counters**: tactical counter-techniques
+- Club, tournament, and matchup context
+- Same scouting fields as athletes
 - Privacy-enforced for opponent names too
 
 ✅ **Printable Tournament-Day Profiles**
 - Clean, one-page profiles per athlete
+- Optimized for matside use by coaches
+- Includes all scouting fields and opponent notes
 - Print-optimized CSS (works with browser print or Save as PDF)
-- Includes tokui-waza, development areas, and all opponent notes
-- Matside-readable format
 - **Works completely offline once loaded**
+
+✅ **Premium Roster Cards**
+- Scan 30+ athletes in seconds
+- Shows stance, weight class, age division
+- Opponent note counts at a glance
+- Smooth hover animations and transitions
 
 ✅ **Local-First Architecture**
 - All data stored in browser localStorage
@@ -73,23 +139,16 @@ This is the **first slice** of the Silicon Valley Judo Competitor Analysis Dashb
 - Fast, instant updates with no network latency
 - Complete data privacy (nothing leaves your device)
 
-✅ **Deployment Ready**
-- Vercel deployment configuration included
-- Production build tested and working
-- Static site with client-side data persistence
-- No backend infrastructure needed
-
 ### Out of Scope (Not Yet Built)
 
-The following features are **intentionally excluded** from this first slice:
+The following features are **intentionally excluded** from this version:
 
 ❌ Badges and achievement tracking  
 ❌ Family/parent accounts  
 ❌ Mindbody integration  
-❌ SmoothComp API (manual/CSV entry is sufficient for v1)  
+❌ SmoothComp API integration  
 ❌ Photo uploads  
 ❌ Video storage  
-❌ Harvey-style analysis (stance, kumi-kata)  
 ❌ Public leaderboards  
 ❌ Multi-device sync  
 
@@ -118,6 +177,7 @@ This application is built with **privacy-first** principles:
 ## 📊 Domain Model
 
 ### Athlete
+
 ```typescript
 {
   id: string
@@ -126,6 +186,11 @@ This application is built with **privacy-first** principles:
   tokuiWaza: string            // Favorite techniques
   developmentAreas: string     // Current focus areas
   notes: string                // General notes
+  stance: 'left' | 'right' | 'unknown' | null
+  kumiKata: string             // Grip style
+  neWaza: string               // Ground game notes
+  weightClass: string          // e.g. -57kg, -66kg
+  ageDivision: string          // e.g. Juvenile, Cadet, Junior
   createdAt: string            // ISO timestamp
   updatedAt: string            // ISO timestamp
   opponentNotes: OpponentNote[]
@@ -133,6 +198,7 @@ This application is built with **privacy-first** principles:
 ```
 
 ### OpponentNote
+
 ```typescript
 {
   id: string
@@ -141,6 +207,12 @@ This application is built with **privacy-first** principles:
   club: string | null          // Opponent's club (optional)
   notes: string                // Scouting notes
   tournament: string | null    // Context (optional)
+  stance: 'left' | 'right' | 'unknown' | null
+  kumiKata: string             // Opponent's grip style
+  neWaza: string               // Opponent's ground game
+  commonCounters: string       // Tactical counters
+  weightClass: string          // e.g. -48kg
+  ageDivision: string          // e.g. Juvenile
   createdAt: string            // ISO timestamp
 }
 ```
@@ -149,17 +221,18 @@ This application is built with **privacy-first** principles:
 
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript (strict mode)
-- **Styling**: Tailwind CSS + custom print CSS
+- **Styling**: Tailwind CSS + custom design system tokens
 - **Storage**: Browser localStorage (local-first)
 - **Deployment**: Vercel (static/SSR)
 - **Type Safety**: Full TypeScript coverage with custom types
+- **Fonts**: Google Fonts (Michroma, Archivo, Source Sans 3)
 
 ### Why This Stack?
 
 - **Next.js**: Modern, fast, production-ready with great Vercel integration
 - **TypeScript**: Catch privacy violations and errors at compile time
 - **localStorage**: Simple, reliable, no database complexity, works offline
-- **Tailwind**: Rapid UI development with excellent print utilities
+- **Tailwind + Design Tokens**: Rapid UI development with brand consistency
 - **Local-First**: Coaches need reliable offline access on tournament day
 
 ## 📁 Project Structure
@@ -169,18 +242,16 @@ This application is built with **privacy-first** principles:
 ├── app/                          # Next.js App Router
 │   ├── athletes/[id]/            # Athlete detail & edit
 │   │   └── print/                # Printable profile
-│   ├── page.tsx                  # Home (athlete list)
-│   ├── layout.tsx                # Root layout
-│   └── globals.css               # Global styles + print CSS
+│   ├── login/                    # Coach authentication
+│   ├── page.tsx                  # Home (athlete roster)
+│   ├── layout.tsx                # Root layout + font loading
+│   └── globals.css               # Design tokens + print CSS
 ├── lib/
 │   ├── store.ts                  # localStorage data layer
 │   └── types.ts                  # TypeScript type definitions
-├── prisma/                       # (Legacy - kept for reference)
-│   ├── schema.prisma             # Original DB schema
-│   └── seed.ts                   # Original seed script
 ├── package.json                  # Dependencies & scripts
 ├── tsconfig.json                 # TypeScript config
-└── vercel.json                   # Vercel deployment config
+└── README.md                     # This file
 ```
 
 ## 💾 Data Storage & Management
@@ -211,16 +282,17 @@ Open your browser's Developer Console (F12) on the app, and run:
 localStorage.removeItem('judo-athletes');
 localStorage.removeItem('judo-opponent-notes');
 localStorage.removeItem('judo-initialized');
+localStorage.removeItem('judo-auth');
 location.reload();
 ```
 
-The app will reseed with sample athletes on the next page load.
+The app will reseed with sample athletes on the next login.
 
 **To Backup Your Data:**
 
 1. Open Developer Console (F12)
 2. Go to the "Application" or "Storage" tab
-3. Find localStorage → `https://judo-comp-analysis.vercel.app` (or your domain)
+3. Find localStorage → your domain
 4. Copy the values for:
    - `judo-athletes`
    - `judo-opponent-notes`
@@ -268,8 +340,8 @@ This app is optimized for Vercel deployment with a local-first architecture. No 
 ### How Vercel Deployment Works
 
 - **Static Pages**: The app is mostly static with client-side hydration
-- **No API Routes Used for Data**: API routes exist but are legacy (not used in production)
-- **localStorage in Browser**: All CRUD operations happen client-side
+- **No API Routes Used for Data**: All CRUD operations happen client-side
+- **localStorage in Browser**: Client-side storage for privacy and offline support
 - **Fast Global CDN**: Vercel serves your app from edge locations worldwide
 - **Automatic HTTPS**: Secure by default
 - **Zero Configuration**: Just push to `main` branch and Vercel auto-deploys
@@ -303,12 +375,12 @@ npm run lint        # Run Next.js linter
 
 ### Sample Data
 
-On first visit, the app automatically seeds 3 athletes with opponent notes:
-- **Maya H.** - Seoi-nage specialist, 2 opponent notes
-- **Alex K.** - Osoto-gari specialist, 1 opponent note
-- **Jordan T.** - Ko-uchi-gari specialist, 1 opponent note
+On first login, the app automatically seeds 3 athletes with opponent notes:
+- **Maya H.** - Seoi-nage specialist, right stance, -48kg Juvenile, 2 opponent notes
+- **Alex K.** - Osoto-gari specialist, right stance, -66kg Cadet, 1 opponent note
+- **Jordan T.** - Ko-uchi-gari specialist, left stance, -57kg Junior, 1 opponent note
 
-This happens client-side in the browser when localStorage is empty.
+This happens client-side in the browser when localStorage is empty. Click "Seed Data" in the header to reset the sample data.
 
 ## 🗺 What's Next?
 
@@ -318,11 +390,12 @@ Potential future iterations (pending approval):
 2. **IndexedDB Migration** - More robust storage for larger datasets
 3. **PWA Support** - Install as a native-feeling app with service workers
 4. **Multi-Device Sync** - Optional cloud sync (while preserving offline-first)
-5. **Enhanced Search/Filters** - Filter athletes by division, club, etc.
+5. **Enhanced Search/Filters** - Filter athletes by division, club, stance, etc.
 6. **Tournament Mode** - Quick access to profiles during events
 7. **Mobile Optimization** - Touch-friendly UI for tablet use
 8. **Bulk PDF Export** - Export all profiles for tournament day
 9. **Analytics** - Track athlete progress over time (local only)
+10. **Supabase Integration** - Optional cloud backup with RLS policies
 
 ## 🐛 Known Limitations
 
@@ -330,16 +403,27 @@ Potential future iterations (pending approval):
 - Data is per-browser, not synced across devices (by design for privacy)
 - No server-side backup (coaches should manually export important data)
 - Print page requires JavaScript (but works offline once loaded)
+- Authentication is simulated locally (production would use Supabase Auth)
 
-## 🔄 Migration from Previous Version
+## 🔄 Migration Notes
 
-**If you previously used the Prisma/SQLite version:**
+**Current Version**: Local-first with localStorage
 
-The app has migrated to local-first storage. Your old SQLite data is not automatically migrated. This is a clean slate with client-side storage.
+**Scouting Fields Added**:
+- Stance (left/right/unknown) for athletes and opponents
+- Kumi-kata (grip style) for detailed matchup preparation
+- Ne-waza (ground game notes)
+- Common Counters (tactical analysis for opponents)
+- Weight Class and Age Division for tournament organization
 
-If you need to preserve old data:
+**Design System**:
+- Silicon Valley Judo brand tokens (navy field, brand blue)
+- Google Fonts: Michroma (logo), Archivo (headings), Source Sans 3 (body)
+- Premium coach-tool aesthetic with matside-optimized print layout
+
+If you need to preserve data from a previous version:
 1. Export from the old version using the Prisma database
-2. Transform the data to match the localStorage format
+2. Transform the data to match the new localStorage format with scouting fields
 3. Import using browser console (see "Managing Your Data" above)
 
 ## 📄 License
