@@ -12,6 +12,12 @@ import {
   getAllCoaches,
 } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
+import { 
+  autoAssignCoaches, 
+  AssignmentProposal, 
+  ConflictWarning, 
+  getCoachName as getCoachNameUtil 
+} from '@/lib/coach-auto-assign';
 
 type EntryWithAthlete = TournamentDayEntry & {
   athlete: AthleteWithNotes;
@@ -29,6 +35,10 @@ export default function AssignmentBoardPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'all' | 'by-coach' | 'by-mat'>('all');
   const [selectedCoachFilter, setSelectedCoachFilter] = useState<string | null>(null);
+  const [showAutoAssignPreview, setShowAutoAssignPreview] = useState(false);
+  const [autoAssignProposals, setAutoAssignProposals] = useState<AssignmentProposal[]>([]);
+  const [autoAssignConflicts, setAutoAssignConflicts] = useState<ConflictWarning[]>([]);
+  const [applyingAutoAssign, setApplyingAutoAssign] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -120,9 +130,70 @@ export default function AssignmentBoardPage() {
   };
 
   const getCoachName = (coachId: string | null | undefined) => {
-    if (!coachId) return null;
-    const coach = coaches.find(c => c.id === coachId);
-    return coach ? coach.email.split('@')[0] : 'Unknown';
+    return getCoachNameUtil(coachId, coaches);
+  };
+
+  const handleAutoAssign = () => {
+    const { proposals, conflicts } = autoAssignCoaches(entries, coaches);
+    setAutoAssignProposals(proposals);
+    setAutoAssignConflicts(conflicts);
+    setShowAutoAssignPreview(true);
+  };
+
+  const handleApplyAutoAssign = async () => {
+    setApplyingAutoAssign(true);
+    try {
+      // Apply all proposals
+      for (const proposal of autoAssignProposals) {
+        await updateTournamentDayEntry(proposal.entryId, {
+          assignedCoachId: proposal.proposedCoachId,
+        });
+      }
+      
+      // Reload entries
+      if (selectedTournamentDay) {
+        await loadTournamentDayEntries(selectedTournamentDay.id, athletes);
+      }
+      
+      // Close preview
+      setShowAutoAssignPreview(false);
+      setAutoAssignProposals([]);
+      setAutoAssignConflicts([]);
+    } catch (error) {
+      console.error('Error applying auto-assignments:', error);
+      alert('Failed to apply auto-assignments. Please try again.');
+    } finally {
+      setApplyingAutoAssign(false);
+    }
+  };
+
+  const handleClearAllAssignments = async () => {
+    if (!confirm('Clear all coach assignments? This will not affect locked assignments.')) {
+      return;
+    }
+    
+    setSaving('clearing');
+    try {
+      const entriesToClear = entries.filter(e => 
+        e.assignedCoachId && !e.athlete.isCoachLocked
+      );
+      
+      for (const entry of entriesToClear) {
+        await updateTournamentDayEntry(entry.id, {
+          assignedCoachId: null,
+        });
+      }
+      
+      // Reload entries
+      if (selectedTournamentDay) {
+        await loadTournamentDayEntries(selectedTournamentDay.id, athletes);
+      }
+    } catch (error) {
+      console.error('Error clearing assignments:', error);
+      alert('Failed to clear assignments. Please try again.');
+    } finally {
+      setSaving(null);
+    }
   };
 
   const getConflicts = (entryId: string, coachId: string | null | undefined, timeWindow: string | null | undefined) => {
@@ -222,8 +293,8 @@ export default function AssignmentBoardPage() {
 
         {/* Tournament Day Selector */}
         <div className="card p-6 mb-6">
-          <div className="flex gap-4 items-end mb-4">
-            <div className="flex-1">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-end mb-4">
+            <div className="flex-1 w-full">
               <label className="eyebrow block text-gray-700 mb-2">
                 Tournament Day
               </label>
@@ -242,7 +313,7 @@ export default function AssignmentBoardPage() {
               )}
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
               <button
                 onClick={() => setViewMode('all')}
                 className={`px-4 py-2 rounded transition-colors ${
@@ -275,6 +346,30 @@ export default function AssignmentBoardPage() {
               </button>
             </div>
           </div>
+
+          {/* Auto-Assign Actions */}
+          {entries.length > 0 && (
+            <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-gray-200">
+              <button
+                onClick={handleAutoAssign}
+                disabled={saving !== null}
+                className="btn-primary px-6 py-3 text-sm font-semibold disabled:opacity-50"
+              >
+                🤖 Auto-Assign Coaches
+              </button>
+              <button
+                onClick={handleClearAllAssignments}
+                disabled={saving !== null}
+                className="px-6 py-3 text-sm font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 rounded transition-colors disabled:opacity-50"
+              >
+                Clear All (Keep Locked)
+              </button>
+              <div className="flex-1" />
+              <div className="text-xs text-gray-600 self-center">
+                Auto-assign respects locked and exclusive coaches
+              </div>
+            </div>
+          )}
 
           {entries.length === 0 ? (
             <div className="text-center py-8 text-gray-600">
@@ -499,6 +594,158 @@ export default function AssignmentBoardPage() {
           </div>
         )}
       </div>
+
+      {/* Auto-Assign Preview Modal */}
+      {showAutoAssignPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-2xl font-bold text-gray-900">Auto-Assign Preview</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Review proposed assignments before applying
+              </p>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-6">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-blue-50 p-4 rounded">
+                  <p className="text-xs text-gray-600 mb-1">Proposals</p>
+                  <p className="text-2xl font-bold text-brand-blue">{autoAssignProposals.length}</p>
+                </div>
+                <div className="bg-orange-50 p-4 rounded">
+                  <p className="text-xs text-gray-600 mb-1">Conflicts</p>
+                  <p className="text-2xl font-bold text-orange-700">{autoAssignConflicts.length}</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded">
+                  <p className="text-xs text-gray-600 mb-1">Already Assigned</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    {entries.filter(e => e.assignedCoachId && !e.noCoachNeeded).length}
+                  </p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded">
+                  <p className="text-xs text-gray-600 mb-1">No Coach Needed</p>
+                  <p className="text-2xl font-bold text-purple-700">
+                    {entries.filter(e => e.noCoachNeeded).length}
+                  </p>
+                </div>
+              </div>
+
+              {/* Conflicts Warning */}
+              {autoAssignConflicts.length > 0 && (
+                <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0">
+                      <span className="text-2xl">⚠️</span>
+                    </div>
+                    <div className="ml-3 flex-1">
+                      <h4 className="text-sm font-semibold text-orange-800 mb-2">
+                        {autoAssignConflicts.length} Conflict Warning{autoAssignConflicts.length !== 1 ? 's' : ''}
+                      </h4>
+                      <div className="space-y-3">
+                        {autoAssignConflicts.map((conflict, idx) => (
+                          <div key={idx} className="text-sm text-orange-700">
+                            <p className="font-semibold">{conflict.athleteName}</p>
+                            <p>{conflict.message}</p>
+                            {conflict.conflictingEntries.length > 0 && (
+                              <ul className="mt-1 ml-4 text-xs">
+                                {conflict.conflictingEntries.map((ce, i) => (
+                                  <li key={i}>
+                                    • {ce.athleteName} 
+                                    {ce.matNumber && ` (Mat ${ce.matNumber})`}
+                                    {ce.timeWindow && ` - ${ce.timeWindow}`}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-orange-600 mt-3">
+                        You can still apply these assignments. Review conflicts and adjust manually if needed.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Proposed Assignments */}
+              {autoAssignProposals.length > 0 ? (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                    Proposed Assignments ({autoAssignProposals.length})
+                  </h4>
+                  {autoAssignProposals.map(proposal => {
+                    const entry = entries.find(e => e.id === proposal.entryId);
+                    if (!entry) return null;
+                    
+                    const coachName = getCoachName(proposal.proposedCoachId);
+                    
+                    return (
+                      <div key={proposal.entryId} className="bg-gray-50 p-4 rounded border border-gray-200">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900">
+                              {entry.athlete.firstName} {entry.athlete.lastInitial}.
+                            </p>
+                            {entry.athlete.weightClass && (
+                              <p className="text-xs text-gray-600">{entry.athlete.weightClass}</p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-brand-blue">{coachName}</p>
+                            <p className="text-xs text-gray-600">{proposal.reason}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                          {entry.matNumber && (
+                            <div>
+                              <span className="font-semibold">Mat:</span> {entry.matNumber}
+                            </div>
+                          )}
+                          {entry.timeWindow && (
+                            <div>
+                              <span className="font-semibold">Time:</span> {entry.timeWindow}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-600">
+                  <p className="text-lg">✅ All athletes are already assigned!</p>
+                  <p className="text-sm mt-2">No new assignments needed.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200 bg-gray-50 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAutoAssignPreview(false);
+                  setAutoAssignProposals([]);
+                  setAutoAssignConflicts([]);
+                }}
+                disabled={applyingAutoAssign}
+                className="px-6 py-3 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded font-semibold transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              {autoAssignProposals.length > 0 && (
+                <button
+                  onClick={handleApplyAutoAssign}
+                  disabled={applyingAutoAssign}
+                  className="px-6 py-3 bg-brand-blue text-white hover:bg-brand-blue-hover rounded font-semibold transition-colors disabled:opacity-50 flex-1"
+                >
+                  {applyingAutoAssign ? 'Applying...' : `Apply ${autoAssignProposals.length} Assignment${autoAssignProposals.length !== 1 ? 's' : ''}`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
