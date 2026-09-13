@@ -1,24 +1,31 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AthleteWithNotes } from '@/lib/types';
-import { getAthleteWithNotes } from '@/lib/store';
+import { getAthleteWithNotes } from '@/lib/supabase-store';
+import { useAuth } from '@/lib/auth-context';
 
 export default function PrintProfilePage() {
   const params = useParams();
+  const router = useRouter();
   const [athlete, setAthlete] = useState<AthleteWithNotes | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    loadAthlete();
-  }, []);
+    if (!authLoading && !user) {
+      router.push('/login?redirectTo=' + encodeURIComponent(window.location.pathname));
+    } else if (user) {
+      loadAthlete();
+    }
+  }, [user, authLoading, router]);
 
-  const loadAthlete = () => {
+  const loadAthlete = async () => {
     try {
       const id = params.id as string;
-      const data = getAthleteWithNotes(id);
+      const data = await getAthleteWithNotes(id);
       setAthlete(data);
     } catch (error) {
       console.error('Error loading athlete:', error);
@@ -27,12 +34,16 @@ export default function PrintProfilePage() {
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Loading...</p>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   if (!athlete) {

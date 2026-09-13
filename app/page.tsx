@@ -1,13 +1,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AthleteWithNotes } from '@/lib/types';
-import { getAllAthletesWithNotes, createAthlete, seedDataIfEmpty } from '@/lib/store';
+import { getAllAthletesWithNotes, createAthlete, seedData } from '@/lib/supabase-store';
+import { useAuth } from '@/lib/auth-context';
 
 export default function Home() {
   const [athletes, setAthletes] = useState<AthleteWithNotes[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showSeedButton, setShowSeedButton] = useState(false);
+  const { user, loading: authLoading, signOut } = useAuth();
+  const router = useRouter();
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -18,16 +23,18 @@ export default function Home() {
   });
 
   useEffect(() => {
-    // Seed data if this is first visit
-    seedDataIfEmpty();
-    // Load athletes
-    loadAthletes();
-  }, []);
+    if (!authLoading && !user) {
+      router.push('/login');
+    } else if (user) {
+      loadAthletes();
+    }
+  }, [user, authLoading, router]);
 
-  const loadAthletes = () => {
+  const loadAthletes = async () => {
     try {
-      const data = getAllAthletesWithNotes();
+      const data = await getAllAthletesWithNotes();
       setAthletes(data);
+      setShowSeedButton(data.length === 0);
     } catch (error) {
       console.error('Error loading athletes:', error);
     } finally {
@@ -35,10 +42,35 @@ export default function Home() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSeedData = async () => {
+    if (!confirm('Add sample athletes and opponent notes?')) {
+      return;
+    }
+    setLoading(true);
+    try {
+      await seedData();
+      await loadAthletes();
+    } catch (error) {
+      console.error('Error seeding data:', error);
+      alert('Failed to seed data. ' + (error instanceof Error ? error.message : ''));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      createAthlete({
+      await createAthlete({
         firstName: formData.firstName,
         lastInitial: formData.lastInitial,
         tokuiWaza: formData.tokuiWaza,
@@ -53,19 +85,23 @@ export default function Home() {
         notes: '',
       });
       setShowAddForm(false);
-      loadAthletes();
+      await loadAthletes();
     } catch (error) {
       console.error('Error creating athlete:', error);
       alert('Failed to create athlete. Please check your input.');
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Loading...</p>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return (
@@ -75,12 +111,20 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-gray-900">
             Silicon Valley Judo - Competitor Analysis
           </h1>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            {showAddForm ? 'Cancel' : 'Add Athlete'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              {showAddForm ? 'Cancel' : 'Add Athlete'}
+            </button>
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
 
         {showAddForm && (
@@ -169,9 +213,19 @@ export default function Home() {
 
         <div className="grid gap-4">
           {athletes.length === 0 ? (
-            <p className="text-gray-600 text-center py-12">
-              No athletes yet. Add your first athlete to get started.
-            </p>
+            <div className="text-center py-12">
+              <p className="text-gray-600 mb-4">
+                No athletes yet. Add your first athlete to get started.
+              </p>
+              {showSeedButton && (
+                <button
+                  onClick={handleSeedData}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Load Sample Data
+                </button>
+              )}
+            </div>
           ) : (
             athletes.map((athlete) => (
               <Link
