@@ -91,10 +91,14 @@ export function OnlineProvider({ children }: { children: ReactNode }) {
             }
           };
 
-          navigator.serviceWorker.controller.postMessage(
-            { type: 'CLEAR_CACHE' },
-            [messageChannel.port2]
-          );
+          if (navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage(
+              { type: 'CLEAR_CACHE' },
+              [messageChannel.port2]
+            );
+          } else {
+            reject(new Error('No service worker controller'));
+          }
 
           // Timeout after 5 seconds
           setTimeout(() => reject(new Error('Cache clear timeout')), 5000);
