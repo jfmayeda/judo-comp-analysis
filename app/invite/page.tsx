@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { getAllCoaches, inviteCoach, removeCoach } from '@/lib/supabase-store';
+import { getAllCoaches, inviteCoach, removeCoach, getAllTechniques, createTechnique, deleteTechnique } from '@/lib/supabase-store';
+import { Technique } from '@/lib/types';
 
 export default function InviteCoachPage() {
   const router = useRouter();
@@ -15,6 +16,13 @@ export default function InviteCoachPage() {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  const [techniques, setTechniques] = useState<Technique[]>([]);
+  const [showAddTechnique, setShowAddTechnique] = useState(false);
+  const [newTechnique, setNewTechnique] = useState({
+    name: '',
+    category: 'Ne-waza' as 'Tachi-waza' | 'Ne-waza',
+  });
 
   useEffect(() => {
     if (authLoading) return;
@@ -36,8 +44,18 @@ export default function InviteCoachPage() {
 
     if (isAllowlisted === true && isAdmin === true) {
       loadCoaches();
+      loadTechniques();
     }
   }, [user, authLoading, isAllowlisted, isAdmin, router]);
+
+  const loadTechniques = async () => {
+    try {
+      const data = await getAllTechniques();
+      setTechniques(data.filter(t => t.isCustom));
+    } catch (error) {
+      console.error('Error loading techniques:', error);
+    }
+  };
 
   const loadCoaches = async () => {
     try {
@@ -80,6 +98,38 @@ export default function InviteCoachPage() {
     } catch (error: any) {
       console.error('Error removing coach:', error);
       alert(`Error: ${error.message || 'Failed to remove coach'}`);
+    }
+  };
+
+  const handleAddTechnique = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await createTechnique({
+        name: newTechnique.name,
+        category: newTechnique.category,
+      });
+      setNewTechnique({ name: '', category: 'Ne-waza' });
+      setShowAddTechnique(false);
+      await loadTechniques();
+      setMessage(`Custom technique "${newTechnique.name}" added successfully!`);
+    } catch (error: any) {
+      console.error('Error adding technique:', error);
+      setError(error.message || 'Failed to add technique');
+    }
+  };
+
+  const handleDeleteTechnique = async (techniqueId: string, techniqueName: string) => {
+    if (!confirm(`Delete custom technique "${techniqueName}"? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteTechnique(techniqueId);
+      await loadTechniques();
+      setMessage(`Technique "${techniqueName}" deleted successfully!`);
+    } catch (error: any) {
+      console.error('Error deleting technique:', error);
+      alert(`Error: ${error.message || 'Failed to delete technique'}`);
     }
   };
 
@@ -185,6 +235,76 @@ export default function InviteCoachPage() {
                       Remove
                     </button>
                   )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="card p-6 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl uppercase tracking-wide">Custom Techniques ({techniques.length})</h3>
+            <button
+              onClick={() => setShowAddTechnique(!showAddTechnique)}
+              className="btn-primary text-sm"
+            >
+              {showAddTechnique ? 'Cancel' : 'Add Custom Technique'}
+            </button>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-4">
+            Add dojo-specific techniques that aren't in the standard Kodokan list. These will appear in the technique picker for all coaches.
+          </p>
+
+          {showAddTechnique && (
+            <form onSubmit={handleAddTechnique} className="mb-6 p-4 bg-gray-50 rounded space-y-4">
+              <div>
+                <label className="form-label block mb-2">Technique Name</label>
+                <input
+                  type="text"
+                  required
+                  value={newTechnique.name}
+                  onChange={(e) => setNewTechnique({ ...newTechnique, name: e.target.value })}
+                  className="form-input w-full"
+                  placeholder="e.g., Cat Wrench"
+                />
+              </div>
+              <div>
+                <label className="form-label block mb-2">Category</label>
+                <select
+                  value={newTechnique.category}
+                  onChange={(e) => setNewTechnique({ ...newTechnique, category: e.target.value as 'Tachi-waza' | 'Ne-waza' })}
+                  className="form-input w-full"
+                >
+                  <option value="Tachi-waza">Tachi-waza (Standing)</option>
+                  <option value="Ne-waza">Ne-waza (Ground)</option>
+                </select>
+              </div>
+              <button type="submit" className="btn-primary">
+                Add Technique
+              </button>
+            </form>
+          )}
+
+          {techniques.length === 0 ? (
+            <p className="text-gray-600">No custom techniques yet. Add dojo-specific techniques here.</p>
+          ) : (
+            <div className="space-y-2">
+              {techniques.map((technique) => (
+                <div
+                  key={technique.id}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200"
+                >
+                  <div>
+                    <p className="font-semibold text-gray-900">{technique.name}</p>
+                    <p className="text-sm text-gray-600">{technique.category}</p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteTechnique(technique.id, technique.name)}
+                    className="btn-secondary border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-sm"
+                  >
+                    Delete
+                  </button>
                 </div>
               ))}
             </div>
