@@ -16,7 +16,7 @@ import { useAuth } from '@/lib/auth-context';
 export default function AthletePage() {
   const params = useParams();
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAllowlisted } = useAuth();
   const [athlete, setAthlete] = useState<AthleteWithNotes | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -53,8 +53,16 @@ export default function AthletePage() {
       router.push('/login');
       return;
     }
-    loadAthlete();
-  }, [user, authLoading, router]);
+
+    if (isAllowlisted === false) {
+      router.push('/unauthorized');
+      return;
+    }
+
+    if (isAllowlisted === true) {
+      loadAthlete();
+    }
+  }, [user, authLoading, isAllowlisted, router]);
 
   const loadAthlete = async () => {
     try {

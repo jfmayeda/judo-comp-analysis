@@ -103,6 +103,29 @@ export type Database = {
           created_by?: string;
         };
       };
+      coach_allowlist: {
+        Row: {
+          id: string;
+          email: string;
+          invited_by: string | null;
+          invited_at: string;
+          is_admin: boolean;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          invited_by?: string | null;
+          invited_at?: string;
+          is_admin?: boolean;
+        };
+        Update: {
+          id?: string;
+          email?: string;
+          invited_by?: string | null;
+          invited_at?: string;
+          is_admin?: boolean;
+        };
+      };
     };
   };
 };

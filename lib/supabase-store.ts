@@ -940,3 +940,77 @@ function dbOpponentToOpponent(dbOpponent: {
     createdBy: dbOpponent.created_by,
   };
 }
+
+// Coach Allowlist CRUD
+export async function inviteCoach(email: string): Promise<void> {
+  const supabase = getSupabaseClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User must be authenticated to invite coaches');
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const { error: insertError } = await supabase
+    .from('coach_allowlist')
+    .insert([{
+      email: normalizedEmail,
+      invited_by: user.id,
+      is_admin: false,
+    }] as never);
+
+  if (insertError) {
+    if (insertError.code === '23505') {
+      throw new Error('This email is already in the allowlist');
+    }
+    console.error('Error inviting coach:', insertError);
+    throw new Error('Failed to invite coach');
+  }
+
+  const { error: magicLinkError } = await supabase.auth.signInWithOtp({
+    email: normalizedEmail,
+    options: {
+      shouldCreateUser: true,
+    },
+  });
+
+  if (magicLinkError) {
+    console.error('Error sending magic link:', magicLinkError);
+  }
+}
+
+export async function getAllCoaches(): Promise<Array<{ id: string; email: string; invitedAt: string; isAdmin: boolean }>> {
+  const supabase = getSupabaseClient();
+
+  const { data, error } = await supabase
+    .from('coach_allowlist')
+    .select('*')
+    .order('invited_at', { ascending: false }) as { data: Array<{ id: string; email: string; invited_at: string; is_admin: boolean }> | null; error: any };
+
+  if (error) {
+    console.error('Error fetching coaches:', error);
+    throw new Error('Failed to fetch coaches');
+  }
+
+  return (data || []).map(coach => ({
+    id: coach.id,
+    email: coach.email,
+    invitedAt: coach.invited_at,
+    isAdmin: coach.is_admin,
+  }));
+}
+
+export async function removeCoach(coachId: string): Promise<void> {
+  const supabase = getSupabaseClient();
+
+  const { error } = await supabase
+    .from('coach_allowlist')
+    .delete()
+    .eq('id', coachId);
+
+  if (error) {
+    console.error('Error removing coach:', error);
+    throw new Error('Failed to remove coach');
+  }
+}
