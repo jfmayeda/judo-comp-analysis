@@ -180,10 +180,12 @@ export default function AthletePage() {
       <header className="app-header flex items-center justify-between px-8 no-print">
         <Link href="/" className="flex items-center gap-3 text-white hover:opacity-80 transition-opacity">
           <span className="text-xl">←</span>
-          <div>
-            <p className="eyebrow text-white mb-1">Competitor Analysis</p>
-            <h1 className="wordmark text-xl">SILICON VALLEY JUDO</h1>
-          </div>
+          <img 
+            src="/svj-logo-white.png" 
+            alt="Silicon Valley Judo" 
+            className="app-header-logo"
+          />
+          <p className="eyebrow text-white text-xs">COMPETITOR ANALYSIS</p>
         </Link>
       </header>
 
@@ -208,7 +210,7 @@ export default function AthletePage() {
               </button>
               <button
                 onClick={handleDelete}
-                className="btn-secondary border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-sm"
+                className="btn-danger text-sm"
               >
                 Delete
               </button>

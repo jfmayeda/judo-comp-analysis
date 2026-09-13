@@ -116,9 +116,13 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Header */}
       <header className="app-header flex items-center justify-between px-8">
-        <div>
-          <p className="eyebrow text-white mb-1">Competitor Analysis</p>
-          <h1 className="wordmark text-xl">SILICON VALLEY JUDO</h1>
+        <div className="flex items-center gap-4">
+          <img 
+            src="/svj-logo-white.png" 
+            alt="Silicon Valley Judo" 
+            className="app-header-logo"
+          />
+          <p className="eyebrow text-white text-xs">COMPETITOR ANALYSIS</p>
         </div>
         <div className="flex gap-3">
           <Link
