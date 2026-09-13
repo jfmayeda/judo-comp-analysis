@@ -1,8 +1,8 @@
 # Silicon Valley Judo - Competitor Analysis Dashboard
 
-**Local-first coach scouting notes + printable offline tournament-day profiles.**
+**Multi-coach shared database with auth-protected scouting notes + printable offline tournament-day profiles.**
 
-Privacy-first competitor analysis tool for judo coaches. Track athlete development and opponent scouting notes with printable tournament-day profiles. All data stored locally in your browser for complete privacy and offline access.
+Privacy-first competitor analysis tool for judo coaches. Track athlete development and opponent scouting notes with printable tournament-day profiles. Data is stored in a shared Supabase database with coach authentication required for all access.
 
 ## 🚀 Quick Start
 
@@ -10,7 +10,8 @@ Privacy-first competitor analysis tool for judo coaches. Track athlete developme
 
 - Node.js 18+ and npm
 - Git
-- A modern web browser with localStorage support
+- A modern web browser
+- Supabase account (for deployment)
 
 ### Installation
 
@@ -22,13 +23,35 @@ cd judo-comp-analysis
 # Install dependencies
 npm install
 
+# Set up environment variables
+cp .env.local.example .env.local
+# Edit .env.local and add your Supabase credentials
+```
+
+### Environment Configuration
+
+Create a `.env.local` file in the project root with your Supabase credentials:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://wnwcxousneqhzlkdzeku.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-actual-anon-key-here
+```
+
+**NEVER commit `.env.local` to git.** The `.gitignore` file is configured to exclude it.
+
+Get your credentials from the Supabase project dashboard:
+- Project: JudoCoach
+- URL: https://wnwcxousneqhzlkdzeku.supabase.co
+- Navigate to Settings → API to find your anon/public key
+
+### Development
+
+```bash
 # Start development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the app.
-
-On your first visit, the app automatically seeds 3 sample athletes with opponent notes so you can explore the features right away.
+Open [http://localhost:3000](http://localhost:3000) to view the app. You'll be redirected to the login page.
 
 ### Production Build
 
@@ -40,60 +63,81 @@ npm run build
 npm start
 ```
 
-## 🎯 What's In This Slice (v1)
+## 🔐 Authentication & Access
 
-This is the **first slice** of the Silicon Valley Judo Competitor Analysis Dashboard — a focused, working prototype with local-first architecture.
+### Coach Authentication
 
-### Features Included
+All data access requires authentication. Coaches must sign in before viewing any athlete or opponent information.
 
-✅ **Athlete Management (CRUD)**
+**Login methods:**
+1. **Email + Password**: Standard email/password authentication
+2. **Magic Link**: Passwordless email magic link (recommended for ease of use)
+
+### First-Time Setup
+
+1. **Admin creates coach accounts in Supabase:**
+   - Go to Supabase Dashboard → Authentication → Users
+   - Click "Add User" → "Create new user"
+   - Enter coach's email and either:
+     - Set a temporary password (coach can reset later)
+     - Or use "Send magic link" for passwordless auth
+
+2. **Coach signs in:**
+   - Navigate to the app URL
+   - Enter email (and password if using password auth)
+   - For magic link: click the link sent to their email
+
+3. **Load sample data (optional):**
+   - On first login, if no athletes exist, a "Load Sample Data" button appears
+   - Click to seed 3 sample athletes with opponent notes
+   - This helps coaches understand the system before adding real data
+
+## 🎯 Features
+
+### ✅ Multi-Coach Shared Database
+
+- All coaches share the same athlete and opponent note data
+- Real-time updates across all sessions
+- No localStorage isolation issues
+- Data persists across devices and browsers
+
+### ✅ Coach Authentication
+
+- Secure email-based authentication (password or magic link)
+- Unauthenticated users cannot access any athlete data
+- Row-level security (RLS) enforced in Supabase
+- Anonymous access completely blocked
+
+### ✅ Athlete Management (CRUD)
+
 - Add, edit, and delete athletes
 - Track tokui-waza (favorite techniques)
 - Document development areas
 - Add general notes
 - Privacy-enforced: first name + last initial only
 
-✅ **Opponent Scouting Notes**
+### ✅ Opponent Scouting Notes
+
 - Link scouting notes to specific athletes
 - Track opponent details (name, club, tournament)
 - Add strategic notes for matchup preparation
 - Privacy-enforced for opponent names too
+- Cascade delete when athlete is removed
 
-✅ **Printable Tournament-Day Profiles**
+### ✅ Printable Tournament-Day Profiles
+
 - Clean, one-page profiles per athlete
 - Print-optimized CSS (works with browser print or Save as PDF)
 - Includes tokui-waza, development areas, and all opponent notes
 - Matside-readable format
-- **Works completely offline once loaded**
+- Works offline after initial load (requires auth first)
 
-✅ **Local-First Architecture**
-- All data stored in browser localStorage
-- No database server required
-- Works offline after initial page load
-- Fast, instant updates with no network latency
-- Complete data privacy (nothing leaves your device)
+### ✅ Deployment Ready
 
-✅ **Deployment Ready**
 - Vercel deployment configuration included
+- Supabase backend fully configured
+- Environment variable support
 - Production build tested and working
-- Static site with client-side data persistence
-- No backend infrastructure needed
-
-### Out of Scope (Not Yet Built)
-
-The following features are **intentionally excluded** from this first slice:
-
-❌ Badges and achievement tracking  
-❌ Family/parent accounts  
-❌ Mindbody integration  
-❌ SmoothComp API (manual/CSV entry is sufficient for v1)  
-❌ Photo uploads  
-❌ Video storage  
-❌ Harvey-style analysis (stance, kumi-kata)  
-❌ Public leaderboards  
-❌ Multi-device sync  
-
-These may be added in future iterations with explicit approval.
 
 ## 🔒 Privacy Rules (Non-Negotiable)
 
@@ -104,243 +148,230 @@ This application is built with **privacy-first** principles:
 3. **Opponent Privacy**: Same naming rules apply to opponent notes
 4. **Full Deletion**: Every athlete record can be fully deleted (hard delete with cascade to related notes)
 5. **Type Safety**: Privacy rules are encoded in the data model and TypeScript types
-6. **Local Storage Only**: All data stays in your browser — nothing sent to any server
+6. **Auth-Gated Access**: All data requires authentication — no public access to competition intelligence
 
 ### Privacy Implementation
 
-- Data model enforces `lastInitial` as single character
+- Data model enforces `last_initial` as single character (DB constraint)
 - Type-safe validation ensures privacy constraints
 - UI prevents full name entry
 - Cascade deletes ensure no orphaned data
-- No external data sharing or analytics
-- localStorage isolation means data never leaves your device
+- Row-level security (RLS) prevents anonymous access
+- Only authenticated coaches can view or modify data
 
-## 📊 Domain Model
+## 📊 Database Schema
 
-### Athlete
-```typescript
-{
-  id: string
-  firstName: string
-  lastInitial: string          // Single character, uppercase
-  tokuiWaza: string            // Favorite techniques
-  developmentAreas: string     // Current focus areas
-  notes: string                // General notes
-  createdAt: string            // ISO timestamp
-  updatedAt: string            // ISO timestamp
-  opponentNotes: OpponentNote[]
-}
+### Tables (Supabase)
+
+#### `athletes`
+```sql
+CREATE TABLE athletes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  first_name TEXT NOT NULL,
+  last_initial TEXT NOT NULL CHECK (length(last_initial) = 1),
+  tokui_waza TEXT DEFAULT '',
+  development_areas TEXT DEFAULT '',
+  notes TEXT DEFAULT '',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  created_by UUID NOT NULL REFERENCES auth.users(id)
+);
 ```
 
-### OpponentNote
-```typescript
-{
-  id: string
-  athleteId: string            // Links to our athlete
-  opponentLabel: string        // First + last initial
-  club: string | null          // Opponent's club (optional)
-  notes: string                // Scouting notes
-  tournament: string | null    // Context (optional)
-  createdAt: string            // ISO timestamp
-}
+#### `opponent_notes`
+```sql
+CREATE TABLE opponent_notes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  athlete_id UUID NOT NULL REFERENCES athletes(id) ON DELETE CASCADE,
+  opponent_label TEXT NOT NULL,
+  club TEXT,
+  notes TEXT NOT NULL,
+  tournament TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_by UUID NOT NULL REFERENCES auth.users(id)
+);
 ```
+
+### Row-Level Security (RLS)
+
+Both tables enforce RLS policies:
+- **Authenticated users**: Full CRUD access
+- **Anonymous users**: No access (all operations blocked)
+
+This prevents competition/trade-secret leaks from public access.
 
 ## 🛠 Tech Stack
 
 - **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS + custom print CSS
-- **Storage**: Browser localStorage (local-first)
-- **Deployment**: Vercel (static/SSR)
+- **Backend**: Supabase (PostgreSQL + Auth)
+- **Authentication**: Supabase Auth (email/password + magic links)
+- **Storage**: Supabase PostgreSQL with RLS
+- **Deployment**: Vercel (frontend) + Supabase (backend)
 - **Type Safety**: Full TypeScript coverage with custom types
 
 ### Why This Stack?
 
 - **Next.js**: Modern, fast, production-ready with great Vercel integration
 - **TypeScript**: Catch privacy violations and errors at compile time
-- **localStorage**: Simple, reliable, no database complexity, works offline
+- **Supabase**: Managed PostgreSQL + Auth + RLS for secure multi-coach access
 - **Tailwind**: Rapid UI development with excellent print utilities
-- **Local-First**: Coaches need reliable offline access on tournament day
+- **Vercel**: Zero-config deployment with automatic HTTPS and global CDN
+
+### Migration from localStorage
+
+**v1 (localStorage)** → **v2 (Supabase + Auth)**
+
+Key changes:
+- **Before**: Client-side localStorage, no auth, single-browser data
+- **After**: Server-side Supabase DB, coach auth required, shared multi-coach data
+- **Reason**: Prevent competition intel leaks + support multi-coach collaboration with latest shared data
 
 ## 📁 Project Structure
 
 ```
 /workspace
-├── app/                          # Next.js App Router
-│   ├── athletes/[id]/            # Athlete detail & edit
-│   │   └── print/                # Printable profile
-│   ├── page.tsx                  # Home (athlete list)
-│   ├── layout.tsx                # Root layout
+├── app/
+│   ├── athletes/[id]/
+│   │   ├── page.tsx              # Athlete detail & edit (auth required)
+│   │   └── print/page.tsx        # Printable profile (auth required)
+│   ├── login/page.tsx            # Coach login (password or magic link)
+│   ├── page.tsx                  # Home / athlete list (auth required)
+│   ├── layout.tsx                # Root layout with AuthProvider
 │   └── globals.css               # Global styles + print CSS
 ├── lib/
-│   ├── store.ts                  # localStorage data layer
+│   ├── supabase.ts               # Supabase client initialization
+│   ├── supabase-store.ts         # Supabase data layer (CRUD operations)
+│   ├── auth-context.tsx          # Auth context provider
+│   ├── store.ts                  # (DEPRECATED) Old localStorage store
 │   └── types.ts                  # TypeScript type definitions
-├── prisma/                       # (Legacy - kept for reference)
-│   ├── schema.prisma             # Original DB schema
-│   └── seed.ts                   # Original seed script
+├── .env.local.example            # Environment variable template
+├── .env.local                    # (gitignored) Your actual env vars
 ├── package.json                  # Dependencies & scripts
 ├── tsconfig.json                 # TypeScript config
-└── vercel.json                   # Vercel deployment config
+└── README.md                     # This file
 ```
 
-## 💾 Data Storage & Management
+## 🚢 Deployment to Vercel
 
-### How Data Works
+### Prerequisites
 
-All athlete and opponent note data is stored in your browser's localStorage. This means:
+- GitHub repository connected to Vercel
+- Supabase project created with tables and RLS policies configured
+- Supabase API URL and anon key ready
 
-- ✅ **Your data stays on your device** — complete privacy
-- ✅ **Works offline** — once loaded, the app works without internet
-- ✅ **Instant performance** — no network requests, no latency
-- ✅ **Browser-specific** — data is tied to the browser and domain you're using
+### Step-by-Step Deployment
 
-### Important Notes
+1. **Push to GitHub:**
+   ```bash
+   git push origin main
+   ```
 
-- **Per-Browser Storage**: Data is isolated per browser. If you use Chrome and Firefox, they'll have separate data.
-- **Private/Incognito Mode**: Data will be cleared when you close the private browsing session.
-- **Clearing Browser Data**: If you clear your browser's site data or cookies, you'll lose your athlete data.
-- **No Cloud Sync**: Data is not synced across devices. Each browser/device has its own isolated data.
-
-### Managing Your Data
-
-**To Reset/Clear All Data:**
-
-Open your browser's Developer Console (F12) on the app, and run:
-
-```javascript
-localStorage.removeItem('judo-athletes');
-localStorage.removeItem('judo-opponent-notes');
-localStorage.removeItem('judo-initialized');
-location.reload();
-```
-
-The app will reseed with sample athletes on the next page load.
-
-**To Backup Your Data:**
-
-1. Open Developer Console (F12)
-2. Go to the "Application" or "Storage" tab
-3. Find localStorage → `https://judo-comp-analysis.vercel.app` (or your domain)
-4. Copy the values for:
-   - `judo-athletes`
-   - `judo-opponent-notes`
-5. Save these JSON strings somewhere safe
-
-**To Restore Data:**
-
-1. Open Developer Console (F12)
-2. Run:
-```javascript
-localStorage.setItem('judo-athletes', '<your-backup-json>');
-localStorage.setItem('judo-opponent-notes', '<your-backup-json>');
-localStorage.setItem('judo-initialized', 'true');
-location.reload();
-```
-
-## 🚢 Deployment
-
-### Deploy to Vercel (Recommended)
-
-This app is optimized for Vercel deployment with a local-first architecture. No database configuration needed!
-
-1. **Connect Repository**:
+2. **Import Project to Vercel:**
    - Go to [vercel.com](https://vercel.com)
-   - Import this GitHub repository
-   - Vercel auto-detects Next.js
+   - Click "Add New Project"
+   - Import your GitHub repository
+   - Vercel auto-detects Next.js settings
 
-2. **Configure Build**:
-   - Framework: Next.js (auto-detected)
-   - Build Command: `npm run build` (auto-detected)
-   - Install Command: `npm install` (auto-detected)
-   - No environment variables needed!
+3. **Configure Environment Variables:**
+   
+   In Vercel project settings → Environment Variables, add:
+   
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=https://wnwcxousneqhzlkdzeku.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-actual-anon-key>
+   ```
+   
+   **CRITICAL**: Use the **actual anon key** from your Supabase project dashboard (Settings → API).
+   
+   Set for: **Production, Preview, Development** (all environments)
 
-3. **Deploy**:
+4. **Deploy:**
    - Click "Deploy"
-   - Vercel will build and deploy automatically
+   - Vercel builds and deploys automatically
    - You'll get a live URL (e.g., `https://judo-comp-analysis.vercel.app`)
 
-4. **That's It!**:
-   - No database to configure
-   - No environment variables to set
-   - All data storage happens client-side in the browser
-   - Vercel serves a static/SSR Next.js app with no backend dependencies
+5. **Create First Coach Account:**
+   
+   Go to Supabase Dashboard → Authentication → Users:
+   - Click "Add User" → "Create new user"
+   - Enter coach email + password (or send magic link)
+   - Coach can now sign in at your deployed URL
 
-### How Vercel Deployment Works
+6. **Test Authentication:**
+   - Navigate to your Vercel URL
+   - Should redirect to `/login`
+   - Sign in with coach credentials
+   - Access should work; data should load from Supabase
 
-- **Static Pages**: The app is mostly static with client-side hydration
-- **No API Routes Used for Data**: API routes exist but are legacy (not used in production)
-- **localStorage in Browser**: All CRUD operations happen client-side
-- **Fast Global CDN**: Vercel serves your app from edge locations worldwide
-- **Automatic HTTPS**: Secure by default
-- **Zero Configuration**: Just push to `main` branch and Vercel auto-deploys
+### Automatic Deployments
 
-### Manual Deployment (Any Node.js Host)
-
+Vercel automatically redeploys when you push to `main`:
 ```bash
-# Build the app
-npm run build
-
-# Start production server
-npm start
-
-# App runs on port 3000 by default
+git add .
+git commit -m "Update feature"
+git push origin main
+# Vercel deploys automatically
 ```
 
-Supported hosts: Vercel, Netlify, Railway, Render, Fly.io, DigitalOcean App Platform, etc.
+## 🔄 Data Management
 
-**Note**: Since data is stored client-side, the deployment environment doesn't matter — any static/SSR hosting works perfectly.
+### Seeding Sample Data
 
-## 🧪 Development
+For first-time setup or testing:
 
-### Available Scripts
+1. Sign in as a coach
+2. If no athletes exist, click "Load Sample Data" button on home page
+3. This creates 3 sample athletes with opponent notes
 
+### Backup & Export
+
+Data is stored in Supabase PostgreSQL. To backup:
+
+**Option 1: Supabase Dashboard**
+- Navigate to Database → Backups
+- Supabase Pro plan includes automated daily backups
+
+**Option 2: SQL Export**
 ```bash
-npm run dev         # Start dev server (http://localhost:3000)
-npm run build       # Build for production
-npm start           # Start production server
-npm run lint        # Run Next.js linter
+# Install Supabase CLI
+npm install -g supabase
+
+# Login and link project
+supabase login
+supabase link --project-ref <your-project-ref>
+
+# Export data
+supabase db dump -f backup.sql
 ```
 
-### Sample Data
+### Migration from localStorage (v1)
 
-On first visit, the app automatically seeds 3 athletes with opponent notes:
-- **Maya H.** - Seoi-nage specialist, 2 opponent notes
-- **Alex K.** - Osoto-gari specialist, 1 opponent note
-- **Jordan T.** - Ko-uchi-gari specialist, 1 opponent note
+If you have data in the old localStorage version:
 
-This happens client-side in the browser when localStorage is empty.
+1. Old data is **not automatically migrated** (by design)
+2. This is a clean slate with shared database
+3. Coaches should re-enter active athletes and notes
+4. Old localStorage data remains in individual browsers (read-only via console if needed)
+
+## 🐛 Known Limitations
+
+- **Offline Access**: Print pages work offline after initial auth, but CRUD requires internet
+- **Concurrent Edits**: No conflict resolution; last write wins (typical for small teams)
+- **No Audit Log**: Supabase tracks `created_by` but not edit history (future enhancement)
 
 ## 🗺 What's Next?
 
 Potential future iterations (pending approval):
 
-1. **Export/Import** - JSON export for backup and data portability
-2. **IndexedDB Migration** - More robust storage for larger datasets
-3. **PWA Support** - Install as a native-feeling app with service workers
-4. **Multi-Device Sync** - Optional cloud sync (while preserving offline-first)
-5. **Enhanced Search/Filters** - Filter athletes by division, club, etc.
-6. **Tournament Mode** - Quick access to profiles during events
-7. **Mobile Optimization** - Touch-friendly UI for tablet use
-8. **Bulk PDF Export** - Export all profiles for tournament day
-9. **Analytics** - Track athlete progress over time (local only)
-
-## 🐛 Known Limitations
-
-- localStorage has ~5-10MB limit (sufficient for hundreds of athletes)
-- Data is per-browser, not synced across devices (by design for privacy)
-- No server-side backup (coaches should manually export important data)
-- Print page requires JavaScript (but works offline once loaded)
-
-## 🔄 Migration from Previous Version
-
-**If you previously used the Prisma/SQLite version:**
-
-The app has migrated to local-first storage. Your old SQLite data is not automatically migrated. This is a clean slate with client-side storage.
-
-If you need to preserve old data:
-1. Export from the old version using the Prisma database
-2. Transform the data to match the localStorage format
-3. Import using browser console (see "Managing Your Data" above)
+1. **Audit Logging** - Track who edited what and when
+2. **Real-Time Sync** - Live updates when another coach edits
+3. **Enhanced Search/Filters** - Filter athletes by division, club, etc.
+4. **Tournament Mode** - Quick access to profiles during events
+5. **Mobile Optimization** - Touch-friendly UI for tablet use
+6. **Bulk PDF Export** - Export all profiles for tournament day
+7. **Analytics Dashboard** - Track athlete progress over time
 
 ## 📄 License
 
@@ -354,4 +385,4 @@ This is an internal tool for Silicon Valley Judo. Contact Jacob Mayeda for quest
 
 **Built with ❤️ for Silicon Valley Judo coaches and athletes.**
 
-**Now with local-first architecture — your data stays private and works offline!**
+**Now with Supabase authentication and shared database — secure, collaborative, and privacy-first!**

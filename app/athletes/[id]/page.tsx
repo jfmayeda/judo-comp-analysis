@@ -10,13 +10,15 @@ import {
   deleteAthlete,
   createOpponentNote,
   deleteOpponentNote,
-} from '@/lib/store';
+} from '@/lib/supabase-store';
+import { useAuth } from '@/lib/auth-context';
 
 export default function AthletePage() {
   const params = useParams();
   const router = useRouter();
   const [athlete, setAthlete] = useState<AthleteWithNotes | null>(null);
   const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
   const [editing, setEditing] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
   const [formData, setFormData] = useState({
@@ -34,13 +36,17 @@ export default function AthletePage() {
   });
 
   useEffect(() => {
-    loadAthlete();
-  }, []);
+    if (!authLoading && !user) {
+      router.push('/login?redirectTo=' + encodeURIComponent(window.location.pathname));
+    } else if (user) {
+      loadAthlete();
+    }
+  }, [user, authLoading, router]);
 
-  const loadAthlete = () => {
+  const loadAthlete = async () => {
     try {
       const id = params.id as string;
-      const data = getAthleteWithNotes(id);
+      const data = await getAthleteWithNotes(id);
       if (data) {
         setAthlete(data);
         setFormData({
@@ -58,26 +64,26 @@ export default function AthletePage() {
     }
   };
 
-  const handleUpdate = (e: React.FormEvent) => {
+  const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const id = params.id as string;
-      updateAthlete(id, formData);
+      await updateAthlete(id, formData);
       setEditing(false);
-      loadAthlete();
+      await loadAthlete();
     } catch (error) {
       console.error('Error updating athlete:', error);
       alert('Failed to update athlete. Please check your input.');
     }
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!confirm(`Delete ${athlete?.firstName} ${athlete?.lastInitial}. and all related notes?`)) {
       return;
     }
     try {
       const id = params.id as string;
-      deleteAthlete(id);
+      await deleteAthlete(id);
       router.push('/');
     } catch (error) {
       console.error('Error deleting athlete:', error);
@@ -85,11 +91,11 @@ export default function AthletePage() {
     }
   };
 
-  const handleAddNote = (e: React.FormEvent) => {
+  const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const id = params.id as string;
-      createOpponentNote({
+      await createOpponentNote({
         athleteId: id,
         opponentLabel: noteFormData.opponentLabel,
         club: noteFormData.club || null,
@@ -103,32 +109,36 @@ export default function AthletePage() {
         tournament: '',
       });
       setShowAddNote(false);
-      loadAthlete();
+      await loadAthlete();
     } catch (error) {
       console.error('Error adding note:', error);
       alert('Failed to add opponent note.');
     }
   };
 
-  const handleDeleteNote = (noteId: string) => {
+  const handleDeleteNote = async (noteId: string) => {
     if (!confirm('Delete this opponent note?')) {
       return;
     }
     try {
-      deleteOpponentNote(noteId);
-      loadAthlete();
+      await deleteOpponentNote(noteId);
+      await loadAthlete();
     } catch (error) {
       console.error('Error deleting note:', error);
       alert('Failed to delete opponent note.');
     }
   };
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-gray-600">Loading...</p>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   if (!athlete) {
