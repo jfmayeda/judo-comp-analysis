@@ -19,27 +19,31 @@ const OnlineContext = createContext<OnlineContextType>({
 });
 
 export function OnlineProvider({ children }: { children: ReactNode }) {
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(() => 
+    typeof window !== 'undefined' ? navigator.onLine : true
+  );
   const [isSyncReady, setIsSyncReady] = useState(false);
 
   useEffect(() => {
     // Initialize online status
-    setIsOnline(navigator.onLine);
+    if (typeof window !== 'undefined') {
+      setIsOnline(navigator.onLine);
 
-    // Listen for online/offline events
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
+      // Listen for online/offline events
+      const handleOnline = () => setIsOnline(true);
+      const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
 
-    // Check if we have cached data on mount
-    checkCacheStatus();
+      // Check if we have cached data on mount
+      checkCacheStatus();
 
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
+    }
   }, []);
 
   const checkCacheStatus = async () => {
@@ -78,7 +82,7 @@ export function OnlineProvider({ children }: { children: ReactNode }) {
 
   const clearCache = async () => {
     try {
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
         const messageChannel = new MessageChannel();
         
         return new Promise<void>((resolve, reject) => {
@@ -112,7 +116,7 @@ export function OnlineProvider({ children }: { children: ReactNode }) {
 
   const getCachedCount = async (): Promise<number> => {
     try {
-      if ('caches' in window) {
+      if (typeof window !== 'undefined' && 'caches' in window) {
         const cache = await caches.open('data-v1');
         const keys = await cache.keys();
         // Count athlete detail requests

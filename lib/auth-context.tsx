@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAdmin(null);
       
       // Clear offline cache on logout for user isolation
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
         try {
           const messageChannel = new MessageChannel();
           messageChannel.port1.onmessage = () => {
