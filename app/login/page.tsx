@@ -85,98 +85,108 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-8">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
-          Silicon Valley Judo
-        </h1>
-        <p className="text-gray-600 text-center mb-8">
-          Coach Login
-        </p>
-
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
-            {error}
-          </div>
-        )}
-
-        {message && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
-            {message}
-          </div>
-        )}
-
-        <div className="mb-6 flex gap-2">
-          <button
-            onClick={() => setUseMagicLink(false)}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-              !useMagicLink
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Password
-          </button>
-          <button
-            onClick={() => setUseMagicLink(true)}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-              useMagicLink
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Magic Link
-          </button>
+    <div className="min-h-screen navy-field flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        {/* Logo Wordmark */}
+        <div className="text-center mb-12">
+          <h1 className="wordmark text-3xl mb-3 tracking-wide">SILICON VALLEY JUDO</h1>
+          <p className="eyebrow text-white">Competitor Analysis</p>
         </div>
 
-        <form onSubmit={useMagicLink ? handleMagicLinkLogin : handlePasswordLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="coach@example.com"
-              disabled={loading}
-            />
-          </div>
+        {/* Login Card */}
+        <div className="card p-8">
+          <h2 className="text-2xl mb-6 text-center text-gray-900">COACH LOGIN</h2>
 
-          {!useMagicLink && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="••••••••"
-                disabled={loading}
-              />
+          {error && (
+            <div className="mb-4 p-3 rounded text-sm bg-red-50 text-red-800">
+              {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
-          >
-            {loading ? 'Please wait...' : useMagicLink ? 'Send Magic Link' : 'Sign In'}
-          </button>
-        </form>
+          {message && (
+            <div className="mb-4 p-3 rounded text-sm bg-blue-50 text-blue-800">
+              {message}
+            </div>
+          )}
 
-        <div className="mt-6 text-center text-sm text-gray-600">
-          <p>Authorized coaches only</p>
-          <p className="mt-2">
-            Contact Jacob Mayeda for access
-          </p>
+          {!useMagicLink ? (
+            <form onSubmit={handlePasswordLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  placeholder="coach@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  placeholder="Enter your password"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full"
+              >
+                {loading ? 'Signing in...' : 'Sign in'}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleMagicLinkLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  placeholder="coach@example.com"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-primary w-full"
+              >
+                {loading ? 'Sending...' : 'Send magic link'}
+              </button>
+            </form>
+          )}
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => {
+                setUseMagicLink(!useMagicLink);
+                setError(null);
+                setMessage(null);
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800 font-semibold uppercase tracking-wide"
+            >
+              {useMagicLink ? '← Use password' : 'Use magic link instead →'}
+            </button>
+          </div>
         </div>
+
+        <p className="text-center text-white text-sm mt-8 opacity-75">
+          Coach access only • Privacy-first competitor analysis
+        </p>
       </div>
     </div>
   );

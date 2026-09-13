@@ -1,4 +1,4 @@
-import { Athlete, OpponentNote, AthleteWithNotes } from './types';
+import { Athlete, OpponentNote, AthleteWithNotes, Stance } from './types';
 import { getSupabaseClient } from './supabase';
 import type { Database } from './supabase';
 
@@ -64,6 +64,11 @@ export async function createAthlete(data: {
   tokuiWaza?: string;
   developmentAreas?: string;
   notes?: string;
+  stance?: Stance;
+  kumiKata?: string;
+  neWaza?: string;
+  weightClass?: string;
+  ageDivision?: string;
 }): Promise<Athlete> {
   const supabase = getSupabaseClient();
   
@@ -84,6 +89,11 @@ export async function createAthlete(data: {
       tokui_waza: data.tokuiWaza || '',
       development_areas: data.developmentAreas || '',
       notes: data.notes || '',
+      stance: data.stance || null,
+      kumi_kata: data.kumiKata || '',
+      ne_waza: data.neWaza || '',
+      weight_class: data.weightClass || '',
+      age_division: data.ageDivision || '',
       created_by: user.id,
     }] as never)
     .select()
@@ -114,6 +124,11 @@ export async function updateAthlete(
   if (data.tokuiWaza !== undefined) updateData.tokui_waza = data.tokuiWaza;
   if (data.developmentAreas !== undefined) updateData.development_areas = data.developmentAreas;
   if (data.notes !== undefined) updateData.notes = data.notes;
+  if (data.stance !== undefined) updateData.stance = data.stance;
+  if (data.kumiKata !== undefined) updateData.kumi_kata = data.kumiKata;
+  if (data.neWaza !== undefined) updateData.ne_waza = data.neWaza;
+  if (data.weightClass !== undefined) updateData.weight_class = data.weightClass;
+  if (data.ageDivision !== undefined) updateData.age_division = data.ageDivision;
   
   updateData.updated_at = new Date().toISOString();
 
@@ -170,7 +185,7 @@ export async function getOpponentNotesByAthleteId(athleteId: string): Promise<Op
     .from('opponent_notes')
     .select('*')
     .eq('athlete_id', athleteId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false});
 
   if (error) {
     console.error('Error fetching opponent notes:', error);
@@ -203,6 +218,12 @@ export async function createOpponentNote(data: {
   club?: string | null;
   notes: string;
   tournament?: string | null;
+  stance?: Stance;
+  kumiKata?: string;
+  neWaza?: string;
+  commonCounters?: string;
+  weightClass?: string;
+  ageDivision?: string;
 }): Promise<OpponentNote> {
   const supabase = getSupabaseClient();
 
@@ -219,6 +240,12 @@ export async function createOpponentNote(data: {
       club: data.club || null,
       notes: data.notes,
       tournament: data.tournament || null,
+      stance: data.stance || null,
+      kumi_kata: data.kumiKata || '',
+      ne_waza: data.neWaza || '',
+      common_counters: data.commonCounters || '',
+      weight_class: data.weightClass || '',
+      age_division: data.ageDivision || '',
       created_by: user.id,
     }] as never)
     .select()
@@ -244,6 +271,12 @@ export async function updateOpponentNote(
   if (data.club !== undefined) updateData.club = data.club;
   if (data.notes !== undefined) updateData.notes = data.notes;
   if (data.tournament !== undefined) updateData.tournament = data.tournament;
+  if (data.stance !== undefined) updateData.stance = data.stance;
+  if (data.kumiKata !== undefined) updateData.kumi_kata = data.kumiKata;
+  if (data.neWaza !== undefined) updateData.ne_waza = data.neWaza;
+  if (data.commonCounters !== undefined) updateData.common_counters = data.commonCounters;
+  if (data.weightClass !== undefined) updateData.weight_class = data.weightClass;
+  if (data.ageDivision !== undefined) updateData.age_division = data.ageDivision;
 
   const { data: updated, error } = await supabase
     .from('opponent_notes')
@@ -294,6 +327,11 @@ export async function seedData(): Promise<void> {
     tokuiWaza: 'Seoi-nage, Uchi-mata',
     developmentAreas: 'Ne-waza transitions, grip fighting speed',
     notes: 'Strong thrower, needs work on ground game. Competes in -48kg division.',
+    stance: 'right',
+    kumiKata: 'Traditional high lapel grip, quick hand changes',
+    neWaza: 'Working on turtle attacks, solid pins',
+    weightClass: '-48kg',
+    ageDivision: 'Juvenile',
   });
 
   const alex = await createAthlete({
@@ -302,6 +340,11 @@ export async function seedData(): Promise<void> {
     tokuiWaza: 'Osoto-gari, Harai-goshi',
     developmentAreas: 'Left-side attacks, tournament cardio',
     notes: 'Powerful right-sided player. Currently working on switching stances. -66kg division.',
+    stance: 'right',
+    kumiKata: 'Deep sleeve control, defensive posture',
+    neWaza: 'Strong top game, needs escape work',
+    weightClass: '-66kg',
+    ageDivision: 'Cadet',
   });
 
   const jordan = await createAthlete({
@@ -310,6 +353,11 @@ export async function seedData(): Promise<void> {
     tokuiWaza: 'Ko-uchi-gari, Sasae-tsurikomi-ashi',
     developmentAreas: 'Follow-through on attacks, defensive positioning',
     notes: 'Technical player with good footwork. Needs to commit more fully to attacks. -57kg division.',
+    stance: 'left',
+    kumiKata: 'Over-the-top grip, good at breaking grips',
+    neWaza: 'Prefers standing, learning submissions',
+    weightClass: '-57kg',
+    ageDivision: 'Junior',
   });
 
   await createOpponentNote({
@@ -318,6 +366,12 @@ export async function seedData(): Promise<void> {
     club: 'Peninsula Judo',
     notes: 'Very aggressive, likes left uchi-mata. Watch for counter with ko-soto-gake.',
     tournament: 'Bay Area Open 2024',
+    stance: 'left',
+    kumiKata: 'High collar grip, pulls down',
+    neWaza: 'Strong pins, avoid bottom position',
+    commonCounters: 'Ko-soto-gake, tai-otoshi on failed attacks',
+    weightClass: '-48kg',
+    ageDivision: 'Juvenile',
   });
 
   await createOpponentNote({
@@ -326,6 +380,12 @@ export async function seedData(): Promise<void> {
     club: 'San Jose Judo',
     notes: 'Strong ne-waza specialist. Stay standing, avoid ground exchanges unless winning.',
     tournament: 'NorCal Championships',
+    stance: 'right',
+    kumiKata: 'Low posture, defensive grips',
+    neWaza: 'Excellent transitions, multiple submission threats',
+    commonCounters: 'Pulls guard, arm bars from bottom',
+    weightClass: '-48kg',
+    ageDivision: 'Juvenile',
   });
 
   await createOpponentNote({
@@ -334,6 +394,12 @@ export async function seedData(): Promise<void> {
     club: 'Monterey Judo Club',
     notes: 'Taller opponent, good at keeping distance. Close the gap fast, work inside grip.',
     tournament: 'Bay Area Open 2024',
+    stance: 'right',
+    kumiKata: 'Long-arm control, stiff arms',
+    neWaza: 'Average ground game',
+    commonCounters: 'Uchi-mata when you close distance',
+    weightClass: '-66kg',
+    ageDivision: 'Cadet',
   });
 
   await createOpponentNote({
@@ -342,6 +408,12 @@ export async function seedData(): Promise<void> {
     club: 'East Bay Judo',
     notes: 'Defensive player, hard to score on. Be patient, set up combinations.',
     tournament: null,
+    stance: 'unknown',
+    kumiKata: 'Defensive, breaks grips constantly',
+    neWaza: 'Turtles up immediately',
+    commonCounters: 'Counter-attacks off your entries',
+    weightClass: '-57kg',
+    ageDivision: 'Junior',
   });
 }
 
@@ -353,6 +425,11 @@ function dbAthleteToAthlete(dbAthlete: {
   tokui_waza: string;
   development_areas: string;
   notes: string;
+  stance: 'left' | 'right' | 'unknown' | null;
+  kumi_kata: string;
+  ne_waza: string;
+  weight_class: string;
+  age_division: string;
   created_at: string;
   updated_at: string;
 }): Athlete {
@@ -363,6 +440,11 @@ function dbAthleteToAthlete(dbAthlete: {
     tokuiWaza: dbAthlete.tokui_waza,
     developmentAreas: dbAthlete.development_areas,
     notes: dbAthlete.notes,
+    stance: dbAthlete.stance,
+    kumiKata: dbAthlete.kumi_kata,
+    neWaza: dbAthlete.ne_waza,
+    weightClass: dbAthlete.weight_class,
+    ageDivision: dbAthlete.age_division,
     createdAt: dbAthlete.created_at,
     updatedAt: dbAthlete.updated_at,
   };
@@ -375,6 +457,12 @@ function dbOpponentNoteToOpponentNote(dbNote: {
   club: string | null;
   notes: string;
   tournament: string | null;
+  stance: 'left' | 'right' | 'unknown' | null;
+  kumi_kata: string;
+  ne_waza: string;
+  common_counters: string;
+  weight_class: string;
+  age_division: string;
   created_at: string;
 }): OpponentNote {
   return {
@@ -384,6 +472,12 @@ function dbOpponentNoteToOpponentNote(dbNote: {
     club: dbNote.club,
     notes: dbNote.notes,
     tournament: dbNote.tournament,
+    stance: dbNote.stance,
+    kumiKata: dbNote.kumi_kata,
+    neWaza: dbNote.ne_waza,
+    commonCounters: dbNote.common_counters,
+    weightClass: dbNote.weight_class,
+    ageDivision: dbNote.age_division,
     createdAt: dbNote.created_at,
   };
 }
