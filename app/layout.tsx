@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Michroma, Archivo, Source_Sans_3 } from 'next/font/google';
 import { AuthProvider } from '@/lib/auth-context';
+import { OnlineProvider } from '@/lib/online-context';
+import { ServiceWorkerRegistration } from './sw-register';
 import './globals.css';
 
 const michroma = Michroma({
@@ -30,6 +32,7 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.ico',
   },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -39,10 +42,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${michroma.variable} ${archivo.variable} ${sourceSans3.variable}`}>
+      <head>
+        <meta name="theme-color" content="#0f172a" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <link rel="apple-touch-icon" href="/favicon.ico" />
+      </head>
       <body className="antialiased">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <ServiceWorkerRegistration />
+        <OnlineProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </OnlineProvider>
       </body>
     </html>
   );
