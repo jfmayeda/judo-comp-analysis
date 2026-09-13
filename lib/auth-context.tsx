@@ -112,6 +112,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(null);
       setIsAllowlisted(null);
       setIsAdmin(null);
+      
+      // Clear offline cache on logout for user isolation
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        try {
+          const messageChannel = new MessageChannel();
+          messageChannel.port1.onmessage = () => {
+            console.log('Cache cleared on logout');
+          };
+          navigator.serviceWorker.controller.postMessage(
+            { type: 'CLEAR_CACHE' },
+            [messageChannel.port2]
+          );
+        } catch (cacheError) {
+          console.error('Failed to clear cache on logout:', cacheError);
+        }
+      }
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
