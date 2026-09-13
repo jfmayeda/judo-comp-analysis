@@ -1,5 +1,14 @@
 export type Stance = 'left' | 'right' | 'unknown' | null;
 
+export type Technique = {
+  id: string;
+  name: string;
+  category: 'Tachi-waza' | 'Ne-waza';
+  subcategory: string;
+  displayOrder: number;
+  createdAt: string;
+};
+
 export type Athlete = {
   id: string;
   firstName: string;
@@ -12,6 +21,8 @@ export type Athlete = {
   neWaza: string;
   weightClass: string;
   ageDivision: string;
+  tokuiTechniqueIds: string[];
+  newazaTechniqueIds: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -27,6 +38,8 @@ export type Opponent = {
   commonCounters: string;
   weightClass: string;
   ageDivision: string;
+  tokuiTechniqueIds: string[];
+  newazaTechniqueIds: string[];
   notes: string;
   createdAt: string;
   updatedAt: string;
@@ -47,6 +60,8 @@ export type OpponentNote = {
   commonCounters: string;
   weightClass: string;
   ageDivision: string;
+  tokuiTechniqueIds: string[];
+  newazaTechniqueIds: string[];
   createdAt: string;
 };
 

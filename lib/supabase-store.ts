@@ -1,4 +1,4 @@
-import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent } from './types';
+import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent, Technique } from './types';
 import { getSupabaseClient } from './supabase';
 import type { Database } from './supabase';
 
@@ -69,6 +69,8 @@ export async function createAthlete(data: {
   neWaza?: string;
   weightClass?: string;
   ageDivision?: string;
+  tokuiTechniqueIds?: string[];
+  newazaTechniqueIds?: string[];
 }): Promise<Athlete> {
   const supabase = getSupabaseClient();
   
@@ -94,6 +96,8 @@ export async function createAthlete(data: {
       ne_waza: data.neWaza || '',
       weight_class: data.weightClass || '',
       age_division: data.ageDivision || '',
+      tokui_technique_ids: data.tokuiTechniqueIds || [],
+      newaza_technique_ids: data.newazaTechniqueIds || [],
       created_by: user.id,
     }] as never)
     .select()
@@ -129,6 +133,8 @@ export async function updateAthlete(
   if (data.neWaza !== undefined) updateData.ne_waza = data.neWaza;
   if (data.weightClass !== undefined) updateData.weight_class = data.weightClass;
   if (data.ageDivision !== undefined) updateData.age_division = data.ageDivision;
+  if (data.tokuiTechniqueIds !== undefined) updateData.tokui_technique_ids = data.tokuiTechniqueIds;
+  if (data.newazaTechniqueIds !== undefined) updateData.newaza_technique_ids = data.newazaTechniqueIds;
   
   updateData.updated_at = new Date().toISOString();
 
@@ -250,6 +256,8 @@ export async function createOpponentNote(data: {
   commonCounters?: string;
   weightClass?: string;
   ageDivision?: string;
+  tokuiTechniqueIds?: string[];
+  newazaTechniqueIds?: string[];
 }): Promise<OpponentNote> {
   const supabase = getSupabaseClient();
 
@@ -273,6 +281,8 @@ export async function createOpponentNote(data: {
       common_counters: data.commonCounters || '',
       weight_class: data.weightClass || '',
       age_division: data.ageDivision || '',
+      tokui_technique_ids: data.tokuiTechniqueIds || [],
+      newaza_technique_ids: data.newazaTechniqueIds || [],
       created_by: user.id,
     }] as never)
     .select()
@@ -810,6 +820,106 @@ export async function deleteOpponent(id: string): Promise<void> {
   }
 }
 
+// Techniques CRUD
+export async function getAllTechniques(): Promise<Technique[]> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('techniques')
+    .select('*')
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching techniques:', error);
+    throw new Error('Failed to fetch techniques');
+  }
+
+  return (data || []).map(dbTechniqueToTechnique);
+}
+
+export async function getTechniquesByIds(ids: string[]): Promise<Technique[]> {
+  if (ids.length === 0) return [];
+  
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('techniques')
+    .select('*')
+    .in('id', ids)
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching techniques by ids:', error);
+    return [];
+  }
+
+  return (data || []).map(dbTechniqueToTechnique);
+}
+
+export async function createTechnique(data: {
+  name: string;
+  category: 'Tachi-waza' | 'Ne-waza';
+  subcategory: string;
+}): Promise<Technique> {
+  const supabase = getSupabaseClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User must be authenticated to create techniques');
+  }
+
+  const { data: newTechnique, error } = await supabase
+    .from('techniques')
+    .insert([{
+      name: data.name,
+      category: data.category,
+      subcategory: data.subcategory,
+      display_order: 9999,
+    }] as never)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating technique:', error);
+    throw new Error('Failed to create technique');
+  }
+
+  return dbTechniqueToTechnique(newTechnique);
+}
+
+export async function deleteTechnique(id: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  const { error } = await supabase
+    .from('techniques')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting technique:', error);
+    throw new Error('Failed to delete technique');
+  }
+}
+
+// Helper functions to convert between DB schema and app types
+function dbTechniqueToTechnique(dbTechnique: {
+  id: string;
+  name: string;
+  category: 'Tachi-waza' | 'Ne-waza';
+  subcategory: string;
+  display_order: number;
+  created_at: string;
+}): Technique {
+  return {
+    id: dbTechnique.id,
+    name: dbTechnique.name,
+    category: dbTechnique.category,
+    subcategory: dbTechnique.subcategory,
+    displayOrder: dbTechnique.display_order,
+    createdAt: dbTechnique.created_at,
+  };
+}
+
 // Helper functions to convert between DB schema and app types
 function dbAthleteToAthlete(dbAthlete: {
   id: string;
@@ -823,6 +933,8 @@ function dbAthleteToAthlete(dbAthlete: {
   ne_waza: string;
   weight_class: string;
   age_division: string;
+  tokui_technique_ids?: string[];
+  newaza_technique_ids?: string[];
   created_at: string;
   updated_at: string;
 }): Athlete {
@@ -838,6 +950,8 @@ function dbAthleteToAthlete(dbAthlete: {
     neWaza: dbAthlete.ne_waza,
     weightClass: dbAthlete.weight_class,
     ageDivision: dbAthlete.age_division,
+    tokuiTechniqueIds: dbAthlete.tokui_technique_ids || [],
+    newazaTechniqueIds: dbAthlete.newaza_technique_ids || [],
     createdAt: dbAthlete.created_at,
     updatedAt: dbAthlete.updated_at,
   };
@@ -857,6 +971,8 @@ function dbOpponentNoteToOpponentNote(dbNote: {
   common_counters: string;
   weight_class: string;
   age_division: string;
+  tokui_technique_ids?: string[];
+  newaza_technique_ids?: string[];
   created_at: string;
 }): OpponentNote {
   return {
@@ -873,6 +989,8 @@ function dbOpponentNoteToOpponentNote(dbNote: {
     commonCounters: dbNote.common_counters,
     weightClass: dbNote.weight_class,
     ageDivision: dbNote.age_division,
+    tokuiTechniqueIds: dbNote.tokui_technique_ids || [],
+    newazaTechniqueIds: dbNote.newaza_technique_ids || [],
     createdAt: dbNote.created_at,
   };
 }
@@ -918,6 +1036,8 @@ function dbOpponentToOpponent(dbOpponent: {
   common_counters: string;
   weight_class: string;
   age_division: string;
+  tokui_technique_ids?: string[];
+  newaza_technique_ids?: string[];
   notes: string;
   created_at: string;
   updated_at: string;
@@ -934,6 +1054,8 @@ function dbOpponentToOpponent(dbOpponent: {
     commonCounters: dbOpponent.common_counters,
     weightClass: dbOpponent.weight_class,
     ageDivision: dbOpponent.age_division,
+    tokuiTechniqueIds: dbOpponent.tokui_technique_ids || [],
+    newazaTechniqueIds: dbOpponent.newaza_technique_ids || [],
     notes: dbOpponent.notes,
     createdAt: dbOpponent.created_at,
     updatedAt: dbOpponent.updated_at,

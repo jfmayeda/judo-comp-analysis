@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AthleteWithNotes, Stance } from '@/lib/types';
 import { getAllAthletesWithNotes, createAthlete, seedData } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
+import TechniquePicker from '@/components/TechniquePicker';
 
 export default function Home() {
   const router = useRouter();
@@ -24,6 +25,8 @@ export default function Home() {
     neWaza: '',
     weightClass: '',
     ageDivision: '',
+    tokuiTechniqueIds: [] as string[],
+    newazaTechniqueIds: [] as string[],
   });
 
   useEffect(() => {
@@ -69,6 +72,8 @@ export default function Home() {
         neWaza: formData.neWaza,
         weightClass: formData.weightClass,
         ageDivision: formData.ageDivision,
+        tokuiTechniqueIds: formData.tokuiTechniqueIds,
+        newazaTechniqueIds: formData.newazaTechniqueIds,
       });
       setFormData({
         firstName: '',
@@ -81,6 +86,8 @@ export default function Home() {
         neWaza: '',
         weightClass: '',
         ageDivision: '',
+        tokuiTechniqueIds: [],
+        newazaTechniqueIds: [],
       });
       setShowAddForm(false);
       await loadAthletes();
@@ -266,8 +273,20 @@ export default function Home() {
               </div>
 
               <div>
+                <TechniquePicker
+                  label="Tokui-waza (Tachi-waza) - Standing techniques"
+                  selectedIds={formData.tokuiTechniqueIds}
+                  onChange={(tokuiTechniqueIds) =>
+                    setFormData({ ...formData, tokuiTechniqueIds })
+                  }
+                  categoryFilter="Tachi-waza"
+                  placeholder="Type to search throws, footsweeps... (e.g. Seoi-nage)"
+                />
+              </div>
+
+              <div>
                 <label className="eyebrow block text-gray-700 mb-2">
-                  Tokui-waza (favorite techniques)
+                  Tokui-waza (free text / additional notes)
                 </label>
                 <input
                   type="text"
@@ -275,6 +294,34 @@ export default function Home() {
                   onChange={(e) =>
                     setFormData({ ...formData, tokuiWaza: e.target.value })
                   }
+                  className="form-input w-full"
+                  placeholder="Optional: add custom notes about standing techniques"
+                />
+              </div>
+
+              <div>
+                <TechniquePicker
+                  label="Ne-waza - Ground techniques"
+                  selectedIds={formData.newazaTechniqueIds}
+                  onChange={(newazaTechniqueIds) =>
+                    setFormData({ ...formData, newazaTechniqueIds })
+                  }
+                  categoryFilter="Ne-waza"
+                  placeholder="Type to search pins, chokes, armbars..."
+                />
+              </div>
+
+              <div>
+                <label className="eyebrow block text-gray-700 mb-2">
+                  Ne-waza (free text / additional notes)
+                </label>
+                <input
+                  type="text"
+                  value={formData.neWaza}
+                  onChange={(e) =>
+                    setFormData({ ...formData, neWaza: e.target.value })
+                  }
+                  placeholder="Optional: add custom notes about ground techniques"
                   className="form-input w-full"
                 />
               </div>
@@ -290,21 +337,6 @@ export default function Home() {
                     setFormData({ ...formData, kumiKata: e.target.value })
                   }
                   placeholder="e.g. High lapel grip, quick hand changes"
-                  className="form-input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Ne-waza (ground game)
-                </label>
-                <input
-                  type="text"
-                  value={formData.neWaza}
-                  onChange={(e) =>
-                    setFormData({ ...formData, neWaza: e.target.value })
-                  }
-                  placeholder="e.g. Strong pins, working on turtle attacks"
                   className="form-input w-full"
                 />
               </div>
