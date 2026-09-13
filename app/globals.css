@@ -146,8 +146,8 @@
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
-    min-height: 48px;
-    line-height: 1.5;
+    min-height: 44px;
+    line-height: 1.4;
   }
   
   .btn-primary:hover {
@@ -174,8 +174,8 @@
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
-    min-height: 48px;
-    line-height: 1.5;
+    min-height: 44px;
+    line-height: 1.4;
   }
   
   .btn-secondary:hover {
@@ -203,8 +203,8 @@
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
-    min-height: 48px;
-    line-height: 1.5;
+    min-height: 44px;
+    line-height: 1.4;
   }
   
   .btn-danger:hover {
@@ -220,7 +220,7 @@
   
   /* Header */
   .app-header {
-    height: var(--header-height);
+    min-height: var(--header-height);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -234,8 +234,20 @@
   }
   
   .app-header-logo {
-    height: 44px;
+    height: 36px;
     width: auto;
+  }
+  
+  /* Mobile: stack header items vertically for clarity */
+  @media (max-width: 767px) {
+    .app-header {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+    }
+    
+    .app-header-logo {
+      height: 32px;
+    }
   }
   
   /* Form Inputs */
