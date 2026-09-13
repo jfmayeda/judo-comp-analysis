@@ -3,13 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { AthleteWithNotes, Stance } from '@/lib/types';
+import { AthleteWithNotes, Stance, Opponent } from '@/lib/types';
 import {
   getAthleteWithNotes,
   updateAthlete,
   deleteAthlete,
   createOpponentNote,
   deleteOpponentNote,
+  searchOpponents,
+  createOpponent,
+  getOpponentById,
 } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
 
@@ -21,6 +24,10 @@ export default function AthletePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
+  const [noteType, setNoteType] = useState<'oneoff' | 'existing' | 'new'>('oneoff');
+  const [opponentSearch, setOpponentSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<Opponent[]>([]);
+  const [selectedOpponent, setSelectedOpponent] = useState<Opponent | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastInitial: '',
@@ -110,12 +117,84 @@ export default function AthletePage() {
     }
   };
 
+  useEffect(() => {
+    const search = async () => {
+      if (opponentSearch.trim().length > 0) {
+        const results = await searchOpponents(opponentSearch);
+        setSearchResults(results);
+      } else {
+        setSearchResults([]);
+      }
+    };
+    search();
+  }, [opponentSearch]);
+
+  const resetNoteForm = () => {
+    setNoteFormData({
+      opponentLabel: '',
+      club: '',
+      notes: '',
+      tournament: '',
+      stance: '',
+      kumiKata: '',
+      neWaza: '',
+      commonCounters: '',
+      weightClass: '',
+      ageDivision: '',
+    });
+    setNoteType('oneoff');
+    setOpponentSearch('');
+    setSearchResults([]);
+    setSelectedOpponent(null);
+    setShowAddNote(false);
+  };
+
+  const handleSelectOpponent = (opponent: Opponent) => {
+    setSelectedOpponent(opponent);
+    setNoteFormData({
+      opponentLabel: `${opponent.firstName} ${opponent.lastInitial}.`,
+      club: opponent.club,
+      notes: '',
+      tournament: '',
+      stance: opponent.stance || '',
+      kumiKata: opponent.kumiKata,
+      neWaza: opponent.neWaza,
+      commonCounters: opponent.commonCounters,
+      weightClass: opponent.weightClass,
+      ageDivision: opponent.ageDivision,
+    });
+    setOpponentSearch('');
+    setSearchResults([]);
+  };
+
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const id = params.id as string;
+      
+      let opponentId: string | null = null;
+      
+      if (noteType === 'existing' && selectedOpponent) {
+        opponentId = selectedOpponent.id;
+      } else if (noteType === 'new') {
+        const newOpponent = await createOpponent({
+          firstName: noteFormData.opponentLabel.split(' ')[0] || noteFormData.opponentLabel,
+          lastInitial: noteFormData.opponentLabel.split(' ')[1]?.[0]?.toUpperCase() || 'X',
+          club: noteFormData.club,
+          stance: noteFormData.stance || null,
+          kumiKata: noteFormData.kumiKata,
+          neWaza: noteFormData.neWaza,
+          commonCounters: noteFormData.commonCounters,
+          weightClass: noteFormData.weightClass,
+          ageDivision: noteFormData.ageDivision,
+          notes: '',
+        });
+        opponentId = newOpponent.id;
+      }
+
       await createOpponentNote({
         athleteId: id,
+        opponentId,
         opponentLabel: noteFormData.opponentLabel,
         club: noteFormData.club || null,
         notes: noteFormData.notes,
@@ -127,22 +206,12 @@ export default function AthletePage() {
         weightClass: noteFormData.weightClass,
         ageDivision: noteFormData.ageDivision,
       });
-      setNoteFormData({
-        opponentLabel: '',
-        club: '',
-        notes: '',
-        tournament: '',
-        stance: '',
-        kumiKata: '',
-        neWaza: '',
-        commonCounters: '',
-        weightClass: '',
-        ageDivision: '',
-      });
-      setShowAddNote(false);
+      
+      resetNoteForm();
       await loadAthlete();
     } catch (error: any) {
       console.error('Error adding note:', error);
+      alert(`Error: ${error.message || 'Failed to add note'}`);
     }
   };
 
@@ -177,23 +246,23 @@ export default function AthletePage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="app-header flex items-center justify-between px-8 no-print">
+      <header className="app-header flex items-center justify-between px-4 md:px-8 no-print">
         <Link href="/" className="flex items-center gap-3 text-white hover:opacity-80 transition-opacity">
           <span className="text-xl">←</span>
           <div>
             <p className="eyebrow text-white mb-1">Competitor Analysis</p>
-            <h1 className="wordmark text-xl">SILICON VALLEY JUDO</h1>
+            <h1 className="wordmark text-base md:text-xl">SILICON VALLEY JUDO</h1>
           </div>
         </Link>
       </header>
 
-      <div className="max-w-5xl mx-auto p-8">
-        <div className="card p-6 mb-6">
-          <div className="flex justify-between items-start mb-6 no-print">
-            <h2 className="text-3xl">
+      <div className="max-w-5xl mx-auto p-4 md:p-8">
+        <div className="card p-4 md:p-6 mb-4 md:mb-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4 md:mb-6 gap-3 no-print">
+            <h2 className="text-2xl md:text-3xl">
               {athlete.firstName} {athlete.lastInitial}.
             </h2>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Link
                 href={`/athletes/${athlete.id}/print`}
                 className="btn-secondary text-sm"
@@ -216,8 +285,8 @@ export default function AthletePage() {
           </div>
 
           {editing ? (
-            <form onSubmit={handleUpdate} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleUpdate} className="space-y-4 md:space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="eyebrow block text-gray-700 mb-2">
                     First Name
@@ -249,7 +318,7 @@ export default function AthletePage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="eyebrow block text-gray-700 mb-2">
                     Stance
@@ -433,51 +502,171 @@ export default function AthletePage() {
           )}
         </div>
 
-        <div className="card p-6">
-          <div className="flex justify-between items-center mb-6 no-print">
-            <h3 className="text-2xl">Opponent Notes</h3>
+        <div className="card p-4 md:p-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-3 no-print">
+            <h3 className="text-xl md:text-2xl">Opponent Notes</h3>
             <button
-              onClick={() => setShowAddNote(!showAddNote)}
-              className="btn-primary text-sm"
+              onClick={() => {
+                if (showAddNote) {
+                  resetNoteForm();
+                } else {
+                  setShowAddNote(true);
+                }
+              }}
+              className="btn-primary text-sm w-full md:w-auto"
             >
               {showAddNote ? 'Cancel' : 'Add Note'}
             </button>
           </div>
 
           {showAddNote && (
-            <form onSubmit={handleAddNote} className="mb-6 p-6 bg-gray-50 rounded-lg space-y-6 no-print">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Opponent Name * (first + last initial)
+            <form onSubmit={handleAddNote} className="mb-6 p-4 md:p-6 bg-gray-50 rounded-lg space-y-4 md:space-y-6 no-print">
+              <div>
+                <label className="eyebrow block text-gray-700 mb-3">
+                  Opponent Type *
+                </label>
+                <div className="flex flex-col md:flex-row gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="noteType"
+                      value="oneoff"
+                      checked={noteType === 'oneoff'}
+                      onChange={() => {
+                        setNoteType('oneoff');
+                        setSelectedOpponent(null);
+                        setOpponentSearch('');
+                      }}
+                    />
+                    <span className="text-sm">One-off (not saved to shared DB)</span>
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={noteFormData.opponentLabel}
-                    onChange={(e) =>
-                      setNoteFormData({ ...noteFormData, opponentLabel: e.target.value })
-                    }
-                    placeholder="e.g. Sarah M"
-                    className="form-input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Club
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="noteType"
+                      value="existing"
+                      checked={noteType === 'existing'}
+                      onChange={() => setNoteType('existing')}
+                    />
+                    <span className="text-sm">Link to existing opponent</span>
                   </label>
-                  <input
-                    type="text"
-                    value={noteFormData.club}
-                    onChange={(e) =>
-                      setNoteFormData({ ...noteFormData, club: e.target.value })
-                    }
-                    className="form-input w-full"
-                  />
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="noteType"
+                      value="new"
+                      checked={noteType === 'new'}
+                      onChange={() => {
+                        setNoteType('new');
+                        setSelectedOpponent(null);
+                        setOpponentSearch('');
+                      }}
+                    />
+                    <span className="text-sm">Create new shared opponent</span>
+                  </label>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              {noteType === 'existing' && !selectedOpponent && (
+                <div>
+                  <label className="eyebrow block text-gray-700 mb-2">
+                    Search Opponents
+                  </label>
+                  <input
+                    type="text"
+                    value={opponentSearch}
+                    onChange={(e) => setOpponentSearch(e.target.value)}
+                    placeholder="Search by name or club..."
+                    className="form-input w-full"
+                  />
+                  {searchResults.length > 0 && (
+                    <div className="mt-2 border border-gray-300 rounded-lg bg-white max-h-48 overflow-y-auto">
+                      {searchResults.map((opp) => (
+                        <button
+                          key={opp.id}
+                          type="button"
+                          onClick={() => handleSelectOpponent(opp)}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 border-b border-gray-200 last:border-b-0"
+                        >
+                          <div className="font-semibold text-sm">
+                            {opp.firstName} {opp.lastInitial}.
+                          </div>
+                          {opp.club && (
+                            <div className="text-xs text-gray-600">{opp.club}</div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {noteType === 'existing' && selectedOpponent && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        Selected: {selectedOpponent.firstName} {selectedOpponent.lastInitial}.
+                      </p>
+                      {selectedOpponent.club && (
+                        <p className="text-sm text-gray-600">{selectedOpponent.club}</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedOpponent(null);
+                        resetNoteForm();
+                        setNoteType('existing');
+                      }}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      Change
+                    </button>
+                  </div>
+                  <div className="text-xs text-gray-600 space-y-1">
+                    {selectedOpponent.stance && <p>Stance: {selectedOpponent.stance}</p>}
+                    {selectedOpponent.kumiKata && <p>Kumi-kata: {selectedOpponent.kumiKata}</p>}
+                    {selectedOpponent.neWaza && <p>Ne-waza: {selectedOpponent.neWaza}</p>}
+                    {selectedOpponent.commonCounters && <p>Counters: {selectedOpponent.commonCounters}</p>}
+                  </div>
+                </div>
+              )}
+
+              {noteType !== 'existing' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="eyebrow block text-gray-700 mb-2">
+                      Opponent Name * (first + last initial)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={noteFormData.opponentLabel}
+                      onChange={(e) =>
+                        setNoteFormData({ ...noteFormData, opponentLabel: e.target.value })
+                      }
+                      placeholder="e.g. Sarah M"
+                      className="form-input w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="eyebrow block text-gray-700 mb-2">
+                      Club
+                    </label>
+                    <input
+                      type="text"
+                      value={noteFormData.club}
+                      onChange={(e) =>
+                        setNoteFormData({ ...noteFormData, club: e.target.value })
+                      }
+                      className="form-input w-full"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="eyebrow block text-gray-700 mb-2">
                     Stance
@@ -537,48 +726,52 @@ export default function AthletePage() {
                 />
               </div>
 
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Kumi-kata (grip style)
-                </label>
-                <input
-                  type="text"
-                  value={noteFormData.kumiKata}
-                  onChange={(e) =>
-                    setNoteFormData({ ...noteFormData, kumiKata: e.target.value })
-                  }
-                  className="form-input w-full"
-                />
-              </div>
+              {noteType !== 'existing' && (
+                <>
+                  <div>
+                    <label className="eyebrow block text-gray-700 mb-2">
+                      Kumi-kata (grip style)
+                    </label>
+                    <input
+                      type="text"
+                      value={noteFormData.kumiKata}
+                      onChange={(e) =>
+                        setNoteFormData({ ...noteFormData, kumiKata: e.target.value })
+                      }
+                      className="form-input w-full"
+                    />
+                  </div>
 
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Ne-waza (ground game)
-                </label>
-                <input
-                  type="text"
-                  value={noteFormData.neWaza}
-                  onChange={(e) =>
-                    setNoteFormData({ ...noteFormData, neWaza: e.target.value })
-                  }
-                  className="form-input w-full"
-                />
-              </div>
+                  <div>
+                    <label className="eyebrow block text-gray-700 mb-2">
+                      Ne-waza (ground game)
+                    </label>
+                    <input
+                      type="text"
+                      value={noteFormData.neWaza}
+                      onChange={(e) =>
+                        setNoteFormData({ ...noteFormData, neWaza: e.target.value })
+                      }
+                      className="form-input w-full"
+                    />
+                  </div>
 
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Common Counters
-                </label>
-                <input
-                  type="text"
-                  value={noteFormData.commonCounters}
-                  onChange={(e) =>
-                    setNoteFormData({ ...noteFormData, commonCounters: e.target.value })
-                  }
-                  placeholder="e.g. Ko-soto-gake on failed attacks"
-                  className="form-input w-full"
-                />
-              </div>
+                  <div>
+                    <label className="eyebrow block text-gray-700 mb-2">
+                      Common Counters
+                    </label>
+                    <input
+                      type="text"
+                      value={noteFormData.commonCounters}
+                      onChange={(e) =>
+                        setNoteFormData({ ...noteFormData, commonCounters: e.target.value })
+                      }
+                      placeholder="e.g. Ko-soto-gake on failed attacks"
+                      className="form-input w-full"
+                    />
+                  </div>
+                </>
+              )}
 
               <div>
                 <label className="eyebrow block text-gray-700 mb-2">

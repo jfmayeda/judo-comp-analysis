@@ -1,4 +1,4 @@
-import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes } from './types';
+import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent } from './types';
 import { getSupabaseClient } from './supabase';
 import type { Database } from './supabase';
 
@@ -192,7 +192,32 @@ export async function getOpponentNotesByAthleteId(athleteId: string): Promise<Op
     return [];
   }
 
-  return (data || []).map(dbOpponentNoteToOpponentNote);
+  const notes = (data || []).map(dbOpponentNoteToOpponentNote);
+  
+  // Fetch linked opponent data to populate labels
+  const notesWithOpponents = await Promise.all(
+    notes.map(async (note) => {
+      if (note.opponentId) {
+        const opponent = await getOpponentById(note.opponentId);
+        if (opponent) {
+          return {
+            ...note,
+            opponentLabel: `${opponent.firstName} ${opponent.lastInitial}.`,
+            club: opponent.club || note.club,
+            stance: opponent.stance || note.stance,
+            kumiKata: opponent.kumiKata || note.kumiKata,
+            neWaza: opponent.neWaza || note.neWaza,
+            commonCounters: opponent.commonCounters || note.commonCounters,
+            weightClass: opponent.weightClass || note.weightClass,
+            ageDivision: opponent.ageDivision || note.ageDivision,
+          };
+        }
+      }
+      return note;
+    })
+  );
+  
+  return notesWithOpponents;
 }
 
 export async function getOpponentNoteById(id: string): Promise<OpponentNote | null> {
@@ -214,6 +239,7 @@ export async function getOpponentNoteById(id: string): Promise<OpponentNote | nu
 
 export async function createOpponentNote(data: {
   athleteId: string;
+  opponentId?: string | null;
   opponentLabel: string;
   club?: string | null;
   notes: string;
@@ -236,6 +262,7 @@ export async function createOpponentNote(data: {
     .from('opponent_notes')
     .insert([{
       athlete_id: data.athleteId,
+      opponent_id: data.opponentId || null,
       opponent_label: data.opponentLabel,
       club: data.club || null,
       notes: data.notes,
@@ -627,6 +654,162 @@ export async function setTournamentDayAthletes(
   }
 }
 
+// Opponents CRUD
+export async function getAllOpponents(): Promise<Opponent[]> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('opponents')
+    .select('*')
+    .order('first_name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching opponents:', error);
+    throw new Error('Failed to fetch opponents');
+  }
+
+  return (data || []).map(dbOpponentToOpponent);
+}
+
+export async function getOpponentById(id: string): Promise<Opponent | null> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('opponents')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching opponent:', error);
+    return null;
+  }
+
+  return data ? dbOpponentToOpponent(data) : null;
+}
+
+export async function searchOpponents(query: string): Promise<Opponent[]> {
+  const supabase = getSupabaseClient();
+  
+  const searchTerm = query.toLowerCase();
+  
+  const { data, error } = await supabase
+    .from('opponents')
+    .select('*')
+    .or(`first_name.ilike.%${searchTerm}%,last_initial.ilike.%${searchTerm}%,club.ilike.%${searchTerm}%`)
+    .order('first_name', { ascending: true });
+
+  if (error) {
+    console.error('Error searching opponents:', error);
+    return [];
+  }
+
+  return (data || []).map(dbOpponentToOpponent);
+}
+
+export async function createOpponent(data: {
+  firstName: string;
+  lastInitial: string;
+  club?: string;
+  stance?: Stance;
+  kumiKata?: string;
+  neWaza?: string;
+  commonCounters?: string;
+  weightClass?: string;
+  ageDivision?: string;
+  notes?: string;
+}): Promise<Opponent> {
+  const supabase = getSupabaseClient();
+  
+  if (data.lastInitial.length !== 1) {
+    throw new Error('lastInitial must be exactly one character');
+  }
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User must be authenticated to create opponents');
+  }
+
+  const { data: newOpponent, error } = await supabase
+    .from('opponents')
+    .insert([{
+      first_name: data.firstName,
+      last_initial: data.lastInitial.toUpperCase(),
+      club: data.club || '',
+      stance: data.stance || null,
+      kumi_kata: data.kumiKata || '',
+      ne_waza: data.neWaza || '',
+      common_counters: data.commonCounters || '',
+      weight_class: data.weightClass || '',
+      age_division: data.ageDivision || '',
+      notes: data.notes || '',
+      created_by: user.id,
+    }] as never)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating opponent:', error);
+    throw new Error('Failed to create opponent');
+  }
+
+  return dbOpponentToOpponent(newOpponent);
+}
+
+export async function updateOpponent(
+  id: string,
+  data: Partial<Omit<Opponent, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>>
+): Promise<Opponent> {
+  const supabase = getSupabaseClient();
+  
+  if (data.lastInitial && data.lastInitial.length !== 1) {
+    throw new Error('lastInitial must be exactly one character');
+  }
+
+  const updateData: Record<string, unknown> = {};
+  
+  if (data.firstName !== undefined) updateData.first_name = data.firstName;
+  if (data.lastInitial !== undefined) updateData.last_initial = data.lastInitial.toUpperCase();
+  if (data.club !== undefined) updateData.club = data.club;
+  if (data.stance !== undefined) updateData.stance = data.stance;
+  if (data.kumiKata !== undefined) updateData.kumi_kata = data.kumiKata;
+  if (data.neWaza !== undefined) updateData.ne_waza = data.neWaza;
+  if (data.commonCounters !== undefined) updateData.common_counters = data.commonCounters;
+  if (data.weightClass !== undefined) updateData.weight_class = data.weightClass;
+  if (data.ageDivision !== undefined) updateData.age_division = data.ageDivision;
+  if (data.notes !== undefined) updateData.notes = data.notes;
+  
+  updateData.updated_at = new Date().toISOString();
+
+  const { data: updated, error } = await supabase
+    .from('opponents')
+    .update(updateData as never)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating opponent:', error);
+    throw new Error('Failed to update opponent');
+  }
+
+  return dbOpponentToOpponent(updated);
+}
+
+export async function deleteOpponent(id: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  const { error } = await supabase
+    .from('opponents')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting opponent:', error);
+    throw new Error('Failed to delete opponent');
+  }
+}
+
 // Helper functions to convert between DB schema and app types
 function dbAthleteToAthlete(dbAthlete: {
   id: string;
@@ -663,6 +846,7 @@ function dbAthleteToAthlete(dbAthlete: {
 function dbOpponentNoteToOpponentNote(dbNote: {
   id: string;
   athlete_id: string;
+  opponent_id?: string | null;
   opponent_label: string;
   club: string | null;
   notes: string;
@@ -678,6 +862,7 @@ function dbOpponentNoteToOpponentNote(dbNote: {
   return {
     id: dbNote.id,
     athleteId: dbNote.athlete_id,
+    opponentId: dbNote.opponent_id || null,
     opponentLabel: dbNote.opponent_label,
     club: dbNote.club,
     notes: dbNote.notes,
@@ -719,5 +904,39 @@ function dbTournamentDayEntryToTournamentDayEntry(dbEntry: {
     tournamentDayId: dbEntry.tournament_day_id,
     athleteId: dbEntry.athlete_id,
     createdAt: dbEntry.created_at,
+  };
+}
+
+function dbOpponentToOpponent(dbOpponent: {
+  id: string;
+  first_name: string;
+  last_initial: string;
+  club: string;
+  stance: 'left' | 'right' | 'unknown' | null;
+  kumi_kata: string;
+  ne_waza: string;
+  common_counters: string;
+  weight_class: string;
+  age_division: string;
+  notes: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
+}): Opponent {
+  return {
+    id: dbOpponent.id,
+    firstName: dbOpponent.first_name,
+    lastInitial: dbOpponent.last_initial,
+    club: dbOpponent.club,
+    stance: dbOpponent.stance,
+    kumiKata: dbOpponent.kumi_kata,
+    neWaza: dbOpponent.ne_waza,
+    commonCounters: dbOpponent.common_counters,
+    weightClass: dbOpponent.weight_class,
+    ageDivision: dbOpponent.age_division,
+    notes: dbOpponent.notes,
+    createdAt: dbOpponent.created_at,
+    updatedAt: dbOpponent.updated_at,
+    createdBy: dbOpponent.created_by,
   };
 }
