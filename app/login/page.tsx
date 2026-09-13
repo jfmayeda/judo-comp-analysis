@@ -117,7 +117,7 @@ function LoginForm() {
           {!useMagicLink ? (
             <form onSubmit={handlePasswordLogin} className="space-y-5">
               <div>
-                <label className="eyebrow block text-gray-700 mb-2">
+                <label className="form-label block mb-2">
                   Email
                 </label>
                 <input
@@ -130,7 +130,7 @@ function LoginForm() {
                 />
               </div>
               <div>
-                <label className="eyebrow block text-gray-700 mb-2">
+                <label className="form-label block mb-2">
                   Password
                 </label>
                 <input
@@ -153,7 +153,7 @@ function LoginForm() {
           ) : (
             <form onSubmit={handleMagicLinkLogin} className="space-y-5">
               <div>
-                <label className="eyebrow block text-gray-700 mb-2">
+                <label className="form-label block mb-2">
                   Email
                 </label>
                 <input
@@ -185,7 +185,7 @@ function LoginForm() {
                 setError(null);
                 setMessage(null);
               }}
-              className="text-sm text-brand-blue hover:text-brand-blue-hover font-semibold transition-colors"
+              className="btn-link"
             >
               {useMagicLink ? '← Use password instead' : 'Use magic link instead →'}
             </button>

@@ -108,6 +108,7 @@
   /* Cards */
   .card {
     background: var(--color-white);
+    color: #1a1a1a; /* reset — .navy-field sets color:white and inherits into cards */
     border-radius: var(--radius-card);
     border: var(--border-card);
     box-shadow: var(--shadow-card);
@@ -251,3 +252,19 @@
     font-family: var(--font-heading) !important;
   }
 }
+
+
+  .btn-link {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--color-brand-blue);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: var(--tracking-button);
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .btn-link:hover {
+    color: var(--color-brand-blue-hover);
+  }
