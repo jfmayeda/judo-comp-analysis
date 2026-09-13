@@ -186,7 +186,7 @@ export default function Home() {
                     Stance
                   </label>
                   <select
-                    value={formData.stance}
+                    value={formData.stance || ''}
                     onChange={(e) =>
                       setFormData({ ...formData, stance: e.target.value as Stance | '' })
                     }

@@ -257,7 +257,7 @@ export default function AthletePage() {
                     Stance
                   </label>
                   <select
-                    value={formData.stance}
+                    value={formData.stance || ''}
                     onChange={(e) =>
                       setFormData({ ...formData, stance: e.target.value as Stance | '' })
                     }
@@ -485,7 +485,7 @@ export default function AthletePage() {
                     Stance
                   </label>
                   <select
-                    value={noteFormData.stance}
+                    value={noteFormData.stance || ''}
                     onChange={(e) =>
                       setNoteFormData({ ...noteFormData, stance: e.target.value as Stance | '' })
                     }
