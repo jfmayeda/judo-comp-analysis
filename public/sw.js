@@ -5,10 +5,8 @@ const VERSION = 'v1';
 const SHELL_CACHE = `shell-${VERSION}`;
 const DATA_CACHE = `data-${VERSION}`;
 
-// Assets to precache on install
+// Assets to precache on install (only public static assets)
 const SHELL_ASSETS = [
-  '/',
-  '/tournament-day',
   '/favicon.ico',
   '/svj-logo-white.png',
   '/manifest.json',
@@ -118,11 +116,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Default: network-first
+  // Default: network-first with runtime caching for HTML documents
   event.respondWith(
-    fetch(request).catch(() => {
-      return caches.match(request);
-    })
+    fetch(request)
+      .then((response) => {
+        // Cache successful HTML responses for offline access
+        if (response.ok && request.headers.get('accept')?.includes('text/html')) {
+          const responseClone = response.clone();
+          caches.open(SHELL_CACHE).then((cache) => {
+            cache.put(request, responseClone);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        // Try cache on network failure
+        return caches.match(request);
+      })
   );
 });
 
