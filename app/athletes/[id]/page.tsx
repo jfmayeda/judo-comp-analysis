@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { AthleteWithNotes, Stance, JudoBelt, Promotion } from '@/lib/types';
+import { AthleteWithNotes, Stance, JudoBelt, Promotion, Coach } from '@/lib/types';
 import {
   getAthleteWithNotes,
   updateAthlete,
@@ -13,6 +13,7 @@ import {
   getPromotionsByAthleteId,
   createPromotion,
   deletePromotion,
+  getAllCoaches,
 } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
@@ -24,6 +25,7 @@ export default function AthletePage() {
   const router = useRouter();
   const { user, loading: authLoading, isAllowlisted } = useAuth();
   const [athlete, setAthlete] = useState<AthleteWithNotes | null>(null);
+  const [coaches, setCoaches] = useState<Coach[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
@@ -44,6 +46,9 @@ export default function AthletePage() {
     techniqueIds: [] as string[],
     tokuiTechniqueIds: [] as string[],
     newazaTechniqueIds: [] as string[],
+    preferredCoachId: null as string | null,
+    isCoachLocked: false,
+    coachIsExclusive: false,
   });
   const [noteFormData, setNoteFormData] = useState({
     opponentLabel: '',
@@ -88,7 +93,13 @@ export default function AthletePage() {
   const loadAthlete = async () => {
     try {
       const id = params.id as string;
-      const data = await getAthleteWithNotes(id);
+      const [data, coachesData] = await Promise.all([
+        getAthleteWithNotes(id),
+        getAllCoaches(),
+      ]);
+      
+      setCoaches(coachesData);
+      
       if (data) {
         setAthlete(data);
         setFormData({
@@ -106,6 +117,9 @@ export default function AthletePage() {
           techniqueIds: data.techniqueIds || [],
           tokuiTechniqueIds: data.tokuiTechniqueIds || [],
           newazaTechniqueIds: data.newazaTechniqueIds || [],
+          preferredCoachId: data.preferredCoachId || null,
+          isCoachLocked: data.isCoachLocked || false,
+          coachIsExclusive: data.coachIsExclusive || false,
         });
       }
       
@@ -401,6 +415,72 @@ export default function AthletePage() {
                     }
                     className="form-input w-full"
                   />
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-6">
+                <h4 className="text-lg font-semibold mb-4 text-gray-900">Preferred Coach Assignment</h4>
+                <div className="space-y-4">
+                  <div>
+                    <label className="eyebrow block text-gray-700 mb-2">
+                      Preferred Coach
+                    </label>
+                    <select
+                      value={formData.preferredCoachId || ''}
+                      onChange={(e) =>
+                        setFormData({ ...formData, preferredCoachId: e.target.value || null })
+                      }
+                      className="form-input w-full"
+                    >
+                      <option value="">No preference</option>
+                      {coaches.map(coach => (
+                        <option key={coach.id} value={coach.id}>
+                          {coach.email.split('@')[0]}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Select a preferred coach for tournament assignments
+                    </p>
+                  </div>
+
+                  {formData.preferredCoachId && (
+                    <>
+                      <label className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={formData.isCoachLocked}
+                          onChange={(e) =>
+                            setFormData({ ...formData, isCoachLocked: e.target.checked })
+                          }
+                          className="mt-1 rounded"
+                        />
+                        <div>
+                          <span className="font-medium text-gray-900">Lock to preferred coach 🔒</span>
+                          <p className="text-xs text-gray-600">
+                            This athlete must always be assigned their preferred coach
+                          </p>
+                        </div>
+                      </label>
+
+                      <label className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={formData.coachIsExclusive}
+                          onChange={(e) =>
+                            setFormData({ ...formData, coachIsExclusive: e.target.checked })
+                          }
+                          className="mt-1 rounded"
+                        />
+                        <div>
+                          <span className="font-medium text-gray-900">Coach is exclusive ⭐</span>
+                          <p className="text-xs text-gray-600">
+                            This coach is dedicated to this athlete only and should not coach others
+                          </p>
+                        </div>
+                      </label>
+                    </>
+                  )}
                 </div>
               </div>
 

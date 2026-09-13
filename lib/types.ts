@@ -46,6 +46,9 @@ export type Athlete = {
   techniqueIds: string[];
   tokuiTechniqueIds: string[];
   newazaTechniqueIds: string[];
+  preferredCoachId?: string | null;
+  isCoachLocked: boolean;
+  coachIsExclusive: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -118,9 +121,20 @@ export type TournamentDayEntry = {
   id: string;
   tournamentDayId: string;
   athleteId: string;
+  assignedCoachId?: string | null;
+  matNumber?: string | null;
+  timeWindow?: string | null;
+  noCoachNeeded: boolean;
   createdAt: string;
 };
 
 export type TournamentDayWithAthletes = TournamentDay & {
   athletes: AthleteWithNotes[];
+};
+
+export type Coach = {
+  id: string;
+  email: string;
+  invitedAt: string;
+  isAdmin: boolean;
 };

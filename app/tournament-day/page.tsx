@@ -198,6 +198,12 @@ export default function TournamentDayPage() {
             >
               Print Pack ({selectedAthleteIds.size})
             </button>
+            <Link
+              href="/tournament-day/assign"
+              className="btn-primary inline-block text-center"
+            >
+              Assign Coaches →
+            </Link>
           </div>
 
           {selectedAthletes.length > 0 && (
