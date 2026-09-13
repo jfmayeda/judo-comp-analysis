@@ -35,6 +35,8 @@ export default function AthletePage() {
     weightClass: '',
     ageDivision: '',
     techniqueIds: [] as string[],
+    tokuiTechniqueIds: [] as string[],
+    newazaTechniqueIds: [] as string[],
   });
   const [noteFormData, setNoteFormData] = useState({
     opponentLabel: '',
@@ -48,6 +50,8 @@ export default function AthletePage() {
     weightClass: '',
     ageDivision: '',
     techniqueIds: [] as string[],
+    tokuiTechniqueIds: [] as string[],
+    newazaTechniqueIds: [] as string[],
   });
 
   useEffect(() => {
@@ -86,6 +90,8 @@ export default function AthletePage() {
           weightClass: data.weightClass,
           ageDivision: data.ageDivision,
           techniqueIds: data.techniqueIds || [],
+          tokuiTechniqueIds: data.tokuiTechniqueIds || [],
+          newazaTechniqueIds: data.newazaTechniqueIds || [],
         });
       }
     } catch (error) {
@@ -140,6 +146,8 @@ export default function AthletePage() {
         weightClass: noteFormData.weightClass,
         ageDivision: noteFormData.ageDivision,
         techniqueIds: noteFormData.techniqueIds,
+        tokuiTechniqueIds: noteFormData.tokuiTechniqueIds,
+        newazaTechniqueIds: noteFormData.newazaTechniqueIds,
       });
       setNoteFormData({
         opponentLabel: '',
@@ -153,6 +161,8 @@ export default function AthletePage() {
         weightClass: '',
         ageDivision: '',
         techniqueIds: [],
+        tokuiTechniqueIds: [],
+        newazaTechniqueIds: [],
       });
       setShowAddNote(false);
       await loadAthlete();
@@ -316,12 +326,13 @@ export default function AthletePage() {
 
               <div>
                 <TechniquePicker
-                  label="Tokui-waza (favorite techniques) - Pick from list"
-                  selectedIds={formData.techniqueIds}
-                  onChange={(techniqueIds) =>
-                    setFormData({ ...formData, techniqueIds })
+                  label="Tokui-waza (Tachi-waza) - Standing techniques"
+                  selectedIds={formData.tokuiTechniqueIds}
+                  onChange={(tokuiTechniqueIds) =>
+                    setFormData({ ...formData, tokuiTechniqueIds })
                   }
-                  placeholder="Search techniques..."
+                  categoryFilter="Tachi-waza"
+                  placeholder="Type to search throws, footsweeps..."
                 />
               </div>
 
@@ -341,6 +352,33 @@ export default function AthletePage() {
               </div>
 
               <div>
+                <TechniquePicker
+                  label="Ne-waza - Ground techniques"
+                  selectedIds={formData.newazaTechniqueIds}
+                  onChange={(newazaTechniqueIds) =>
+                    setFormData({ ...formData, newazaTechniqueIds })
+                  }
+                  categoryFilter="Ne-waza"
+                  placeholder="Type to search pins, chokes, armbars..."
+                />
+              </div>
+
+              <div>
+                <label className="eyebrow block text-gray-700 mb-2">
+                  Ne-waza (free text / additional notes)
+                </label>
+                <input
+                  type="text"
+                  value={formData.neWaza}
+                  onChange={(e) =>
+                    setFormData({ ...formData, neWaza: e.target.value })
+                  }
+                  className="form-input w-full"
+                  placeholder="Optional: add custom notes"
+                />
+              </div>
+
+              <div>
                 <label className="eyebrow block text-gray-700 mb-2">
                   Kumi-kata (grip style)
                 </label>
@@ -349,20 +387,6 @@ export default function AthletePage() {
                   value={formData.kumiKata}
                   onChange={(e) =>
                     setFormData({ ...formData, kumiKata: e.target.value })
-                  }
-                  className="form-input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Ne-waza (ground game)
-                </label>
-                <input
-                  type="text"
-                  value={formData.neWaza}
-                  onChange={(e) =>
-                    setFormData({ ...formData, neWaza: e.target.value })
                   }
                   className="form-input w-full"
                 />
@@ -575,8 +599,20 @@ export default function AthletePage() {
               </div>
 
               <div>
+                <TechniquePicker
+                  label="Opponent Tokui-waza (Tachi-waza)"
+                  selectedIds={noteFormData.tokuiTechniqueIds}
+                  onChange={(tokuiTechniqueIds) =>
+                    setNoteFormData({ ...noteFormData, tokuiTechniqueIds })
+                  }
+                  categoryFilter="Tachi-waza"
+                  placeholder="Type to search opponent's standing techniques..."
+                />
+              </div>
+
+              <div>
                 <label className="eyebrow block text-gray-700 mb-2">
-                  Kumi-kata (grip style)
+                  Kumi-kata (grip style - free text)
                 </label>
                 <input
                   type="text"
@@ -589,8 +625,20 @@ export default function AthletePage() {
               </div>
 
               <div>
+                <TechniquePicker
+                  label="Opponent Ne-waza"
+                  selectedIds={noteFormData.newazaTechniqueIds}
+                  onChange={(newazaTechniqueIds) =>
+                    setNoteFormData({ ...noteFormData, newazaTechniqueIds })
+                  }
+                  categoryFilter="Ne-waza"
+                  placeholder="Type to search opponent's ground techniques..."
+                />
+              </div>
+
+              <div>
                 <label className="eyebrow block text-gray-700 mb-2">
-                  Ne-waza (ground game)
+                  Ne-waza (free text / additional notes)
                 </label>
                 <input
                   type="text"
@@ -599,17 +647,7 @@ export default function AthletePage() {
                     setNoteFormData({ ...noteFormData, neWaza: e.target.value })
                   }
                   className="form-input w-full"
-                />
-              </div>
-
-              <div>
-                <TechniquePicker
-                  label="Opponent's techniques"
-                  selectedIds={noteFormData.techniqueIds}
-                  onChange={(techniqueIds) =>
-                    setNoteFormData({ ...noteFormData, techniqueIds })
-                  }
-                  placeholder="Search techniques to track..."
+                  placeholder="Optional: add custom notes about ground game"
                 />
               </div>
 
