@@ -2,24 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-
-type Athlete = {
-  id: string;
-  firstName: string;
-  lastInitial: string;
-  tokuiWaza: string;
-  developmentAreas: string;
-  notes: string;
-  opponentNotes: Array<{
-    id: string;
-    opponentLabel: string;
-    club: string | null;
-    notes: string;
-  }>;
-};
+import { AthleteWithNotes } from '@/lib/types';
+import { getAllAthletesWithNotes, createAthlete, seedDataIfEmpty } from '@/lib/store';
 
 export default function Home() {
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
+  const [athletes, setAthletes] = useState<AthleteWithNotes[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -31,42 +18,45 @@ export default function Home() {
   });
 
   useEffect(() => {
-    fetchAthletes();
+    // Seed data if this is first visit
+    seedDataIfEmpty();
+    // Load athletes
+    loadAthletes();
   }, []);
 
-  const fetchAthletes = async () => {
+  const loadAthletes = () => {
     try {
-      const res = await fetch('/api/athletes');
-      const data = await res.json();
+      const data = getAllAthletesWithNotes();
       setAthletes(data);
     } catch (error) {
-      console.error('Error fetching athletes:', error);
+      console.error('Error loading athletes:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/athletes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+      createAthlete({
+        firstName: formData.firstName,
+        lastInitial: formData.lastInitial,
+        tokuiWaza: formData.tokuiWaza,
+        developmentAreas: formData.developmentAreas,
+        notes: formData.notes,
       });
-      if (res.ok) {
-        setFormData({
-          firstName: '',
-          lastInitial: '',
-          tokuiWaza: '',
-          developmentAreas: '',
-          notes: '',
-        });
-        setShowAddForm(false);
-        fetchAthletes();
-      }
+      setFormData({
+        firstName: '',
+        lastInitial: '',
+        tokuiWaza: '',
+        developmentAreas: '',
+        notes: '',
+      });
+      setShowAddForm(false);
+      loadAthletes();
     } catch (error) {
       console.error('Error creating athlete:', error);
+      alert('Failed to create athlete. Please check your input.');
     }
   };
 

@@ -3,30 +3,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-
-type OpponentNote = {
-  id: string;
-  opponentLabel: string;
-  club: string | null;
-  notes: string;
-  tournament: string | null;
-  createdAt: string;
-};
-
-type Athlete = {
-  id: string;
-  firstName: string;
-  lastInitial: string;
-  tokuiWaza: string;
-  developmentAreas: string;
-  notes: string;
-  opponentNotes: OpponentNote[];
-};
+import { AthleteWithNotes } from '@/lib/types';
+import {
+  getAthleteWithNotes,
+  updateAthlete,
+  deleteAthlete,
+  createOpponentNote,
+  deleteOpponentNote,
+} from '@/lib/store';
 
 export default function AthletePage() {
   const params = useParams();
   const router = useRouter();
-  const [athlete, setAthlete] = useState<Athlete | null>(null);
+  const [athlete, setAthlete] = useState<AthleteWithNotes | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
@@ -45,14 +34,14 @@ export default function AthletePage() {
   });
 
   useEffect(() => {
-    fetchAthlete();
+    loadAthlete();
   }, []);
 
-  const fetchAthlete = async () => {
+  const loadAthlete = () => {
     try {
-      const res = await fetch(`/api/athletes/${params.id}`);
-      if (res.ok) {
-        const data = await res.json();
+      const id = params.id as string;
+      const data = getAthleteWithNotes(id);
+      if (data) {
         setAthlete(data);
         setFormData({
           firstName: data.firstName,
@@ -63,84 +52,74 @@ export default function AthletePage() {
         });
       }
     } catch (error) {
-      console.error('Error fetching athlete:', error);
+      console.error('Error loading athlete:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleUpdate = async (e: React.FormEvent) => {
+  const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch(`/api/athletes/${params.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      if (res.ok) {
-        setEditing(false);
-        fetchAthlete();
-      }
+      const id = params.id as string;
+      updateAthlete(id, formData);
+      setEditing(false);
+      loadAthlete();
     } catch (error) {
       console.error('Error updating athlete:', error);
+      alert('Failed to update athlete. Please check your input.');
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!confirm(`Delete ${athlete?.firstName} ${athlete?.lastInitial}. and all related notes?`)) {
       return;
     }
     try {
-      const res = await fetch(`/api/athletes/${params.id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        router.push('/');
-      }
+      const id = params.id as string;
+      deleteAthlete(id);
+      router.push('/');
     } catch (error) {
       console.error('Error deleting athlete:', error);
+      alert('Failed to delete athlete.');
     }
   };
 
-  const handleAddNote = async (e: React.FormEvent) => {
+  const handleAddNote = (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/opponent-notes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          athleteId: params.id,
-          ...noteFormData,
-        }),
+      const id = params.id as string;
+      createOpponentNote({
+        athleteId: id,
+        opponentLabel: noteFormData.opponentLabel,
+        club: noteFormData.club || null,
+        notes: noteFormData.notes,
+        tournament: noteFormData.tournament || null,
       });
-      if (res.ok) {
-        setNoteFormData({
-          opponentLabel: '',
-          club: '',
-          notes: '',
-          tournament: '',
-        });
-        setShowAddNote(false);
-        fetchAthlete();
-      }
+      setNoteFormData({
+        opponentLabel: '',
+        club: '',
+        notes: '',
+        tournament: '',
+      });
+      setShowAddNote(false);
+      loadAthlete();
     } catch (error) {
       console.error('Error adding note:', error);
+      alert('Failed to add opponent note.');
     }
   };
 
-  const handleDeleteNote = async (noteId: string) => {
+  const handleDeleteNote = (noteId: string) => {
     if (!confirm('Delete this opponent note?')) {
       return;
     }
     try {
-      const res = await fetch(`/api/opponent-notes/${noteId}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        fetchAthlete();
-      }
+      deleteOpponentNote(noteId);
+      loadAthlete();
     } catch (error) {
       console.error('Error deleting note:', error);
+      alert('Failed to delete opponent note.');
     }
   };
 
