@@ -12,6 +12,8 @@ import {
   deleteOpponentNote,
 } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
+import TechniquePicker from '@/components/TechniquePicker';
+import TechniqueDisplay from '@/components/TechniqueDisplay';
 
 export default function AthletePage() {
   const params = useParams();
@@ -32,6 +34,7 @@ export default function AthletePage() {
     neWaza: '',
     weightClass: '',
     ageDivision: '',
+    techniqueIds: [] as string[],
   });
   const [noteFormData, setNoteFormData] = useState({
     opponentLabel: '',
@@ -44,6 +47,7 @@ export default function AthletePage() {
     commonCounters: '',
     weightClass: '',
     ageDivision: '',
+    techniqueIds: [] as string[],
   });
 
   useEffect(() => {
@@ -81,6 +85,7 @@ export default function AthletePage() {
           neWaza: data.neWaza,
           weightClass: data.weightClass,
           ageDivision: data.ageDivision,
+          techniqueIds: data.techniqueIds || [],
         });
       }
     } catch (error) {
@@ -134,6 +139,7 @@ export default function AthletePage() {
         commonCounters: noteFormData.commonCounters,
         weightClass: noteFormData.weightClass,
         ageDivision: noteFormData.ageDivision,
+        techniqueIds: noteFormData.techniqueIds,
       });
       setNoteFormData({
         opponentLabel: '',
@@ -146,6 +152,7 @@ export default function AthletePage() {
         commonCounters: '',
         weightClass: '',
         ageDivision: '',
+        techniqueIds: [],
       });
       setShowAddNote(false);
       await loadAthlete();
@@ -308,8 +315,19 @@ export default function AthletePage() {
               </div>
 
               <div>
+                <TechniquePicker
+                  label="Tokui-waza (favorite techniques) - Pick from list"
+                  selectedIds={formData.techniqueIds}
+                  onChange={(techniqueIds) =>
+                    setFormData({ ...formData, techniqueIds })
+                  }
+                  placeholder="Search techniques..."
+                />
+              </div>
+
+              <div>
                 <label className="eyebrow block text-gray-700 mb-2">
-                  Tokui-waza (favorite techniques)
+                  Tokui-waza (free text / additional notes)
                 </label>
                 <input
                   type="text"
@@ -318,6 +336,7 @@ export default function AthletePage() {
                     setFormData({ ...formData, tokuiWaza: e.target.value })
                   }
                   className="form-input w-full"
+                  placeholder="Optional: add custom notes"
                 />
               </div>
 
@@ -407,9 +426,15 @@ export default function AthletePage() {
                 )}
               </div>
 
+              <TechniqueDisplay
+                techniqueIds={athlete.techniqueIds}
+                label="Tokui-waza (Techniques)"
+                className="mb-4"
+              />
+
               {athlete.tokuiWaza && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Tokui-waza</h3>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Tokui-waza (Notes)</h3>
                   <p className="text-gray-900">{athlete.tokuiWaza}</p>
                 </div>
               )}
@@ -578,6 +603,17 @@ export default function AthletePage() {
               </div>
 
               <div>
+                <TechniquePicker
+                  label="Opponent's techniques"
+                  selectedIds={noteFormData.techniqueIds}
+                  onChange={(techniqueIds) =>
+                    setNoteFormData({ ...noteFormData, techniqueIds })
+                  }
+                  placeholder="Search techniques to track..."
+                />
+              </div>
+
+              <div>
                 <label className="eyebrow block text-gray-700 mb-2">
                   Common Counters
                 </label>
@@ -680,6 +716,12 @@ export default function AthletePage() {
                       <p className="text-sm text-gray-900">{note.neWaza}</p>
                     </div>
                   )}
+
+                  <TechniqueDisplay
+                    techniqueIds={note.techniqueIds}
+                    label="Opponent's Techniques"
+                    className="mb-3"
+                  />
 
                   {note.commonCounters && (
                     <div className="mb-3">
