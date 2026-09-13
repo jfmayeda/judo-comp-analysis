@@ -115,34 +115,36 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="app-header flex flex-wrap items-center justify-between px-4 md:px-8 gap-3">
-        <div className="flex items-center gap-4">
-          <img 
-            src="/svj-logo-white.png" 
-            alt="Silicon Valley Judo" 
-            className="app-header-logo"
-          />
-          <p className="eyebrow text-white text-xs">COMPETITOR ANALYSIS</p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/opponents"
-            className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-sm"
-          >
-            Opponents
-          </Link>
-          <Link
-            href="/tournament-day"
-            className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-sm"
-          >
-            Tournament Day
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-sm"
-          >
-            Sign Out
-          </button>
+      <header className="app-header">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <img 
+              src="/svj-logo-white.png" 
+              alt="Silicon Valley Judo" 
+              className="app-header-logo"
+            />
+            <p className="eyebrow text-white text-xs uppercase">COMPETITOR ANALYSIS</p>
+          </div>
+          <nav className="flex flex-wrap gap-2 w-full md:w-auto justify-start md:justify-end">
+            <Link
+              href="/opponents"
+              className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-xs px-4 py-2"
+            >
+              Opponents
+            </Link>
+            <Link
+              href="/tournament-day"
+              className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-xs px-4 py-2"
+            >
+              Tournament Day
+            </Link>
+            <button
+              onClick={handleLogout}
+              className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-xs px-4 py-2"
+            >
+              Sign Out
+            </button>
+          </nav>
         </div>
       </header>
 

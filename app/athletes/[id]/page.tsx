@@ -177,16 +177,18 @@ export default function AthletePage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="app-header flex items-center justify-between px-4 md:px-8 no-print">
-        <Link href="/" className="flex items-center gap-3 text-white hover:opacity-80 transition-opacity">
-          <span className="text-xl">←</span>
-          <img 
-            src="/svj-logo-white.png" 
-            alt="Silicon Valley Judo" 
-            className="app-header-logo"
-          />
-          <p className="eyebrow text-white text-xs">COMPETITOR ANALYSIS</p>
-        </Link>
+      <header className="app-header no-print">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
+          <Link href="/" className="flex items-center gap-3 text-white hover:opacity-80 transition-opacity">
+            <span className="text-xl">←</span>
+            <img 
+              src="/svj-logo-white.png" 
+              alt="Silicon Valley Judo" 
+              className="app-header-logo"
+            />
+            <p className="eyebrow text-white text-xs uppercase">COMPETITOR ANALYSIS</p>
+          </Link>
+        </div>
       </header>
 
       <div className="max-w-5xl mx-auto p-8">
