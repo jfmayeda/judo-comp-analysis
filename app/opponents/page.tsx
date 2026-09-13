@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 
 export default function OpponentsPage() {
   const router = useRouter();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, isAllowlisted, signOut } = useAuth();
   const [opponents, setOpponents] = useState<Opponent[]>([]);
   const [filteredOpponents, setFilteredOpponents] = useState<Opponent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,9 +36,16 @@ export default function OpponentsPage() {
       router.push('/login');
       return;
     }
-    
-    loadOpponents();
-  }, [user, authLoading, router]);
+
+    if (isAllowlisted === false) {
+      router.push('/unauthorized');
+      return;
+    }
+
+    if (isAllowlisted === true) {
+      loadOpponents();
+    }
+  }, [user, authLoading, isAllowlisted, router]);
 
   useEffect(() => {
     if (searchQuery.trim() === '') {

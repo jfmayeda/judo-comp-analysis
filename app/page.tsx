@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 
 export default function Home() {
   const router = useRouter();
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading, isAllowlisted, isAdmin, signOut } = useAuth();
   const [athletes, setAthletes] = useState<AthleteWithNotes[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -33,9 +33,16 @@ export default function Home() {
       router.push('/login');
       return;
     }
-    
-    loadAthletes();
-  }, [user, authLoading, router]);
+
+    if (isAllowlisted === false) {
+      router.push('/unauthorized');
+      return;
+    }
+
+    if (isAllowlisted === true) {
+      loadAthletes();
+    }
+  }, [user, authLoading, isAllowlisted, router]);
 
   const loadAthletes = async () => {
     try {
@@ -138,6 +145,14 @@ export default function Home() {
             >
               Tournament Day
             </Link>
+            {isAdmin && (
+              <Link
+                href="/invite"
+                className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-xs px-4 py-2"
+              >
+                Invite Coaches
+              </Link>
+            )}
             <button
               onClick={handleLogout}
               className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-xs px-4 py-2"

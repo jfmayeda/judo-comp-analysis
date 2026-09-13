@@ -15,7 +15,7 @@ import { useAuth } from '@/lib/auth-context';
 
 export default function TournamentDayPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAllowlisted } = useAuth();
   const [athletes, setAthletes] = useState<AthleteWithNotes[]>([]);
   const [tournamentDays, setTournamentDays] = useState<TournamentDay[]>([]);
   const [selectedTournamentDay, setSelectedTournamentDay] = useState<TournamentDay | null>(null);
@@ -30,9 +30,16 @@ export default function TournamentDayPage() {
       router.push('/login');
       return;
     }
-    
-    loadData();
-  }, [user, authLoading, router]);
+
+    if (isAllowlisted === false) {
+      router.push('/unauthorized');
+      return;
+    }
+
+    if (isAllowlisted === true) {
+      loadData();
+    }
+  }, [user, authLoading, isAllowlisted, router]);
 
   const loadData = async () => {
     try {
