@@ -3,44 +3,25 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-
-type OpponentNote = {
-  id: string;
-  opponentLabel: string;
-  club: string | null;
-  notes: string;
-  tournament: string | null;
-  createdAt: string;
-};
-
-type Athlete = {
-  id: string;
-  firstName: string;
-  lastInitial: string;
-  tokuiWaza: string;
-  developmentAreas: string;
-  notes: string;
-  opponentNotes: OpponentNote[];
-};
+import { AthleteWithNotes } from '@/lib/types';
+import { getAthleteWithNotes } from '@/lib/store';
 
 export default function PrintProfilePage() {
   const params = useParams();
-  const [athlete, setAthlete] = useState<Athlete | null>(null);
+  const [athlete, setAthlete] = useState<AthleteWithNotes | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchAthlete();
+    loadAthlete();
   }, []);
 
-  const fetchAthlete = async () => {
+  const loadAthlete = () => {
     try {
-      const res = await fetch(`/api/athletes/${params.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setAthlete(data);
-      }
+      const id = params.id as string;
+      const data = getAthleteWithNotes(id);
+      setAthlete(data);
     } catch (error) {
-      console.error('Error fetching athlete:', error);
+      console.error('Error loading athlete:', error);
     } finally {
       setLoading(false);
     }
