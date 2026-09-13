@@ -3,17 +3,21 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { AthleteWithNotes, Stance } from '@/lib/types';
+import { AthleteWithNotes, Stance, JudoBelt, Promotion } from '@/lib/types';
 import {
   getAthleteWithNotes,
   updateAthlete,
   deleteAthlete,
   createOpponentNote,
   deleteOpponentNote,
+  getPromotionsByAthleteId,
+  createPromotion,
+  deletePromotion,
 } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
 import TechniqueDisplay from '@/components/TechniqueDisplay';
+import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
 
 export default function AthletePage() {
   const params = useParams();
@@ -23,6 +27,8 @@ export default function AthletePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
+  const [showAddPromotion, setShowAddPromotion] = useState(false);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [formData, setFormData] = useState({
     firstName: '',
     lastInitial: '',
@@ -34,6 +40,7 @@ export default function AthletePage() {
     neWaza: '',
     weightClass: '',
     ageDivision: '',
+    currentBelt: 'unset' as JudoBelt,
     techniqueIds: [] as string[],
     tokuiTechniqueIds: [] as string[],
     newazaTechniqueIds: [] as string[],
@@ -52,6 +59,12 @@ export default function AthletePage() {
     techniqueIds: [] as string[],
     tokuiTechniqueIds: [] as string[],
     newazaTechniqueIds: [] as string[],
+  });
+  const [promotionFormData, setPromotionFormData] = useState({
+    promotionDate: new Date().toISOString().split('T')[0],
+    fromBelt: 'unset' as JudoBelt,
+    toBelt: 'unset' as JudoBelt,
+    notes: '',
   });
 
   useEffect(() => {
@@ -89,11 +102,15 @@ export default function AthletePage() {
           neWaza: data.neWaza,
           weightClass: data.weightClass,
           ageDivision: data.ageDivision,
+          currentBelt: data.currentBelt || 'unset',
           techniqueIds: data.techniqueIds || [],
           tokuiTechniqueIds: data.tokuiTechniqueIds || [],
           newazaTechniqueIds: data.newazaTechniqueIds || [],
         });
       }
+      
+      const promotionsData = await getPromotionsByAthleteId(id);
+      setPromotions(promotionsData);
     } catch (error) {
       console.error('Error loading athlete:', error);
     } finally {
@@ -180,6 +197,48 @@ export default function AthletePage() {
       await loadAthlete();
     } catch (error: any) {
       console.error('Error deleting note:', error);
+    }
+  };
+
+  const handleAddPromotion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const id = params.id as string;
+      await createPromotion({
+        athleteId: id,
+        promotionDate: promotionFormData.promotionDate,
+        fromBelt: promotionFormData.fromBelt,
+        toBelt: promotionFormData.toBelt,
+        notes: promotionFormData.notes,
+      });
+      
+      // Update athlete's current belt to match the promotion
+      await updateAthlete(id, {
+        currentBelt: promotionFormData.toBelt,
+      });
+      
+      setPromotionFormData({
+        promotionDate: new Date().toISOString().split('T')[0],
+        fromBelt: 'unset',
+        toBelt: 'unset',
+        notes: '',
+      });
+      setShowAddPromotion(false);
+      await loadAthlete();
+    } catch (error: any) {
+      console.error('Error adding promotion:', error);
+    }
+  };
+
+  const handleDeletePromotion = async (promotionId: string) => {
+    if (!confirm('Delete this promotion record?')) {
+      return;
+    }
+    try {
+      await deletePromotion(promotionId);
+      await loadAthlete();
+    } catch (error: any) {
+      console.error('Error deleting promotion:', error);
     }
   };
 
@@ -278,7 +337,25 @@ export default function AthletePage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="eyebrow block text-gray-700 mb-2">
+                    Current Belt/Rank
+                  </label>
+                  <select
+                    value={formData.currentBelt}
+                    onChange={(e) =>
+                      setFormData({ ...formData, currentBelt: e.target.value as JudoBelt })
+                    }
+                    className="form-input w-full"
+                  >
+                    {getBeltOptions().map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="eyebrow block text-gray-700 mb-2">
                     Stance
@@ -296,6 +373,9 @@ export default function AthletePage() {
                     <option value="unknown">Unknown</option>
                   </select>
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="eyebrow block text-gray-700 mb-2">
                     Weight Class
@@ -429,7 +509,13 @@ export default function AthletePage() {
             </form>
           ) : (
             <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4 pb-4 border-b border-gray-200">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-4 border-b border-gray-200">
+                {athlete.currentBelt && athlete.currentBelt !== 'unset' && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Current Belt</h4>
+                    <p className="text-gray-900">{formatBeltName(athlete.currentBelt)}</p>
+                  </div>
+                )}
                 {athlete.stance && (
                   <div>
                     <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Stance</h4>
@@ -490,6 +576,135 @@ export default function AthletePage() {
                   <p className="text-gray-900 whitespace-pre-wrap">{athlete.notes}</p>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+
+        <div className="card p-6 mb-6">
+          <div className="flex justify-between items-center mb-6 no-print">
+            <h3 className="text-2xl">Promotions</h3>
+            <button
+              onClick={() => setShowAddPromotion(!showAddPromotion)}
+              className="btn-primary text-sm"
+            >
+              {showAddPromotion ? 'Cancel' : 'Add Promotion'}
+            </button>
+          </div>
+
+          {showAddPromotion && (
+            <form onSubmit={handleAddPromotion} className="mb-6 p-6 bg-gray-50 rounded-lg space-y-4 no-print">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="eyebrow block text-gray-700 mb-2">
+                    Promotion Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={promotionFormData.promotionDate}
+                    onChange={(e) =>
+                      setPromotionFormData({ ...promotionFormData, promotionDate: e.target.value })
+                    }
+                    className="form-input w-full"
+                  />
+                </div>
+                <div>
+                  <label className="eyebrow block text-gray-700 mb-2">
+                    From Belt *
+                  </label>
+                  <select
+                    required
+                    value={promotionFormData.fromBelt}
+                    onChange={(e) =>
+                      setPromotionFormData({ ...promotionFormData, fromBelt: e.target.value as JudoBelt })
+                    }
+                    className="form-input w-full"
+                  >
+                    {getBeltOptions().map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="eyebrow block text-gray-700 mb-2">
+                    To Belt *
+                  </label>
+                  <select
+                    required
+                    value={promotionFormData.toBelt}
+                    onChange={(e) =>
+                      setPromotionFormData({ ...promotionFormData, toBelt: e.target.value as JudoBelt })
+                    }
+                    className="form-input w-full"
+                  >
+                    {getBeltOptions().map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="eyebrow block text-gray-700 mb-2">
+                  Notes (optional)
+                </label>
+                <textarea
+                  value={promotionFormData.notes}
+                  onChange={(e) =>
+                    setPromotionFormData({ ...promotionFormData, notes: e.target.value })
+                  }
+                  rows={2}
+                  placeholder="e.g., Testing location, tournament achievements"
+                  className="form-input w-full"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="btn-primary"
+              >
+                Add Promotion
+              </button>
+            </form>
+          )}
+
+          {promotions.length === 0 ? (
+            <p className="text-gray-600 text-center py-8">
+              No promotion records yet. Add promotions to track belt progression.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {promotions.map((promotion) => (
+                <div key={promotion.id} className="p-4 bg-gray-50 rounded-lg flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="font-semibold text-gray-900">
+                        {formatBeltName(promotion.fromBelt)} → {formatBeltName(promotion.toBelt)}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {new Date(promotion.promotionDate).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </span>
+                    </div>
+                    {promotion.notes && (
+                      <p className="text-sm text-gray-700">{promotion.notes}</p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => handleDeletePromotion(promotion.id)}
+                    className="text-red-600 hover:text-red-800 text-sm font-semibold uppercase tracking-wide no-print ml-4"
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
