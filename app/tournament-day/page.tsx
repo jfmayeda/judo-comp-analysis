@@ -135,19 +135,21 @@ export default function TournamentDayPage() {
       <header className="app-header flex items-center justify-between px-4 md:px-8">
         <Link href="/" className="flex items-center gap-3 text-white hover:opacity-80 transition-opacity">
           <span className="text-xl">←</span>
-          <div>
-            <p className="eyebrow text-white mb-1">Competitor Analysis</p>
-            <h1 className="wordmark text-base md:text-xl">SILICON VALLEY JUDO</h1>
-          </div>
+          <img 
+            src="/svj-logo-white.png" 
+            alt="Silicon Valley Judo" 
+            className="app-header-logo"
+          />
+          <p className="eyebrow text-white text-xs">COMPETITOR ANALYSIS</p>
         </Link>
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
-        <div className="mb-6 md:mb-8">
+      <div className="max-w-7xl mx-auto p-8">
+        <div className="mb-8">
           <p className="eyebrow mb-2">Tournament Day</p>
-          <h2 className="text-2xl md:text-3xl mb-2">Who's Fighting Today</h2>
-          <p className="text-gray-700 text-sm md:text-base">
+          <h2 className="text-3xl mb-2">Who's Fighting Today</h2>
+          <p className="text-gray-700">
             Select competing athletes and print the tournament pack for matside coaching
           </p>
         </div>

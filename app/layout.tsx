@@ -27,6 +27,9 @@ const sourceSans3 = Source_Sans_3({
 export const metadata: Metadata = {
   title: 'Silicon Valley Judo - Competitor Analysis',
   description: 'Coach scouting notes and tournament-day profiles',
+  icons: {
+    icon: '/svj-logo-white.png',
+  },
 };
 
 export default function RootLayout({

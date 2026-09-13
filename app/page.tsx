@@ -116,9 +116,13 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Header */}
       <header className="app-header flex flex-wrap items-center justify-between px-4 md:px-8 gap-3">
-        <div>
-          <p className="eyebrow text-white mb-1">Competitor Analysis</p>
-          <h1 className="wordmark text-xl">SILICON VALLEY JUDO</h1>
+        <div className="flex items-center gap-4">
+          <img 
+            src="/svj-logo-white.png" 
+            alt="Silicon Valley Judo" 
+            className="app-header-logo"
+          />
+          <p className="eyebrow text-white text-xs">COMPETITOR ANALYSIS</p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link
@@ -143,28 +147,28 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
+      <div className="max-w-7xl mx-auto p-8">
+        <div className="flex justify-between items-center mb-8">
           <div>
             <p className="eyebrow mb-2">Roster</p>
-            <h2 className="text-2xl md:text-3xl mb-2">Athletes</h2>
-            <p className="text-gray-700 text-sm md:text-base">
+            <h2 className="text-3xl mb-2">Athletes</h2>
+            <p className="text-gray-700">
               {athletes.length} athlete{athletes.length !== 1 ? 's' : ''} • Tokui-waza, development areas, and opponent notes for tournament day
             </p>
           </div>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="btn-primary w-full md:w-auto"
+            className="btn-primary"
           >
             {showAddForm ? 'Cancel' : 'Add Athlete'}
           </button>
         </div>
 
         {showAddForm && (
-          <div className="card p-4 md:p-6 mb-6 md:mb-8">
-            <h3 className="text-lg md:text-xl mb-4 md:mb-6 uppercase tracking-wide">Add New Athlete</h3>
-            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="card p-6 mb-8">
+            <h3 className="text-xl mb-6 uppercase tracking-wide">Add New Athlete</h3>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="eyebrow block text-gray-700 mb-2">
                     First Name *
@@ -196,7 +200,7 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="eyebrow block text-gray-700 mb-2">
                     Stance
