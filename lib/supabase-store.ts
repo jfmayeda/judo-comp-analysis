@@ -70,6 +70,8 @@ export async function createAthlete(data: {
   weightClass?: string;
   ageDivision?: string;
   techniqueIds?: string[];
+  tokuiTechniqueIds?: string[];
+  newazaTechniqueIds?: string[];
 }): Promise<Athlete> {
   const supabase = getSupabaseClient();
   
@@ -96,6 +98,8 @@ export async function createAthlete(data: {
       weight_class: data.weightClass || '',
       age_division: data.ageDivision || '',
       technique_ids: data.techniqueIds || [],
+      tokui_technique_ids: data.tokuiTechniqueIds || [],
+      newaza_technique_ids: data.newazaTechniqueIds || [],
       created_by: user.id,
     }] as never)
     .select()
@@ -132,6 +136,8 @@ export async function updateAthlete(
   if (data.weightClass !== undefined) updateData.weight_class = data.weightClass;
   if (data.ageDivision !== undefined) updateData.age_division = data.ageDivision;
   if (data.techniqueIds !== undefined) updateData.technique_ids = data.techniqueIds;
+  if (data.tokuiTechniqueIds !== undefined) updateData.tokui_technique_ids = data.tokuiTechniqueIds;
+  if (data.newazaTechniqueIds !== undefined) updateData.newaza_technique_ids = data.newazaTechniqueIds;
   
   updateData.updated_at = new Date().toISOString();
 
@@ -254,6 +260,8 @@ export async function createOpponentNote(data: {
   weightClass?: string;
   ageDivision?: string;
   techniqueIds?: string[];
+  tokuiTechniqueIds?: string[];
+  newazaTechniqueIds?: string[];
 }): Promise<OpponentNote> {
   const supabase = getSupabaseClient();
 
@@ -278,6 +286,8 @@ export async function createOpponentNote(data: {
       weight_class: data.weightClass || '',
       age_division: data.ageDivision || '',
       technique_ids: data.techniqueIds || [],
+      tokui_technique_ids: data.tokuiTechniqueIds || [],
+      newaza_technique_ids: data.newazaTechniqueIds || [],
       created_by: user.id,
     }] as never)
     .select()
@@ -978,6 +988,8 @@ function dbAthleteToAthlete(dbAthlete: {
   weight_class: string;
   age_division: string;
   technique_ids: string[];
+  tokui_technique_ids?: string[];
+  newaza_technique_ids?: string[];
   created_at: string;
   updated_at: string;
 }): Athlete {
@@ -994,6 +1006,8 @@ function dbAthleteToAthlete(dbAthlete: {
     weightClass: dbAthlete.weight_class,
     ageDivision: dbAthlete.age_division,
     techniqueIds: dbAthlete.technique_ids || [],
+    tokuiTechniqueIds: dbAthlete.tokui_technique_ids || [],
+    newazaTechniqueIds: dbAthlete.newaza_technique_ids || [],
     createdAt: dbAthlete.created_at,
     updatedAt: dbAthlete.updated_at,
   };
@@ -1014,6 +1028,8 @@ function dbOpponentNoteToOpponentNote(dbNote: {
   weight_class: string;
   age_division: string;
   technique_ids: string[];
+  tokui_technique_ids?: string[];
+  newaza_technique_ids?: string[];
   created_at: string;
 }): OpponentNote {
   return {
@@ -1031,6 +1047,8 @@ function dbOpponentNoteToOpponentNote(dbNote: {
     weightClass: dbNote.weight_class,
     ageDivision: dbNote.age_division,
     techniqueIds: dbNote.technique_ids || [],
+    tokuiTechniqueIds: dbNote.tokui_technique_ids || [],
+    newazaTechniqueIds: dbNote.newaza_technique_ids || [],
     createdAt: dbNote.created_at,
   };
 }
@@ -1078,6 +1096,8 @@ function dbOpponentToOpponent(dbOpponent: {
   age_division: string;
   notes: string;
   technique_ids: string[];
+  tokui_technique_ids?: string[];
+  newaza_technique_ids?: string[];
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -1095,6 +1115,8 @@ function dbOpponentToOpponent(dbOpponent: {
     ageDivision: dbOpponent.age_division,
     notes: dbOpponent.notes,
     techniqueIds: dbOpponent.technique_ids || [],
+    tokuiTechniqueIds: dbOpponent.tokui_technique_ids || [],
+    newazaTechniqueIds: dbOpponent.newaza_technique_ids || [],
     createdAt: dbOpponent.created_at,
     updatedAt: dbOpponent.updated_at,
     createdBy: dbOpponent.created_by,

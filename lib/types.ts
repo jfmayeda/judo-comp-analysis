@@ -24,6 +24,8 @@ export type Athlete = {
   weightClass: string;
   ageDivision: string;
   techniqueIds: string[];
+  tokuiTechniqueIds: string[];
+  newazaTechniqueIds: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -41,6 +43,8 @@ export type Opponent = {
   ageDivision: string;
   notes: string;
   techniqueIds: string[];
+  tokuiTechniqueIds: string[];
+  newazaTechniqueIds: string[];
   createdAt: string;
   updatedAt: string;
   createdBy: string;
@@ -61,6 +65,8 @@ export type OpponentNote = {
   weightClass: string;
   ageDivision: string;
   techniqueIds: string[];
+  tokuiTechniqueIds: string[];
+  newazaTechniqueIds: string[];
   createdAt: string;
 };
 

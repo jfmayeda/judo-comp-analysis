@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AthleteWithNotes, Stance, Technique } from '@/lib/types';
-import { getAllAthletesWithNotes, createAthlete, seedData, getAllTechniques } from '@/lib/supabase-store';
+import { AthleteWithNotes, Stance } from '@/lib/types';
+import { getAllAthletesWithNotes, createAthlete, seedData } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
 
@@ -14,7 +14,6 @@ export default function Home() {
   const [athletes, setAthletes] = useState<AthleteWithNotes[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [techniques, setTechniques] = useState<Technique[]>([]);
   const [formData, setFormData] = useState({
     firstName: '',
     lastInitial: '',
@@ -27,6 +26,8 @@ export default function Home() {
     weightClass: '',
     ageDivision: '',
     techniqueIds: [] as string[],
+    tokuiTechniqueIds: [] as string[],
+    newazaTechniqueIds: [] as string[],
   });
 
   useEffect(() => {
@@ -44,18 +45,8 @@ export default function Home() {
 
     if (isAllowlisted === true) {
       loadAthletes();
-      loadTechniques();
     }
   }, [user, authLoading, isAllowlisted, router]);
-
-  const loadTechniques = async () => {
-    try {
-      const data = await getAllTechniques();
-      setTechniques(data);
-    } catch (error) {
-      console.error('Error loading techniques:', error);
-    }
-  };
 
   const loadAthletes = async () => {
     try {
@@ -83,6 +74,8 @@ export default function Home() {
         weightClass: formData.weightClass,
         ageDivision: formData.ageDivision,
         techniqueIds: formData.techniqueIds,
+        tokuiTechniqueIds: formData.tokuiTechniqueIds,
+        newazaTechniqueIds: formData.newazaTechniqueIds,
       });
       setFormData({
         firstName: '',
@@ -96,6 +89,8 @@ export default function Home() {
         weightClass: '',
         ageDivision: '',
         techniqueIds: [],
+        tokuiTechniqueIds: [],
+        newazaTechniqueIds: [],
       });
       setShowAddForm(false);
       await loadAthletes();
@@ -280,25 +275,15 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Tachi-waza technique picker temporarily disabled
-              <TechniquePicker
-                techniques={techniques}
-                selectedIds={formData.tokuiTechniqueIds}
-                onChange={(ids) => setFormData({ ...formData, tokuiTechniqueIds: ids })}
-                categoryFilter="Tachi-waza"
-                label="Tokui-waza (Standing Techniques)"
-                placeholder="Search standing techniques..."
-              />
-              */}
-
               <div>
                 <TechniquePicker
-                  label="Tokui-waza (favorite techniques) - Pick from list"
-                  selectedIds={formData.techniqueIds}
-                  onChange={(techniqueIds) =>
-                    setFormData({ ...formData, techniqueIds })
+                  label="Tokui-waza (Tachi-waza) - Standing techniques"
+                  selectedIds={formData.tokuiTechniqueIds}
+                  onChange={(tokuiTechniqueIds) =>
+                    setFormData({ ...formData, tokuiTechniqueIds })
                   }
-                  placeholder="Search techniques (e.g. Seoi-nage, Uchi-mata)..."
+                  categoryFilter="Tachi-waza"
+                  placeholder="Type to search throws, footsweeps..."
                 />
               </div>
 
@@ -318,30 +303,16 @@ export default function Home() {
               </div>
 
               <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Kumi-kata (grip style)
-                </label>
-                <input
-                  type="text"
-                  value={formData.kumiKata}
-                  onChange={(e) =>
-                    setFormData({ ...formData, kumiKata: e.target.value })
+                <TechniquePicker
+                  label="Ne-waza - Ground techniques"
+                  selectedIds={formData.newazaTechniqueIds}
+                  onChange={(newazaTechniqueIds) =>
+                    setFormData({ ...formData, newazaTechniqueIds })
                   }
-                  placeholder="e.g. High lapel grip, quick hand changes"
-                  className="form-input w-full"
+                  categoryFilter="Ne-waza"
+                  placeholder="Type to search pins, chokes, armbars..."
                 />
               </div>
-
-              {/* Ne-waza technique picker temporarily disabled
-              <TechniquePicker
-                techniques={techniques}
-                selectedIds={formData.newazaTechniqueIds}
-                onChange={(ids) => setFormData({ ...formData, newazaTechniqueIds: ids })}
-                categoryFilter="Ne-waza"
-                label="Ne-waza (Ground Techniques)"
-                placeholder="Search ground techniques..."
-              />
-              */}
 
               <div>
                 <label className="eyebrow block text-gray-700 mb-2">
@@ -354,6 +325,21 @@ export default function Home() {
                     setFormData({ ...formData, neWaza: e.target.value })
                   }
                   placeholder="e.g. Strong pins, working on turtle attacks"
+                  className="form-input w-full"
+                />
+              </div>
+
+              <div>
+                <label className="eyebrow block text-gray-700 mb-2">
+                  Kumi-kata (grip style)
+                </label>
+                <input
+                  type="text"
+                  value={formData.kumiKata}
+                  onChange={(e) =>
+                    setFormData({ ...formData, kumiKata: e.target.value })
+                  }
+                  placeholder="e.g. High lapel grip, quick hand changes"
                   className="form-input w-full"
                 />
               </div>
