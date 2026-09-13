@@ -1,4 +1,4 @@
-import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent, Technique, JudoBelt, Promotion } from './types';
+import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent, Technique, JudoBelt, Promotion, Coach } from './types';
 import { getSupabaseClient } from './supabase';
 import type { Database } from './supabase';
 
@@ -141,6 +141,9 @@ export async function updateAthlete(
   if (data.techniqueIds !== undefined) updateData.technique_ids = data.techniqueIds;
   if (data.tokuiTechniqueIds !== undefined) updateData.tokui_technique_ids = data.tokuiTechniqueIds;
   if (data.newazaTechniqueIds !== undefined) updateData.newaza_technique_ids = data.newazaTechniqueIds;
+  if (data.preferredCoachId !== undefined) updateData.preferred_coach_id = data.preferredCoachId;
+  if (data.isCoachLocked !== undefined) updateData.is_coach_locked = data.isCoachLocked;
+  if (data.coachIsExclusive !== undefined) updateData.coach_is_exclusive = data.coachIsExclusive;
   
   updateData.updated_at = new Date().toISOString();
 
@@ -673,6 +676,38 @@ export async function setTournamentDayAthletes(
   }
 }
 
+export async function updateTournamentDayEntry(
+  entryId: string,
+  data: {
+    assignedCoachId?: string | null;
+    matNumber?: string | null;
+    timeWindow?: string | null;
+    noCoachNeeded?: boolean;
+  }
+): Promise<TournamentDayEntry> {
+  const supabase = getSupabaseClient();
+
+  const updateData: Record<string, unknown> = {};
+  if (data.assignedCoachId !== undefined) updateData.assigned_coach_id = data.assignedCoachId;
+  if (data.matNumber !== undefined) updateData.mat_number = data.matNumber;
+  if (data.timeWindow !== undefined) updateData.time_window = data.timeWindow;
+  if (data.noCoachNeeded !== undefined) updateData.no_coach_needed = data.noCoachNeeded;
+
+  const { data: updated, error } = await supabase
+    .from('tournament_day_entries')
+    .update(updateData as never)
+    .eq('id', entryId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating tournament day entry:', error);
+    throw new Error('Failed to update tournament day entry');
+  }
+
+  return dbTournamentDayEntryToTournamentDayEntry(updated);
+}
+
 // Opponents CRUD
 export async function getAllOpponents(): Promise<Opponent[]> {
   const supabase = getSupabaseClient();
@@ -994,6 +1029,9 @@ function dbAthleteToAthlete(dbAthlete: {
   technique_ids: string[];
   tokui_technique_ids?: string[];
   newaza_technique_ids?: string[];
+  preferred_coach_id?: string | null;
+  is_coach_locked: boolean;
+  coach_is_exclusive: boolean;
   created_at: string;
   updated_at: string;
 }): Athlete {
@@ -1013,6 +1051,9 @@ function dbAthleteToAthlete(dbAthlete: {
     techniqueIds: dbAthlete.technique_ids || [],
     tokuiTechniqueIds: dbAthlete.tokui_technique_ids || [],
     newazaTechniqueIds: dbAthlete.newaza_technique_ids || [],
+    preferredCoachId: dbAthlete.preferred_coach_id,
+    isCoachLocked: dbAthlete.is_coach_locked || false,
+    coachIsExclusive: dbAthlete.coach_is_exclusive || false,
     createdAt: dbAthlete.created_at,
     updatedAt: dbAthlete.updated_at,
   };
@@ -1078,12 +1119,20 @@ function dbTournamentDayEntryToTournamentDayEntry(dbEntry: {
   id: string;
   tournament_day_id: string;
   athlete_id: string;
+  assigned_coach_id?: string | null;
+  mat_number?: string | null;
+  time_window?: string | null;
+  no_coach_needed: boolean;
   created_at: string;
 }): TournamentDayEntry {
   return {
     id: dbEntry.id,
     tournamentDayId: dbEntry.tournament_day_id,
     athleteId: dbEntry.athlete_id,
+    assignedCoachId: dbEntry.assigned_coach_id,
+    matNumber: dbEntry.mat_number,
+    timeWindow: dbEntry.time_window,
+    noCoachNeeded: dbEntry.no_coach_needed || false,
     createdAt: dbEntry.created_at,
   };
 }
