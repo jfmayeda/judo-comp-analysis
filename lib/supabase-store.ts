@@ -1,4 +1,4 @@
-import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent } from './types';
+import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent, Technique } from './types';
 import { getSupabaseClient } from './supabase';
 import type { Database } from './supabase';
 
@@ -69,6 +69,7 @@ export async function createAthlete(data: {
   neWaza?: string;
   weightClass?: string;
   ageDivision?: string;
+  techniqueIds?: string[];
 }): Promise<Athlete> {
   const supabase = getSupabaseClient();
   
@@ -94,6 +95,7 @@ export async function createAthlete(data: {
       ne_waza: data.neWaza || '',
       weight_class: data.weightClass || '',
       age_division: data.ageDivision || '',
+      technique_ids: data.techniqueIds || [],
       created_by: user.id,
     }] as never)
     .select()
@@ -129,6 +131,7 @@ export async function updateAthlete(
   if (data.neWaza !== undefined) updateData.ne_waza = data.neWaza;
   if (data.weightClass !== undefined) updateData.weight_class = data.weightClass;
   if (data.ageDivision !== undefined) updateData.age_division = data.ageDivision;
+  if (data.techniqueIds !== undefined) updateData.technique_ids = data.techniqueIds;
   
   updateData.updated_at = new Date().toISOString();
 
@@ -250,6 +253,7 @@ export async function createOpponentNote(data: {
   commonCounters?: string;
   weightClass?: string;
   ageDivision?: string;
+  techniqueIds?: string[];
 }): Promise<OpponentNote> {
   const supabase = getSupabaseClient();
 
@@ -273,6 +277,7 @@ export async function createOpponentNote(data: {
       common_counters: data.commonCounters || '',
       weight_class: data.weightClass || '',
       age_division: data.ageDivision || '',
+      technique_ids: data.techniqueIds || [],
       created_by: user.id,
     }] as never)
     .select()
@@ -304,6 +309,7 @@ export async function updateOpponentNote(
   if (data.commonCounters !== undefined) updateData.common_counters = data.commonCounters;
   if (data.weightClass !== undefined) updateData.weight_class = data.weightClass;
   if (data.ageDivision !== undefined) updateData.age_division = data.ageDivision;
+  if (data.techniqueIds !== undefined) updateData.technique_ids = data.techniqueIds;
 
   const { data: updated, error } = await supabase
     .from('opponent_notes')
@@ -718,6 +724,7 @@ export async function createOpponent(data: {
   weightClass?: string;
   ageDivision?: string;
   notes?: string;
+  techniqueIds?: string[];
 }): Promise<Opponent> {
   const supabase = getSupabaseClient();
   
@@ -743,6 +750,7 @@ export async function createOpponent(data: {
       weight_class: data.weightClass || '',
       age_division: data.ageDivision || '',
       notes: data.notes || '',
+      technique_ids: data.techniqueIds || [],
       created_by: user.id,
     }] as never)
     .select()
@@ -778,6 +786,7 @@ export async function updateOpponent(
   if (data.weightClass !== undefined) updateData.weight_class = data.weightClass;
   if (data.ageDivision !== undefined) updateData.age_division = data.ageDivision;
   if (data.notes !== undefined) updateData.notes = data.notes;
+  if (data.techniqueIds !== undefined) updateData.technique_ids = data.techniqueIds;
   
   updateData.updated_at = new Date().toISOString();
 
@@ -810,6 +819,95 @@ export async function deleteOpponent(id: string): Promise<void> {
   }
 }
 
+// Techniques CRUD
+export async function getAllTechniques(): Promise<Technique[]> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('techniques')
+    .select('*')
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching techniques:', error);
+    throw new Error('Failed to fetch techniques');
+  }
+
+  return (data || []).map(dbTechniqueToTechnique);
+}
+
+export async function getTechniquesByIds(ids: string[]): Promise<Technique[]> {
+  if (ids.length === 0) return [];
+  
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('techniques')
+    .select('*')
+    .in('id', ids)
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching techniques by ids:', error);
+    return [];
+  }
+
+  return (data || []).map(dbTechniqueToTechnique);
+}
+
+export async function getTechniquesByCategory(category: 'Tachi-waza' | 'Ne-waza'): Promise<Technique[]> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('techniques')
+    .select('*')
+    .eq('category', category)
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching techniques by category:', error);
+    return [];
+  }
+
+  return (data || []).map(dbTechniqueToTechnique);
+}
+
+export async function getTechniquesBySubcategory(subcategory: string): Promise<Technique[]> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('techniques')
+    .select('*')
+    .eq('subcategory', subcategory)
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching techniques by subcategory:', error);
+    return [];
+  }
+
+  return (data || []).map(dbTechniqueToTechnique);
+}
+
+export async function searchTechniques(query: string): Promise<Technique[]> {
+  const supabase = getSupabaseClient();
+  
+  const searchTerm = query.toLowerCase();
+  
+  const { data, error } = await supabase
+    .from('techniques')
+    .select('*')
+    .ilike('name', `%${searchTerm}%`)
+    .order('display_order', { ascending: true });
+
+  if (error) {
+    console.error('Error searching techniques:', error);
+    return [];
+  }
+
+  return (data || []).map(dbTechniqueToTechnique);
+}
+
 // Helper functions to convert between DB schema and app types
 function dbAthleteToAthlete(dbAthlete: {
   id: string;
@@ -823,6 +921,7 @@ function dbAthleteToAthlete(dbAthlete: {
   ne_waza: string;
   weight_class: string;
   age_division: string;
+  technique_ids: string[];
   created_at: string;
   updated_at: string;
 }): Athlete {
@@ -838,6 +937,7 @@ function dbAthleteToAthlete(dbAthlete: {
     neWaza: dbAthlete.ne_waza,
     weightClass: dbAthlete.weight_class,
     ageDivision: dbAthlete.age_division,
+    techniqueIds: dbAthlete.technique_ids || [],
     createdAt: dbAthlete.created_at,
     updatedAt: dbAthlete.updated_at,
   };
@@ -857,6 +957,7 @@ function dbOpponentNoteToOpponentNote(dbNote: {
   common_counters: string;
   weight_class: string;
   age_division: string;
+  technique_ids: string[];
   created_at: string;
 }): OpponentNote {
   return {
@@ -873,6 +974,7 @@ function dbOpponentNoteToOpponentNote(dbNote: {
     commonCounters: dbNote.common_counters,
     weightClass: dbNote.weight_class,
     ageDivision: dbNote.age_division,
+    techniqueIds: dbNote.technique_ids || [],
     createdAt: dbNote.created_at,
   };
 }
@@ -919,6 +1021,7 @@ function dbOpponentToOpponent(dbOpponent: {
   weight_class: string;
   age_division: string;
   notes: string;
+  technique_ids: string[];
   created_at: string;
   updated_at: string;
   created_by: string;
@@ -935,6 +1038,7 @@ function dbOpponentToOpponent(dbOpponent: {
     weightClass: dbOpponent.weight_class,
     ageDivision: dbOpponent.age_division,
     notes: dbOpponent.notes,
+    techniqueIds: dbOpponent.technique_ids || [],
     createdAt: dbOpponent.created_at,
     updatedAt: dbOpponent.updated_at,
     createdBy: dbOpponent.created_by,
@@ -1013,4 +1117,22 @@ export async function removeCoach(coachId: string): Promise<void> {
     console.error('Error removing coach:', error);
     throw new Error('Failed to remove coach');
   }
+}
+
+function dbTechniqueToTechnique(dbTechnique: {
+  id: string;
+  name: string;
+  category: 'Tachi-waza' | 'Ne-waza';
+  subcategory: string;
+  display_order: number;
+  created_at: string;
+}): Technique {
+  return {
+    id: dbTechnique.id,
+    name: dbTechnique.name,
+    category: dbTechnique.category,
+    subcategory: dbTechnique.subcategory,
+    displayOrder: dbTechnique.display_order,
+    createdAt: dbTechnique.created_at,
+  };
 }

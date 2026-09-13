@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { Opponent, Stance } from '@/lib/types';
 import { getAllOpponents, createOpponent, updateOpponent, deleteOpponent, searchOpponents } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
+import TechniquePicker from '@/components/TechniquePicker';
+import TechniqueDisplay from '@/components/TechniqueDisplay';
 
 export default function OpponentsPage() {
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function OpponentsPage() {
     weightClass: '',
     ageDivision: '',
     notes: '',
+    techniqueIds: [] as string[],
   });
 
   useEffect(() => {
@@ -85,6 +88,7 @@ export default function OpponentsPage() {
       weightClass: '',
       ageDivision: '',
       notes: '',
+      techniqueIds: [],
     });
     setEditingOpponent(null);
     setShowAddForm(false);
@@ -105,6 +109,7 @@ export default function OpponentsPage() {
           weightClass: formData.weightClass,
           ageDivision: formData.ageDivision,
           notes: formData.notes,
+          techniqueIds: formData.techniqueIds,
         });
       } else {
         await createOpponent({
@@ -118,6 +123,7 @@ export default function OpponentsPage() {
           weightClass: formData.weightClass,
           ageDivision: formData.ageDivision,
           notes: formData.notes,
+          techniqueIds: formData.techniqueIds,
         });
       }
       resetForm();
@@ -140,6 +146,7 @@ export default function OpponentsPage() {
       weightClass: opponent.weightClass,
       ageDivision: opponent.ageDivision,
       notes: opponent.notes,
+      techniqueIds: opponent.techniqueIds || [],
     });
     setEditingOpponent(opponent);
     setShowAddForm(true);
@@ -358,6 +365,17 @@ export default function OpponentsPage() {
               </div>
 
               <div>
+                <TechniquePicker
+                  label="Tokui-waza (favorite techniques)"
+                  selectedIds={formData.techniqueIds}
+                  onChange={(techniqueIds) =>
+                    setFormData({ ...formData, techniqueIds })
+                  }
+                  placeholder="Search techniques..."
+                />
+              </div>
+
+              <div>
                 <label className="eyebrow block text-gray-700 mb-2">
                   Common Counters
                 </label>
@@ -469,6 +487,11 @@ export default function OpponentsPage() {
                       {opponent.ageDivision}
                     </p>
                   )}
+
+                  <TechniqueDisplay
+                    techniqueIds={opponent.techniqueIds}
+                    label="Tokui-waza"
+                  />
 
                   {opponent.kumiKata && (
                     <p>
