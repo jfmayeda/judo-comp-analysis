@@ -2,6 +2,184 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================================
+   SILICON VALLEY JUDO - DESIGN TOKENS
+   Source: svjudo.com brand specification
+   ============================================================================ */
+
+@layer base {
+  :root {
+    /* COLORS */
+    --color-brand-blue: #005e9b;
+    --color-brand-blue-hover: #00497a;
+    
+    /* Navy Field (signature radial gradient) */
+    --color-navy-1: #163e5d;
+    --color-navy-2: #0f273a;
+    --color-navy-3: #0b1e2e;
+    
+    /* Surfaces */
+    --color-paper: #f5f7f9;
+    --color-gray-100: #e8ecef;
+    --color-white: #ffffff;
+    
+    /* Tatami washes (optional quiet backgrounds) */
+    --color-tatami-red: #ffb1a4;
+    --color-tatami-natural: #e6e7d9;
+    --color-tatami-gray: #d1c6c2;
+    
+    /* TYPOGRAPHY */
+    --font-logo: 'Michroma', sans-serif;
+    --font-heading: 'Archivo', sans-serif;
+    --font-body: 'Source Sans 3', sans-serif;
+    
+    /* TYPE SCALE */
+    --text-body-size: 17px;
+    --text-body-line: 1.62;
+    --text-eyebrow-size: 13px;
+    
+    /* LETTER SPACING */
+    --tracking-heading: 0.04em;
+    --tracking-eyebrow: 0.22em;
+    --tracking-button: 0.12em;
+    
+    /* SURFACES & SHADOWS */
+    --radius-card: 8px;
+    --radius-button: 999px;
+    --border-card: 1px solid var(--color-gray-100);
+    --shadow-card: 0 1px 2px rgba(11, 30, 46, 0.06), 0 8px 24px rgba(11, 30, 46, 0.08);
+    --shadow-card-hover: 0 2px 4px rgba(11, 30, 46, 0.08), 0 12px 32px rgba(11, 30, 46, 0.12);
+    
+    /* MOTION */
+    --duration-fast: 120ms;
+    --duration-base: 200ms;
+    --duration-slow: 420ms;
+    --easing: cubic-bezier(0.2, 0.6, 0.2, 1);
+    
+    /* LAYOUT */
+    --header-height: 76px;
+  }
+}
+
+@layer base {
+  html {
+    font-size: var(--text-body-size);
+    line-height: var(--text-body-line);
+  }
+  
+  body {
+    font-family: var(--font-body);
+    background-color: var(--color-paper);
+    color: #1a1a1a;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-heading);
+  }
+}
+
+/* UTILITY CLASSES */
+@layer components {
+  /* Typography */
+  .eyebrow {
+    font-family: var(--font-heading);
+    font-size: var(--text-eyebrow-size);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-eyebrow);
+    color: var(--color-brand-blue);
+  }
+  
+  .wordmark {
+    font-family: var(--font-logo);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  
+  /* Navy Field (radial gradient background) */
+  .navy-field {
+    background: radial-gradient(circle at 50% 0%, var(--color-navy-1), var(--color-navy-2) 60%, var(--color-navy-3));
+    color: var(--color-white);
+  }
+  
+  /* Cards */
+  .card {
+    background: var(--color-white);
+    border-radius: var(--radius-card);
+    border: var(--border-card);
+    box-shadow: var(--shadow-card);
+    transition: all var(--duration-base) var(--easing);
+  }
+  
+  .card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+  
+  /* Buttons */
+  .btn-primary {
+    background: var(--color-brand-blue);
+    color: var(--color-white);
+    padding: 0.75rem 2rem;
+    border-radius: var(--radius-button);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-button);
+    transition: all var(--duration-base) var(--easing);
+    border: none;
+    cursor: pointer;
+  }
+  
+  .btn-primary:hover {
+    background: var(--color-brand-blue-hover);
+    transform: translateY(-1px);
+  }
+  
+  .btn-primary:active {
+    transform: translateY(1px);
+  }
+  
+  .btn-secondary {
+    background: transparent;
+    color: var(--color-navy-2);
+    padding: calc(0.75rem - 2px) calc(2rem - 2px);
+    border: 2px solid var(--color-navy-2);
+    border-radius: var(--radius-button);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-button);
+    transition: all var(--duration-base) var(--easing);
+    cursor: pointer;
+  }
+  
+  .btn-secondary:hover {
+    background: var(--color-navy-2);
+    color: var(--color-white);
+    transform: translateY(-1px);
+  }
+  
+  .btn-secondary:active {
+    transform: translateY(1px);
+  }
+  
+  /* Header */
+  .app-header {
+    height: var(--header-height);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--color-navy-2);
+    color: var(--color-white);
+    box-shadow: 0 2px 8px rgba(11, 30, 46, 0.15);
+  }
+}
+
+/* PRINT STYLES */
 @media print {
   body {
     background: white;
@@ -17,5 +195,18 @@
   
   .print-section {
     break-inside: avoid;
+  }
+  
+  @page {
+    margin: 0.75in;
+  }
+  
+  /* Use body fonts in print */
+  * {
+    font-family: var(--font-body) !important;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading) !important;
   }
 }

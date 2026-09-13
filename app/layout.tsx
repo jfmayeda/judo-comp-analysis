@@ -1,9 +1,31 @@
 import type { Metadata } from 'next';
-import './globals.css';
+import { Michroma, Archivo, Source_Sans_3 } from 'next/font/google';
 import { AuthProvider } from '@/lib/auth-context';
+import './globals.css';
+
+const michroma = Michroma({
+  weight: '400',
+  subsets: ['latin'],
+  variable: '--font-logo',
+  display: 'swap',
+});
+
+const archivo = Archivo({
+  weight: ['600', '700'],
+  subsets: ['latin'],
+  variable: '--font-heading',
+  display: 'swap',
+});
+
+const sourceSans3 = Source_Sans_3({
+  weight: ['400', '600'],
+  subsets: ['latin'],
+  variable: '--font-body',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: 'SV Judo - Competitor Analysis',
+  title: 'Silicon Valley Judo - Competitor Analysis',
   description: 'Coach scouting notes and tournament-day profiles',
 };
 
@@ -13,8 +35,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="antialiased bg-gray-50">
+    <html lang="en" className={`${michroma.variable} ${archivo.variable} ${sourceSans3.variable}`}>
+      <body className="antialiased">
         <AuthProvider>
           {children}
         </AuthProvider>
