@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   title: 'Silicon Valley Judo - Competitor Analysis',
   description: 'Coach scouting notes and tournament-day profiles',
   icons: {
-    icon: '/svj-logo-white.png',
+    icon: '/favicon.ico',
   },
 };
 
