@@ -16,9 +16,27 @@ export type Athlete = {
   updatedAt: string;
 };
 
+export type Opponent = {
+  id: string;
+  firstName: string;
+  lastInitial: string;
+  club: string;
+  stance: Stance;
+  kumiKata: string;
+  neWaza: string;
+  commonCounters: string;
+  weightClass: string;
+  ageDivision: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+};
+
 export type OpponentNote = {
   id: string;
   athleteId: string;
+  opponentId: string | null;
   opponentLabel: string;
   club: string | null;
   notes: string;
