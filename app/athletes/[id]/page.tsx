@@ -177,7 +177,7 @@ export default function AthletePage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="app-header flex items-center justify-between px-8 no-print">
+      <header className="app-header flex items-center justify-between px-4 md:px-8 no-print">
         <Link href="/" className="flex items-center gap-3 text-white hover:opacity-80 transition-opacity">
           <span className="text-xl">←</span>
           <img 

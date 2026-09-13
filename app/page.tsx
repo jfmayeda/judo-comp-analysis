@@ -115,7 +115,7 @@ export default function Home() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="app-header flex items-center justify-between px-8">
+      <header className="app-header flex flex-wrap items-center justify-between px-4 md:px-8 gap-3">
         <div className="flex items-center gap-4">
           <img 
             src="/svj-logo-white.png" 
@@ -124,7 +124,13 @@ export default function Home() {
           />
           <p className="eyebrow text-white text-xs">COMPETITOR ANALYSIS</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/opponents"
+            className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-sm"
+          >
+            Opponents
+          </Link>
           <Link
             href="/tournament-day"
             className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-sm"
