@@ -7,7 +7,6 @@ import { AthleteWithNotes, Stance, Technique } from '@/lib/types';
 import { getAllAthletesWithNotes, createAthlete, seedData, getAllTechniques } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
-import TechniquePicker from '@/app/components/TechniquePicker';
 
 export default function Home() {
   const router = useRouter();
