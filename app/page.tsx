@@ -27,8 +27,6 @@ export default function Home() {
     weightClass: '',
     ageDivision: '',
     techniqueIds: [] as string[],
-    tokuiTechniqueIds: [] as string[],
-    newazaTechniqueIds: [] as string[],
   });
 
   useEffect(() => {
@@ -85,8 +83,6 @@ export default function Home() {
         weightClass: formData.weightClass,
         ageDivision: formData.ageDivision,
         techniqueIds: formData.techniqueIds,
-        tokuiTechniqueIds: formData.tokuiTechniqueIds,
-        newazaTechniqueIds: formData.newazaTechniqueIds,
       });
       setFormData({
         firstName: '',
@@ -100,8 +96,6 @@ export default function Home() {
         weightClass: '',
         ageDivision: '',
         techniqueIds: [],
-        tokuiTechniqueIds: [],
-        newazaTechniqueIds: [],
       });
       setShowAddForm(false);
       await loadAthletes();
@@ -286,6 +280,7 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Tachi-waza technique picker temporarily disabled
               <TechniquePicker
                 techniques={techniques}
                 selectedIds={formData.tokuiTechniqueIds}
@@ -294,6 +289,7 @@ export default function Home() {
                 label="Tokui-waza (Standing Techniques)"
                 placeholder="Search standing techniques..."
               />
+              */}
 
               <div>
                 <TechniquePicker
@@ -308,7 +304,6 @@ export default function Home() {
 
               <div>
                 <label className="eyebrow block text-gray-700 mb-2">
-                  Tokui-waza (free text / additional notes)
                   Tokui-waza Notes (optional)
                 </label>
                 <input
@@ -319,7 +314,6 @@ export default function Home() {
                   }
                   placeholder="e.g., Strong right-sided entries"
                   className="form-input w-full"
-                  placeholder="Optional: add custom notes about techniques"
                 />
               </div>
 
@@ -338,6 +332,7 @@ export default function Home() {
                 />
               </div>
 
+              {/* Ne-waza technique picker temporarily disabled
               <TechniquePicker
                 techniques={techniques}
                 selectedIds={formData.newazaTechniqueIds}
@@ -346,6 +341,7 @@ export default function Home() {
                 label="Ne-waza (Ground Techniques)"
                 placeholder="Search ground techniques..."
               />
+              */}
 
               <div>
                 <label className="eyebrow block text-gray-700 mb-2">

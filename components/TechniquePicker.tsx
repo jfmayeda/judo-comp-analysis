@@ -67,14 +67,20 @@ export default function TechniquePicker({
   };
 
   const filteredTechniques = useMemo(() => {
-    if (!searchQuery) return techniques;
+    if (!searchQuery.trim()) return [];
+    
+    let filtered = techniques;
+    
+    if (categoryFilter) {
+      filtered = filtered.filter(t => t.category === categoryFilter);
+    }
     
     const query = searchQuery.toLowerCase();
-    return techniques.filter(t => 
+    return filtered.filter(t => 
       t.name.toLowerCase().includes(query) ||
       t.subcategory.toLowerCase().includes(query)
     );
-  }, [techniques, searchQuery]);
+  }, [techniques, searchQuery, categoryFilter]);
 
   const groupedTechniques = useMemo(() => {
     const groups: Record<string, Record<string, Technique[]>> = {

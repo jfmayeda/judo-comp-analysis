@@ -825,7 +825,7 @@ export async function getAllTechniques(): Promise<Technique[]> {
   
   const { data, error } = await supabase
     .from('techniques')
-    .select('*')
+    .select('id, name, category, subcategory, display_order, is_custom, created_by, created_at')
     .order('display_order', { ascending: true });
 
   if (error) {
@@ -906,6 +906,62 @@ export async function searchTechniques(query: string): Promise<Technique[]> {
   }
 
   return (data || []).map(dbTechniqueToTechnique);
+}
+
+export async function createTechnique(data: {
+  name: string;
+  category: 'Tachi-waza' | 'Ne-waza';
+  subcategory?: string;
+}): Promise<Technique> {
+  const supabase = getSupabaseClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User must be authenticated to create techniques');
+  }
+
+  const { data: maxOrder } = await supabase
+    .from('techniques')
+    .select('display_order')
+    .order('display_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nextOrder = ((maxOrder as { display_order: number } | null)?.display_order || 0) + 1;
+
+  const { data: newTechnique, error } = await supabase
+    .from('techniques')
+    .insert([{
+      name: data.name,
+      category: data.category,
+      subcategory: data.subcategory || 'Custom',
+      display_order: nextOrder,
+      is_custom: true,
+      created_by: user.id,
+    }] as never)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating technique:', error);
+    throw new Error('Failed to create technique');
+  }
+
+  return dbTechniqueToTechnique(newTechnique);
+}
+
+export async function deleteTechnique(id: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  const { error } = await supabase
+    .from('techniques')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting technique:', error);
+    throw new Error('Failed to delete technique');
+  }
 }
 
 // Helper functions to convert between DB schema and app types
@@ -1125,6 +1181,8 @@ function dbTechniqueToTechnique(dbTechnique: {
   category: 'Tachi-waza' | 'Ne-waza';
   subcategory: string;
   display_order: number;
+  is_custom: boolean;
+  created_by?: string | null;
   created_at: string;
 }): Technique {
   return {
@@ -1133,6 +1191,8 @@ function dbTechniqueToTechnique(dbTechnique: {
     category: dbTechnique.category,
     subcategory: dbTechnique.subcategory,
     displayOrder: dbTechnique.display_order,
+    isCustom: dbTechnique.is_custom,
+    createdBy: dbTechnique.created_by,
     createdAt: dbTechnique.created_at,
   };
 }
