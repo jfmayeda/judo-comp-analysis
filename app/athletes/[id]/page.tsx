@@ -3,17 +3,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { AthleteWithNotes, Stance } from '@/lib/types';
+import { AthleteWithNotes, Stance, Technique } from '@/lib/types';
 import {
   getAthleteWithNotes,
   updateAthlete,
   deleteAthlete,
   createOpponentNote,
   deleteOpponentNote,
+  getAllTechniques,
 } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
 import TechniqueDisplay from '@/components/TechniqueDisplay';
+import TechniquePicker from '@/app/components/TechniquePicker';
 
 export default function AthletePage() {
   const params = useParams();
@@ -23,6 +25,7 @@ export default function AthletePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
+  const [techniques, setTechniques] = useState<Technique[]>([]);
   const [formData, setFormData] = useState({
     firstName: '',
     lastInitial: '',
@@ -35,6 +38,8 @@ export default function AthletePage() {
     weightClass: '',
     ageDivision: '',
     techniqueIds: [] as string[],
+    tokuiTechniqueIds: [] as string[],
+    newazaTechniqueIds: [] as string[],
   });
   const [noteFormData, setNoteFormData] = useState({
     opponentLabel: '',
@@ -48,6 +53,8 @@ export default function AthletePage() {
     weightClass: '',
     ageDivision: '',
     techniqueIds: [] as string[],
+    tokuiTechniqueIds: [] as string[],
+    newazaTechniqueIds: [] as string[],
   });
 
   useEffect(() => {
@@ -65,8 +72,18 @@ export default function AthletePage() {
 
     if (isAllowlisted === true) {
       loadAthlete();
+      loadTechniques();
     }
   }, [user, authLoading, isAllowlisted, router]);
+
+  const loadTechniques = async () => {
+    try {
+      const data = await getAllTechniques();
+      setTechniques(data);
+    } catch (error) {
+      console.error('Error loading techniques:', error);
+    }
+  };
 
   const loadAthlete = async () => {
     try {
@@ -86,6 +103,8 @@ export default function AthletePage() {
           weightClass: data.weightClass,
           ageDivision: data.ageDivision,
           techniqueIds: data.techniqueIds || [],
+          tokuiTechniqueIds: data.tokuiTechniqueIds || [],
+          newazaTechniqueIds: data.newazaTechniqueIds || [],
         });
       }
     } catch (error) {
@@ -140,6 +159,8 @@ export default function AthletePage() {
         weightClass: noteFormData.weightClass,
         ageDivision: noteFormData.ageDivision,
         techniqueIds: noteFormData.techniqueIds,
+        tokuiTechniqueIds: noteFormData.tokuiTechniqueIds,
+        newazaTechniqueIds: noteFormData.newazaTechniqueIds,
       });
       setNoteFormData({
         opponentLabel: '',
@@ -153,6 +174,8 @@ export default function AthletePage() {
         weightClass: '',
         ageDivision: '',
         techniqueIds: [],
+        tokuiTechniqueIds: [],
+        newazaTechniqueIds: [],
       });
       setShowAddNote(false);
       await loadAthlete();
@@ -235,85 +258,90 @@ export default function AthletePage() {
           </div>
 
           {editing ? (
-            <form onSubmit={handleUpdate} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    First Name
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, firstName: e.target.value })
-                    }
-                    className="form-input w-full"
-                  />
+            <form onSubmit={handleUpdate} className="space-y-8">
+              {/* Basic Info */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-200">Basic Information</h3>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="eyebrow block text-gray-700 mb-2">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.firstName}
+                      onChange={(e) =>
+                        setFormData({ ...formData, firstName: e.target.value })
+                      }
+                      className="form-input w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="eyebrow block text-gray-700 mb-2">
+                      Last Initial
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      maxLength={1}
+                      value={formData.lastInitial}
+                      onChange={(e) =>
+                        setFormData({ ...formData, lastInitial: e.target.value.toUpperCase() })
+                      }
+                      className="form-input w-full"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Last Initial
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={1}
-                    value={formData.lastInitial}
-                    onChange={(e) =>
-                      setFormData({ ...formData, lastInitial: e.target.value.toUpperCase() })
-                    }
-                    className="form-input w-full"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Stance
-                  </label>
-                  <select
-                    value={formData.stance || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, stance: e.target.value as Stance | '' })
-                    }
-                    className="form-input w-full"
-                  >
-                    <option value="">Not set</option>
-                    <option value="left">Left</option>
-                    <option value="right">Right</option>
-                    <option value="unknown">Unknown</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Weight Class
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.weightClass}
-                    onChange={(e) =>
-                      setFormData({ ...formData, weightClass: e.target.value })
-                    }
-                    className="form-input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Age Division
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ageDivision}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ageDivision: e.target.value })
-                    }
-                    className="form-input w-full"
-                  />
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="eyebrow block text-gray-700 mb-2">
+                      Stance
+                    </label>
+                    <select
+                      value={formData.stance || ''}
+                      onChange={(e) =>
+                        setFormData({ ...formData, stance: e.target.value as Stance | '' })
+                      }
+                      className="form-input w-full"
+                    >
+                      <option value="">Not set</option>
+                      <option value="left">Left</option>
+                      <option value="right">Right</option>
+                      <option value="unknown">Unknown</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="eyebrow block text-gray-700 mb-2">
+                      Weight Class
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.weightClass}
+                      onChange={(e) =>
+                        setFormData({ ...formData, weightClass: e.target.value })
+                      }
+                      className="form-input w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="eyebrow block text-gray-700 mb-2">
+                      Age Division
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.ageDivision}
+                      onChange={(e) =>
+                        setFormData({ ...formData, ageDivision: e.target.value })
+                      }
+                      className="form-input w-full"
+                    />
+                  </div>
                 </div>
               </div>
 
+              {/* Tokui-waza (Tachi-waza) */}
               <div>
                 <TechniquePicker
                   label="Tokui-waza (favorite techniques) - Pick from list"
@@ -337,12 +365,62 @@ export default function AthletePage() {
                   }
                   className="form-input w-full"
                   placeholder="Optional: add custom notes"
+                <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-200">Tokui-waza (Standing Techniques)</h3>
+                <TechniquePicker
+                  techniques={techniques}
+                  selectedIds={formData.tokuiTechniqueIds}
+                  onChange={(ids) => setFormData({ ...formData, tokuiTechniqueIds: ids })}
+                  categoryFilter="Tachi-waza"
+                  label="Favorite Throws & Footsweeps"
+                  placeholder="Search standing techniques..."
                 />
+                <div className="mt-4">
+                  <label className="eyebrow block text-gray-700 mb-2">
+                    Notes (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tokuiWaza}
+                    onChange={(e) =>
+                      setFormData({ ...formData, tokuiWaza: e.target.value })
+                    }
+                    placeholder="e.g., Strong right-sided entries"
+                    className="form-input w-full"
+                  />
+                </div>
               </div>
 
+              {/* Ne-waza */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-200">Ne-waza (Ground Techniques)</h3>
+                <TechniquePicker
+                  techniques={techniques}
+                  selectedIds={formData.newazaTechniqueIds}
+                  onChange={(ids) => setFormData({ ...formData, newazaTechniqueIds: ids })}
+                  categoryFilter="Ne-waza"
+                  label="Pins, Chokes & Armbars"
+                  placeholder="Search ground techniques..."
+                />
+                <div className="mt-4">
+                  <label className="eyebrow block text-gray-700 mb-2">
+                    Notes (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.neWaza}
+                    onChange={(e) =>
+                      setFormData({ ...formData, neWaza: e.target.value })
+                    }
+                    placeholder="e.g., Strong top game, working on escapes"
+                    className="form-input w-full"
+                  />
+                </div>
+              </div>
+
+              {/* Kumi-kata */}
               <div>
                 <label className="eyebrow block text-gray-700 mb-2">
-                  Kumi-kata (grip style)
+                  Kumi-kata (Grip Style)
                 </label>
                 <input
                   type="text"
@@ -350,42 +428,28 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, kumiKata: e.target.value })
                   }
+                  placeholder="e.g., High lapel grip, quick hand changes"
                   className="form-input w-full"
                 />
               </div>
 
+              {/* Development Areas */}
               <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Ne-waza (ground game)
-                </label>
-                <input
-                  type="text"
-                  value={formData.neWaza}
-                  onChange={(e) =>
-                    setFormData({ ...formData, neWaza: e.target.value })
-                  }
-                  className="form-input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Development Areas
-                </label>
+                <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-200">Development Areas</h3>
                 <input
                   type="text"
                   value={formData.developmentAreas}
                   onChange={(e) =>
                     setFormData({ ...formData, developmentAreas: e.target.value })
                   }
+                  placeholder="e.g., Left-side attacks, tournament cardio"
                   className="form-input w-full"
                 />
               </div>
 
+              {/* General Notes */}
               <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Notes
-                </label>
+                <h3 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-200">General Notes</h3>
                 <textarea
                   value={formData.notes}
                   onChange={(e) =>
@@ -393,6 +457,7 @@ export default function AthletePage() {
                   }
                   rows={4}
                   className="form-input w-full"
+                  placeholder="Additional notes about this athlete..."
                 />
               </div>
 
@@ -404,7 +469,8 @@ export default function AthletePage() {
               </button>
             </form>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-6">
+              {/* Basic Info Display */}
               <div className="grid grid-cols-3 gap-4 pb-4 border-b border-gray-200">
                 {athlete.stance && (
                   <div>
@@ -436,6 +502,43 @@ export default function AthletePage() {
                 <div>
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Tokui-waza (Notes)</h3>
                   <p className="text-gray-900">{athlete.tokuiWaza}</p>
+              {/* Tokui-waza */}
+              {(athlete.tokuiTechniqueIds.length > 0 || athlete.tokuiWaza) && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Tokui-waza (Standing)</h3>
+                  {athlete.tokuiTechniqueIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {athlete.tokuiTechniqueIds.map((id) => {
+                        const tech = techniques.find(t => t.id === id);
+                        return tech ? (
+                          <span key={id} className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded">
+                            {tech.name}
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                  {athlete.tokuiWaza && <p className="text-gray-900">{athlete.tokuiWaza}</p>}
+                </div>
+              )}
+
+              {/* Ne-waza */}
+              {(athlete.newazaTechniqueIds.length > 0 || athlete.neWaza) && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Ne-waza (Ground)</h3>
+                  {athlete.newazaTechniqueIds.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {athlete.newazaTechniqueIds.map((id) => {
+                        const tech = techniques.find(t => t.id === id);
+                        return tech ? (
+                          <span key={id} className="inline-block px-2 py-1 bg-green-100 text-green-800 text-sm rounded">
+                            {tech.name}
+                          </span>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                  {athlete.neWaza && <p className="text-gray-900">{athlete.neWaza}</p>}
                 </div>
               )}
 
@@ -443,13 +546,6 @@ export default function AthletePage() {
                 <div>
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Kumi-kata</h3>
                   <p className="text-gray-900">{athlete.kumiKata}</p>
-                </div>
-              )}
-
-              {athlete.neWaza && (
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Ne-waza</h3>
-                  <p className="text-gray-900">{athlete.neWaza}</p>
                 </div>
               )}
 
@@ -588,9 +684,25 @@ export default function AthletePage() {
                 />
               </div>
 
+              <TechniquePicker
+                techniques={techniques}
+                selectedIds={noteFormData.tokuiTechniqueIds}
+                onChange={(ids) => setNoteFormData({ ...noteFormData, tokuiTechniqueIds: ids })}
+                label="Opponent's Tokui-waza (optional)"
+                placeholder="Search opponent's favorite techniques..."
+              />
+
+              <TechniquePicker
+                techniques={techniques}
+                selectedIds={noteFormData.newazaTechniqueIds}
+                onChange={(ids) => setNoteFormData({ ...noteFormData, newazaTechniqueIds: ids })}
+                label="Opponent's Ne-waza (optional)"
+                placeholder="Search opponent's ground techniques..."
+              />
+
               <div>
                 <label className="eyebrow block text-gray-700 mb-2">
-                  Ne-waza (ground game)
+                  Ne-waza Notes (optional)
                 </label>
                 <input
                   type="text"
@@ -598,6 +710,7 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setNoteFormData({ ...noteFormData, neWaza: e.target.value })
                   }
+                  placeholder="e.g., Strong pins, avoid bottom position"
                   className="form-input w-full"
                 />
               </div>
