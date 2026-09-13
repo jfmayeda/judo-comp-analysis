@@ -88,31 +88,36 @@ function LoginForm() {
     <div className="min-h-screen navy-field flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
         {/* Logo Wordmark */}
-        <div className="text-center mb-12">
-          <h1 className="wordmark text-3xl mb-3 tracking-wide">SILICON VALLEY JUDO</h1>
+        <div className="text-center mb-8">
+          <h1 className="wordmark text-3xl mb-2 tracking-wide">SILICON VALLEY JUDO</h1>
           <p className="eyebrow text-white">Competitor Analysis</p>
         </div>
 
         {/* Login Card */}
         <div className="card p-8">
-          <h2 className="text-2xl mb-6 text-center text-gray-900">COACH LOGIN</h2>
+          <div className="mb-6">
+            <h2 className="text-xl mb-2 text-center text-gray-900 font-bold uppercase tracking-wide">Coach Login</h2>
+            <p className="text-center text-gray-600 text-sm">
+              Access athlete profiles and tournament-day scouting notes
+            </p>
+          </div>
 
           {error && (
-            <div className="mb-4 p-3 rounded text-sm bg-red-50 text-red-800">
+            <div className="mb-4 p-3 rounded text-sm bg-red-50 text-red-800 border border-red-200">
               {error}
             </div>
           )}
 
           {message && (
-            <div className="mb-4 p-3 rounded text-sm bg-blue-50 text-blue-800">
+            <div className="mb-4 p-3 rounded text-sm bg-blue-50 text-blue-800 border border-blue-200">
               {message}
             </div>
           )}
 
           {!useMagicLink ? (
-            <form onSubmit={handlePasswordLogin} className="space-y-4">
+            <form onSubmit={handlePasswordLogin} className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Email
                 </label>
                 <input
@@ -120,12 +125,12 @@ function LoginForm() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                  placeholder="coach@example.com"
+                  className="form-input w-full"
+                  placeholder="coach@svjudo.com"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Password
                 </label>
                 <input
@@ -133,8 +138,8 @@ function LoginForm() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                  placeholder="Enter your password"
+                  className="form-input w-full"
+                  placeholder="••••••••"
                 />
               </div>
               <button
@@ -142,13 +147,13 @@ function LoginForm() {
                 disabled={loading}
                 className="btn-primary w-full"
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </form>
           ) : (
-            <form onSubmit={handleMagicLinkLogin} className="space-y-4">
+            <form onSubmit={handleMagicLinkLogin} className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Email
                 </label>
                 <input
@@ -156,36 +161,39 @@ function LoginForm() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                  placeholder="coach@example.com"
+                  className="form-input w-full"
+                  placeholder="coach@svjudo.com"
                 />
               </div>
+              <p className="text-sm text-gray-600">
+                We'll email you a secure login link
+              </p>
               <button
                 type="submit"
                 disabled={loading}
                 className="btn-primary w-full"
               >
-                {loading ? 'Sending...' : 'Send magic link'}
+                {loading ? 'Sending...' : 'Send Magic Link'}
               </button>
             </form>
           )}
 
-          <div className="mt-6 text-center">
+          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
             <button
               onClick={() => {
                 setUseMagicLink(!useMagicLink);
                 setError(null);
                 setMessage(null);
               }}
-              className="text-sm text-blue-600 hover:text-blue-800 font-semibold uppercase tracking-wide"
+              className="text-sm text-brand-blue hover:text-brand-blue-hover font-semibold transition-colors"
             >
-              {useMagicLink ? '← Use password' : 'Use magic link instead →'}
+              {useMagicLink ? '← Use password instead' : 'Use magic link instead →'}
             </button>
           </div>
         </div>
 
-        <p className="text-center text-white text-sm mt-8 opacity-75">
-          Coach access only • Privacy-first competitor analysis
+        <p className="text-center text-white text-sm mt-6 opacity-80">
+          Privacy-first competitor analysis for Silicon Valley Judo coaches
         </p>
       </div>
     </div>

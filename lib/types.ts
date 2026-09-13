@@ -35,3 +35,22 @@ export type OpponentNote = {
 export type AthleteWithNotes = Athlete & {
   opponentNotes: OpponentNote[];
 };
+
+export type TournamentDay = {
+  id: string;
+  name: string;
+  day: string;
+  createdAt: string;
+  createdBy: string;
+};
+
+export type TournamentDayEntry = {
+  id: string;
+  tournamentDayId: string;
+  athleteId: string;
+  createdAt: string;
+};
+
+export type TournamentDayWithAthletes = TournamentDay & {
+  athletes: AthleteWithNotes[];
+};

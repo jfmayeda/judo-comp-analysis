@@ -30,7 +30,7 @@ export default function PrintProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+        <p className="text-gray-700">Loading profile...</p>
       </div>
     );
   }
@@ -38,7 +38,7 @@ export default function PrintProfilePage() {
   if (!athlete) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Athlete not found</p>
+        <p className="text-gray-700">Athlete not found</p>
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import { Athlete, OpponentNote, AthleteWithNotes, Stance } from './types';
+import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes } from './types';
 import { getSupabaseClient } from './supabase';
 import type { Database } from './supabase';
 
@@ -417,6 +417,216 @@ export async function seedData(): Promise<void> {
   });
 }
 
+// Tournament Day CRUD
+export async function getAllTournamentDays(): Promise<TournamentDay[]> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('tournament_days')
+    .select('*')
+    .order('day', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching tournament days:', error);
+    throw new Error('Failed to fetch tournament days');
+  }
+
+  return (data || []).map(dbTournamentDayToTournamentDay);
+}
+
+export async function getTournamentDayById(id: string): Promise<TournamentDay | null> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('tournament_days')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching tournament day:', error);
+    return null;
+  }
+
+  return data ? dbTournamentDayToTournamentDay(data) : null;
+}
+
+export async function getTournamentDayWithAthletes(id: string): Promise<TournamentDayWithAthletes | null> {
+  const tournamentDay = await getTournamentDayById(id);
+  if (!tournamentDay) return null;
+
+  const entries = await getTournamentDayEntries(id);
+  const athleteIds = entries.map(e => e.athleteId);
+  
+  const athletes = await Promise.all(
+    athleteIds.map(async (athleteId) => {
+      const athlete = await getAthleteWithNotes(athleteId);
+      return athlete;
+    })
+  );
+
+  return {
+    ...tournamentDay,
+    athletes: athletes.filter(a => a !== null) as AthleteWithNotes[],
+  };
+}
+
+export async function createTournamentDay(data: {
+  name?: string;
+  day?: string;
+}): Promise<TournamentDay> {
+  const supabase = getSupabaseClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User must be authenticated to create tournament days');
+  }
+
+  const { data: newTournamentDay, error } = await supabase
+    .from('tournament_days')
+    .insert([{
+      name: data.name || '',
+      day: data.day || new Date().toISOString().split('T')[0],
+      created_by: user.id,
+    }] as never)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating tournament day:', error);
+    throw new Error('Failed to create tournament day');
+  }
+
+  return dbTournamentDayToTournamentDay(newTournamentDay);
+}
+
+export async function updateTournamentDay(
+  id: string,
+  data: Partial<{ name: string; day: string }>
+): Promise<TournamentDay> {
+  const supabase = getSupabaseClient();
+
+  const updateData: Record<string, unknown> = {};
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.day !== undefined) updateData.day = data.day;
+
+  const { data: updated, error } = await supabase
+    .from('tournament_days')
+    .update(updateData as never)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating tournament day:', error);
+    throw new Error('Failed to update tournament day');
+  }
+
+  return dbTournamentDayToTournamentDay(updated);
+}
+
+export async function deleteTournamentDay(id: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  const { error } = await supabase
+    .from('tournament_days')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting tournament day:', error);
+    throw new Error('Failed to delete tournament day');
+  }
+}
+
+// Tournament Day Entries CRUD
+export async function getTournamentDayEntries(tournamentDayId: string): Promise<TournamentDayEntry[]> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('tournament_day_entries')
+    .select('*')
+    .eq('tournament_day_id', tournamentDayId);
+
+  if (error) {
+    console.error('Error fetching tournament day entries:', error);
+    return [];
+  }
+
+  return (data || []).map(dbTournamentDayEntryToTournamentDayEntry);
+}
+
+export async function addAthleteToTournamentDay(
+  tournamentDayId: string,
+  athleteId: string
+): Promise<TournamentDayEntry> {
+  const supabase = getSupabaseClient();
+
+  const { data: newEntry, error } = await supabase
+    .from('tournament_day_entries')
+    .insert([{
+      tournament_day_id: tournamentDayId,
+      athlete_id: athleteId,
+    }] as never)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error adding athlete to tournament day:', error);
+    throw new Error('Failed to add athlete to tournament day');
+  }
+
+  return dbTournamentDayEntryToTournamentDayEntry(newEntry);
+}
+
+export async function removeAthleteFromTournamentDay(
+  tournamentDayId: string,
+  athleteId: string
+): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  const { error } = await supabase
+    .from('tournament_day_entries')
+    .delete()
+    .eq('tournament_day_id', tournamentDayId)
+    .eq('athlete_id', athleteId);
+
+  if (error) {
+    console.error('Error removing athlete from tournament day:', error);
+    throw new Error('Failed to remove athlete from tournament day');
+  }
+}
+
+export async function setTournamentDayAthletes(
+  tournamentDayId: string,
+  athleteIds: string[]
+): Promise<void> {
+  const supabase = getSupabaseClient();
+
+  // Delete all existing entries
+  await supabase
+    .from('tournament_day_entries')
+    .delete()
+    .eq('tournament_day_id', tournamentDayId);
+
+  // Insert new entries
+  if (athleteIds.length > 0) {
+    const { error } = await supabase
+      .from('tournament_day_entries')
+      .insert(
+        athleteIds.map(athleteId => ({
+          tournament_day_id: tournamentDayId,
+          athlete_id: athleteId,
+        })) as never[]
+      );
+
+    if (error) {
+      console.error('Error setting tournament day athletes:', error);
+      throw new Error('Failed to set tournament day athletes');
+    }
+  }
+}
+
 // Helper functions to convert between DB schema and app types
 function dbAthleteToAthlete(dbAthlete: {
   id: string;
@@ -479,5 +689,35 @@ function dbOpponentNoteToOpponentNote(dbNote: {
     weightClass: dbNote.weight_class,
     ageDivision: dbNote.age_division,
     createdAt: dbNote.created_at,
+  };
+}
+
+function dbTournamentDayToTournamentDay(dbTournamentDay: {
+  id: string;
+  name: string;
+  day: string;
+  created_at: string;
+  created_by: string;
+}): TournamentDay {
+  return {
+    id: dbTournamentDay.id,
+    name: dbTournamentDay.name,
+    day: dbTournamentDay.day,
+    createdAt: dbTournamentDay.created_at,
+    createdBy: dbTournamentDay.created_by,
+  };
+}
+
+function dbTournamentDayEntryToTournamentDayEntry(dbEntry: {
+  id: string;
+  tournament_day_id: string;
+  athlete_id: string;
+  created_at: string;
+}): TournamentDayEntry {
+  return {
+    id: dbEntry.id,
+    tournamentDayId: dbEntry.tournament_day_id,
+    athleteId: dbEntry.athlete_id,
+    createdAt: dbEntry.created_at,
   };
 }

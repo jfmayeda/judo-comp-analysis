@@ -92,9 +92,8 @@ export default function AthletePage() {
       });
       setEditing(false);
       await loadAthlete();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating athlete:', error);
-      alert('Failed to update athlete. Please check your input.');
     }
   };
 
@@ -106,9 +105,8 @@ export default function AthletePage() {
       const id = params.id as string;
       await deleteAthlete(id);
       router.push('/');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting athlete:', error);
-      alert('Failed to delete athlete.');
     }
   };
 
@@ -143,9 +141,8 @@ export default function AthletePage() {
       });
       setShowAddNote(false);
       await loadAthlete();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding note:', error);
-      alert('Failed to add opponent note.');
     }
   };
 
@@ -156,24 +153,23 @@ export default function AthletePage() {
     try {
       await deleteOpponentNote(noteId);
       await loadAthlete();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting note:', error);
-      alert('Failed to delete opponent note.');
     }
   };
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen navy-field flex items-center justify-center">
+        <p className="text-white">Loading athlete...</p>
       </div>
     );
   }
 
   if (!athlete) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Athlete not found</p>
+      <div className="min-h-screen navy-field flex items-center justify-center">
+        <p className="text-white">Athlete not found</p>
       </div>
     );
   }
@@ -223,7 +219,7 @@ export default function AthletePage() {
             <form onSubmit={handleUpdate} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     First Name
                   </label>
                   <input
@@ -233,11 +229,11 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setFormData({ ...formData, firstName: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Last Initial
                   </label>
                   <input
@@ -248,14 +244,14 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setFormData({ ...formData, lastInitial: e.target.value.toUpperCase() })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
               </div>
               
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Stance
                   </label>
                   <select
@@ -263,7 +259,7 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setFormData({ ...formData, stance: e.target.value as Stance | '' })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   >
                     <option value="">Not set</option>
                     <option value="left">Left</option>
@@ -272,7 +268,7 @@ export default function AthletePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Weight Class
                   </label>
                   <input
@@ -281,11 +277,11 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setFormData({ ...formData, weightClass: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Age Division
                   </label>
                   <input
@@ -294,13 +290,13 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setFormData({ ...formData, ageDivision: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Tokui-waza (favorite techniques)
                 </label>
                 <input
@@ -309,12 +305,12 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, tokuiWaza: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Kumi-kata (grip style)
                 </label>
                 <input
@@ -323,12 +319,12 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, kumiKata: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Ne-waza (ground game)
                 </label>
                 <input
@@ -337,12 +333,12 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, neWaza: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Development Areas
                 </label>
                 <input
@@ -351,12 +347,12 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, developmentAreas: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Notes
                 </label>
                 <textarea
@@ -365,7 +361,7 @@ export default function AthletePage() {
                     setFormData({ ...formData, notes: e.target.value })
                   }
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
@@ -452,7 +448,7 @@ export default function AthletePage() {
             <form onSubmit={handleAddNote} className="mb-6 p-6 bg-gray-50 rounded-lg space-y-6 no-print">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Opponent Name * (first + last initial)
                   </label>
                   <input
@@ -463,11 +459,11 @@ export default function AthletePage() {
                       setNoteFormData({ ...noteFormData, opponentLabel: e.target.value })
                     }
                     placeholder="e.g. Sarah M"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Club
                   </label>
                   <input
@@ -476,14 +472,14 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setNoteFormData({ ...noteFormData, club: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Stance
                   </label>
                   <select
@@ -491,7 +487,7 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setNoteFormData({ ...noteFormData, stance: e.target.value as Stance | '' })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   >
                     <option value="">Not set</option>
                     <option value="left">Left</option>
@@ -500,7 +496,7 @@ export default function AthletePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Weight Class
                   </label>
                   <input
@@ -509,11 +505,11 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setNoteFormData({ ...noteFormData, weightClass: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Age Division
                   </label>
                   <input
@@ -522,13 +518,13 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setNoteFormData({ ...noteFormData, ageDivision: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Tournament
                 </label>
                 <input
@@ -537,12 +533,12 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setNoteFormData({ ...noteFormData, tournament: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Kumi-kata (grip style)
                 </label>
                 <input
@@ -551,12 +547,12 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setNoteFormData({ ...noteFormData, kumiKata: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Ne-waza (ground game)
                 </label>
                 <input
@@ -565,12 +561,12 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setNoteFormData({ ...noteFormData, neWaza: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Common Counters
                 </label>
                 <input
@@ -580,12 +576,12 @@ export default function AthletePage() {
                     setNoteFormData({ ...noteFormData, commonCounters: e.target.value })
                   }
                   placeholder="e.g. Ko-soto-gake on failed attacks"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Scouting Notes *
                 </label>
                 <textarea
@@ -595,7 +591,7 @@ export default function AthletePage() {
                     setNoteFormData({ ...noteFormData, notes: e.target.value })
                   }
                   rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
