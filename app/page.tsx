@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AthleteWithNotes, Stance } from '@/lib/types';
 import { getAllAthletesWithNotes, createAthlete, seedData } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
+import TechniquePicker from '@/components/TechniquePicker';
 
 export default function Home() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function Home() {
     neWaza: '',
     weightClass: '',
     ageDivision: '',
+    techniqueIds: [] as string[],
   });
 
   useEffect(() => {
@@ -69,6 +71,7 @@ export default function Home() {
         neWaza: formData.neWaza,
         weightClass: formData.weightClass,
         ageDivision: formData.ageDivision,
+        techniqueIds: formData.techniqueIds,
       });
       setFormData({
         firstName: '',
@@ -81,6 +84,7 @@ export default function Home() {
         neWaza: '',
         weightClass: '',
         ageDivision: '',
+        techniqueIds: [],
       });
       setShowAddForm(false);
       await loadAthletes();
@@ -266,8 +270,19 @@ export default function Home() {
               </div>
 
               <div>
+                <TechniquePicker
+                  label="Tokui-waza (favorite techniques) - Pick from list"
+                  selectedIds={formData.techniqueIds}
+                  onChange={(techniqueIds) =>
+                    setFormData({ ...formData, techniqueIds })
+                  }
+                  placeholder="Search techniques (e.g. Seoi-nage, Uchi-mata)..."
+                />
+              </div>
+
+              <div>
                 <label className="eyebrow block text-gray-700 mb-2">
-                  Tokui-waza (favorite techniques)
+                  Tokui-waza (free text / additional notes)
                 </label>
                 <input
                   type="text"
@@ -276,6 +291,7 @@ export default function Home() {
                     setFormData({ ...formData, tokuiWaza: e.target.value })
                   }
                   className="form-input w-full"
+                  placeholder="Optional: add custom notes about techniques"
                 />
               </div>
 

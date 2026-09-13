@@ -12,6 +12,7 @@ export type Athlete = {
   neWaza: string;
   weightClass: string;
   ageDivision: string;
+  techniqueIds: string[];
   createdAt: string;
   updatedAt: string;
 };
@@ -28,6 +29,7 @@ export type Opponent = {
   weightClass: string;
   ageDivision: string;
   notes: string;
+  techniqueIds: string[];
   createdAt: string;
   updatedAt: string;
   createdBy: string;
@@ -47,6 +49,7 @@ export type OpponentNote = {
   commonCounters: string;
   weightClass: string;
   ageDivision: string;
+  techniqueIds: string[];
   createdAt: string;
 };
 
@@ -71,4 +74,13 @@ export type TournamentDayEntry = {
 
 export type TournamentDayWithAthletes = TournamentDay & {
   athletes: AthleteWithNotes[];
+};
+
+export type Technique = {
+  id: string;
+  name: string;
+  category: 'Tachi-waza' | 'Ne-waza';
+  subcategory: string;
+  displayOrder: number;
+  createdAt: string;
 };

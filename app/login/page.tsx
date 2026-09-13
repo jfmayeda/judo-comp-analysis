@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { getSupabaseClient } from '@/lib/supabase';
+import { checkCoachAllowlist } from '@/lib/auth-utils';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -39,6 +40,14 @@ function LoginForm() {
       if (signInError) throw signInError;
 
       if (data.user) {
+        // Check if user is allowlisted
+        const isAllowlisted = await checkCoachAllowlist();
+        if (!isAllowlisted) {
+          await supabase.auth.signOut();
+          setError('ACCESS NOT AUTHORIZED - Your email is not on the coach allowlist. Please contact your administrator.');
+          return;
+        }
+
         const redirectTo = searchParams.get('redirectTo') || '/';
         router.push(redirectTo);
       }
