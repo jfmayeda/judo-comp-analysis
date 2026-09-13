@@ -7,17 +7,21 @@ import { getAllTechniques, getTechniquesByIds } from '@/lib/supabase-store';
 type TechniquePickerProps = {
   selectedIds: string[];
   onChange: (techniqueIds: string[]) => void;
+  techniques?: Technique[];
   allowCustom?: boolean;
   placeholder?: string;
   label?: string;
+  categoryFilter?: 'Tachi-waza' | 'Ne-waza' | null;
 };
 
 export default function TechniquePicker({
   selectedIds,
   onChange,
+  techniques: techniquesProp,
   allowCustom = true,
   placeholder = 'Search techniques...',
   label = 'Techniques',
+  categoryFilter = null,
 }: TechniquePickerProps) {
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [selectedTechniques, setSelectedTechniques] = useState<Technique[]>([]);
@@ -26,8 +30,13 @@ export default function TechniquePicker({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadTechniques();
-  }, []);
+    if (techniquesProp) {
+      setTechniques(techniquesProp);
+      setLoading(false);
+    } else {
+      loadTechniques();
+    }
+  }, [techniquesProp]);
 
   useEffect(() => {
     if (selectedIds.length > 0) {

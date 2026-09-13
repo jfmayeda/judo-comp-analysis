@@ -15,7 +15,6 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
 import TechniqueDisplay from '@/components/TechniqueDisplay';
-import TechniquePicker from '@/app/components/TechniquePicker';
 
 export default function AthletePage() {
   const params = useParams();
