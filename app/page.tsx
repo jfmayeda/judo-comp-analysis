@@ -3,10 +3,11 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AthleteWithNotes, Stance } from '@/lib/types';
+import { AthleteWithNotes, Stance, JudoBelt } from '@/lib/types';
 import { getAllAthletesWithNotes, createAthlete, seedData } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
+import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
 
 export default function Home() {
   const router = useRouter();
@@ -25,6 +26,7 @@ export default function Home() {
     neWaza: '',
     weightClass: '',
     ageDivision: '',
+    currentBelt: 'unset' as JudoBelt,
     techniqueIds: [] as string[],
     tokuiTechniqueIds: [] as string[],
     newazaTechniqueIds: [] as string[],
@@ -73,6 +75,7 @@ export default function Home() {
         neWaza: formData.neWaza,
         weightClass: formData.weightClass,
         ageDivision: formData.ageDivision,
+        currentBelt: formData.currentBelt,
         techniqueIds: formData.techniqueIds,
         tokuiTechniqueIds: formData.tokuiTechniqueIds,
         newazaTechniqueIds: formData.newazaTechniqueIds,
@@ -88,6 +91,7 @@ export default function Home() {
         neWaza: '',
         weightClass: '',
         ageDivision: '',
+        currentBelt: 'unset',
         techniqueIds: [],
         tokuiTechniqueIds: [],
         newazaTechniqueIds: [],
@@ -227,7 +231,25 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="eyebrow block text-gray-700 mb-2">
+                    Current Belt/Rank
+                  </label>
+                  <select
+                    value={formData.currentBelt}
+                    onChange={(e) =>
+                      setFormData({ ...formData, currentBelt: e.target.value as JudoBelt })
+                    }
+                    className="form-input w-full"
+                  >
+                    {getBeltOptions().map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div>
                   <label className="eyebrow block text-gray-700 mb-2">
                     Stance
@@ -245,6 +267,9 @@ export default function Home() {
                     <option value="unknown">Unknown</option>
                   </select>
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="eyebrow block text-gray-700 mb-2">
                     Weight Class
@@ -401,6 +426,13 @@ export default function Home() {
                 </h3>
                 
                 <div className="space-y-2 mb-4">
+                  {athlete.currentBelt && athlete.currentBelt !== 'unset' && (
+                    <p className="text-gray-700 text-sm">
+                      <span className="font-semibold uppercase tracking-wide text-xs text-gray-500">Belt:</span>{' '}
+                      <span className="text-base">{formatBeltName(athlete.currentBelt)}</span>
+                    </p>
+                  )}
+                  
                   {athlete.tokuiWaza && (
                     <p className="text-gray-700 text-sm">
                       <span className="font-semibold uppercase tracking-wide text-xs text-gray-500">Tokui-waza:</span>{' '}

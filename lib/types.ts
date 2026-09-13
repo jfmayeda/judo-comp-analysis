@@ -1,5 +1,24 @@
 export type Stance = 'left' | 'right' | 'unknown' | null;
 
+export type JudoBelt = 
+  | 'unset'
+  | 'white'
+  | 'yellow'
+  | 'orange'
+  | 'green'
+  | 'blue'
+  | 'brown'
+  | 'shodan'
+  | 'nidan'
+  | 'sandan'
+  | 'yondan'
+  | 'godan'
+  | 'rokudan'
+  | 'shichidan'
+  | 'hachidan'
+  | 'kudan'
+  | 'judan';
+
 export type Technique = {
   id: string;
   name: string;
@@ -23,9 +42,22 @@ export type Athlete = {
   neWaza: string;
   weightClass: string;
   ageDivision: string;
+  currentBelt: JudoBelt;
   techniqueIds: string[];
   tokuiTechniqueIds: string[];
   newazaTechniqueIds: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type Promotion = {
+  id: string;
+  athleteId: string;
+  promotionDate: string;
+  fromBelt: JudoBelt;
+  toBelt: JudoBelt;
+  notes: string;
+  createdBy: string | null;
   createdAt: string;
   updatedAt: string;
 };

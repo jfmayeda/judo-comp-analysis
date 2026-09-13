@@ -1,4 +1,4 @@
-import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent, Technique } from './types';
+import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent, Technique, JudoBelt, Promotion } from './types';
 import { getSupabaseClient } from './supabase';
 import type { Database } from './supabase';
 
@@ -69,6 +69,7 @@ export async function createAthlete(data: {
   neWaza?: string;
   weightClass?: string;
   ageDivision?: string;
+  currentBelt?: JudoBelt;
   techniqueIds?: string[];
   tokuiTechniqueIds?: string[];
   newazaTechniqueIds?: string[];
@@ -97,6 +98,7 @@ export async function createAthlete(data: {
       ne_waza: data.neWaza || '',
       weight_class: data.weightClass || '',
       age_division: data.ageDivision || '',
+      current_belt: data.currentBelt || 'unset',
       technique_ids: data.techniqueIds || [],
       tokui_technique_ids: data.tokuiTechniqueIds || [],
       newaza_technique_ids: data.newazaTechniqueIds || [],
@@ -135,6 +137,7 @@ export async function updateAthlete(
   if (data.neWaza !== undefined) updateData.ne_waza = data.neWaza;
   if (data.weightClass !== undefined) updateData.weight_class = data.weightClass;
   if (data.ageDivision !== undefined) updateData.age_division = data.ageDivision;
+  if (data.currentBelt !== undefined) updateData.current_belt = data.currentBelt;
   if (data.techniqueIds !== undefined) updateData.technique_ids = data.techniqueIds;
   if (data.tokuiTechniqueIds !== undefined) updateData.tokui_technique_ids = data.tokuiTechniqueIds;
   if (data.newazaTechniqueIds !== undefined) updateData.newaza_technique_ids = data.newazaTechniqueIds;
@@ -987,6 +990,7 @@ function dbAthleteToAthlete(dbAthlete: {
   ne_waza: string;
   weight_class: string;
   age_division: string;
+  current_belt?: JudoBelt;
   technique_ids: string[];
   tokui_technique_ids?: string[];
   newaza_technique_ids?: string[];
@@ -1005,6 +1009,7 @@ function dbAthleteToAthlete(dbAthlete: {
     neWaza: dbAthlete.ne_waza,
     weightClass: dbAthlete.weight_class,
     ageDivision: dbAthlete.age_division,
+    currentBelt: dbAthlete.current_belt || 'unset',
     techniqueIds: dbAthlete.technique_ids || [],
     tokuiTechniqueIds: dbAthlete.tokui_technique_ids || [],
     newazaTechniqueIds: dbAthlete.newaza_technique_ids || [],
@@ -1123,6 +1128,108 @@ function dbOpponentToOpponent(dbOpponent: {
   };
 }
 
+// Promotions CRUD
+export async function getPromotionsByAthleteId(athleteId: string): Promise<Promotion[]> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('promotions')
+    .select('*')
+    .eq('athlete_id', athleteId)
+    .order('promotion_date', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching promotions:', error);
+    return [];
+  }
+
+  return (data || []).map(dbPromotionToPromotion);
+}
+
+export async function createPromotion(data: {
+  athleteId: string;
+  promotionDate: string;
+  fromBelt: JudoBelt;
+  toBelt: JudoBelt;
+  notes?: string;
+}): Promise<Promotion> {
+  const supabase = getSupabaseClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User must be authenticated to create promotions');
+  }
+
+  const { data: newPromotion, error } = await supabase
+    .from('promotions')
+    .insert([{
+      athlete_id: data.athleteId,
+      promotion_date: data.promotionDate,
+      from_belt: data.fromBelt,
+      to_belt: data.toBelt,
+      notes: data.notes || '',
+      created_by: user.id,
+    }] as never)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating promotion:', error);
+    throw new Error('Failed to create promotion');
+  }
+
+  return dbPromotionToPromotion(newPromotion);
+}
+
+export async function updatePromotion(
+  id: string,
+  data: Partial<{
+    promotionDate: string;
+    fromBelt: JudoBelt;
+    toBelt: JudoBelt;
+    notes: string;
+  }>
+): Promise<Promotion> {
+  const supabase = getSupabaseClient();
+
+  const updateData: Record<string, unknown> = {};
+  
+  if (data.promotionDate !== undefined) updateData.promotion_date = data.promotionDate;
+  if (data.fromBelt !== undefined) updateData.from_belt = data.fromBelt;
+  if (data.toBelt !== undefined) updateData.to_belt = data.toBelt;
+  if (data.notes !== undefined) updateData.notes = data.notes;
+  
+  updateData.updated_at = new Date().toISOString();
+
+  const { data: updated, error } = await supabase
+    .from('promotions')
+    .update(updateData as never)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating promotion:', error);
+    throw new Error('Failed to update promotion');
+  }
+
+  return dbPromotionToPromotion(updated);
+}
+
+export async function deletePromotion(id: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  const { error } = await supabase
+    .from('promotions')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error deleting promotion:', error);
+    throw new Error('Failed to delete promotion');
+  }
+}
+
 // Coach Allowlist CRUD
 export async function inviteCoach(email: string): Promise<void> {
   const supabase = getSupabaseClient();
@@ -1216,5 +1323,29 @@ function dbTechniqueToTechnique(dbTechnique: {
     isCustom: dbTechnique.is_custom,
     createdBy: dbTechnique.created_by,
     createdAt: dbTechnique.created_at,
+  };
+}
+
+function dbPromotionToPromotion(dbPromotion: {
+  id: string;
+  athlete_id: string;
+  promotion_date: string;
+  from_belt: JudoBelt;
+  to_belt: JudoBelt;
+  notes: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}): Promotion {
+  return {
+    id: dbPromotion.id,
+    athleteId: dbPromotion.athlete_id,
+    promotionDate: dbPromotion.promotion_date,
+    fromBelt: dbPromotion.from_belt,
+    toBelt: dbPromotion.to_belt,
+    notes: dbPromotion.notes,
+    createdBy: dbPromotion.created_by,
+    createdAt: dbPromotion.created_at,
+    updatedAt: dbPromotion.updated_at,
   };
 }
