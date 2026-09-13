@@ -177,6 +177,47 @@
     color: var(--color-white);
     box-shadow: 0 2px 8px rgba(11, 30, 46, 0.15);
   }
+  
+  /* Form Inputs */
+  .form-input {
+    padding: 0.75rem 1rem;
+    border: 1px solid #ced6dc;
+    border-radius: 4px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: #1a1a1a;
+    background: var(--color-white);
+    transition: all var(--duration-base) var(--easing);
+  }
+  
+  .form-input:focus {
+    outline: none;
+    border-color: #8a99a5;
+    box-shadow: 0 0 0 3px rgba(0, 94, 155, 0.1);
+  }
+  
+  .form-input::placeholder {
+    color: #9ca3af;
+  }
+  
+  /* Form Labels (using eyebrow style) */
+  .form-label {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-eyebrow);
+    color: #4b5563;
+  }
+  
+  /* Utility text colors */
+  .text-brand-blue {
+    color: var(--color-brand-blue);
+  }
+  
+  .text-brand-blue-hover {
+    color: var(--color-brand-blue-hover);
+  }
 }
 
 /* PRINT STYLES */

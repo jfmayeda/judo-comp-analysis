@@ -77,9 +77,9 @@ export default function Home() {
       });
       setShowAddForm(false);
       await loadAthletes();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating athlete:', error);
-      alert('Failed to create athlete. Please check your input.');
+      setFormData(prev => ({ ...prev, notes: `Error: ${error.message || 'Failed to create athlete'}` }));
     }
   };
 
@@ -93,19 +93,21 @@ export default function Home() {
   };
 
   const handleSeedData = async () => {
+    if (!confirm('Load sample data? This will add 3 example athletes with scouting notes.')) {
+      return;
+    }
     try {
       await seedData();
       await loadAthletes();
     } catch (error: any) {
       console.error('Error seeding data:', error);
-      alert(error.message || 'Failed to seed data');
     }
   };
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen navy-field flex items-center justify-center">
+        <p className="text-white">Loading roster...</p>
       </div>
     );
   }
@@ -119,12 +121,12 @@ export default function Home() {
           <h1 className="wordmark text-xl">SILICON VALLEY JUDO</h1>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={handleSeedData}
+          <Link
+            href="/tournament-day"
             className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-sm"
           >
-            Seed Data
-          </button>
+            Tournament Day
+          </Link>
           <button
             onClick={handleLogout}
             className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-sm"
@@ -138,9 +140,10 @@ export default function Home() {
       <div className="max-w-7xl mx-auto p-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-3xl mb-2">Athlete Roster</h2>
-            <p className="text-gray-600">
-              {athletes.length} athlete{athletes.length !== 1 ? 's' : ''} • Click to view profile and scouting notes
+            <p className="eyebrow mb-2">Roster</p>
+            <h2 className="text-3xl mb-2">Athletes</h2>
+            <p className="text-gray-700">
+              {athletes.length} athlete{athletes.length !== 1 ? 's' : ''} • Tokui-waza, development areas, and opponent notes for tournament day
             </p>
           </div>
           <button
@@ -153,11 +156,11 @@ export default function Home() {
 
         {showAddForm && (
           <div className="card p-6 mb-8">
-            <h3 className="text-xl mb-6">Add New Athlete</h3>
+            <h3 className="text-xl mb-6 uppercase tracking-wide">Add New Athlete</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     First Name *
                   </label>
                   <input
@@ -167,11 +170,11 @@ export default function Home() {
                     onChange={(e) =>
                       setFormData({ ...formData, firstName: e.target.value })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Last Initial * (one letter)
                   </label>
                   <input
@@ -182,14 +185,14 @@ export default function Home() {
                     onChange={(e) =>
                       setFormData({ ...formData, lastInitial: e.target.value.toUpperCase() })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
               </div>
               
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Stance
                   </label>
                   <select
@@ -197,7 +200,7 @@ export default function Home() {
                     onChange={(e) =>
                       setFormData({ ...formData, stance: e.target.value as Stance | '' })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   >
                     <option value="">Not set</option>
                     <option value="left">Left</option>
@@ -206,7 +209,7 @@ export default function Home() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Weight Class
                   </label>
                   <input
@@ -216,11 +219,11 @@ export default function Home() {
                       setFormData({ ...formData, weightClass: e.target.value })
                     }
                     placeholder="e.g. -57kg"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  <label className="eyebrow block text-gray-700 mb-2">
                     Age Division
                   </label>
                   <input
@@ -230,13 +233,13 @@ export default function Home() {
                       setFormData({ ...formData, ageDivision: e.target.value })
                     }
                     placeholder="e.g. Junior"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                    className="form-input w-full"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Tokui-waza (favorite techniques)
                 </label>
                 <input
@@ -245,12 +248,12 @@ export default function Home() {
                   onChange={(e) =>
                     setFormData({ ...formData, tokuiWaza: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Kumi-kata (grip style)
                 </label>
                 <input
@@ -260,12 +263,12 @@ export default function Home() {
                     setFormData({ ...formData, kumiKata: e.target.value })
                   }
                   placeholder="e.g. High lapel grip, quick hand changes"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Ne-waza (ground game)
                 </label>
                 <input
@@ -275,12 +278,12 @@ export default function Home() {
                     setFormData({ ...formData, neWaza: e.target.value })
                   }
                   placeholder="e.g. Strong pins, working on turtle attacks"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Development Areas
                 </label>
                 <input
@@ -289,12 +292,12 @@ export default function Home() {
                   onChange={(e) =>
                     setFormData({ ...formData, developmentAreas: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                <label className="eyebrow block text-gray-700 mb-2">
                   Notes
                 </label>
                 <textarea
@@ -303,7 +306,7 @@ export default function Home() {
                     setFormData({ ...formData, notes: e.target.value })
                   }
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="form-input w-full"
                 />
               </div>
 
