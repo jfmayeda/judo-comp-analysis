@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { AthleteWithNotes } from '@/lib/types';
+import { AthleteWithNotes, Stance } from '@/lib/types';
 import {
   getAthleteWithNotes,
   updateAthlete,
@@ -25,15 +25,32 @@ export default function AthletePage() {
     tokuiWaza: '',
     developmentAreas: '',
     notes: '',
+    stance: '' as Stance | '',
+    kumiKata: '',
+    neWaza: '',
+    weightClass: '',
+    ageDivision: '',
   });
   const [noteFormData, setNoteFormData] = useState({
     opponentLabel: '',
     club: '',
     notes: '',
     tournament: '',
+    stance: '' as Stance | '',
+    kumiKata: '',
+    neWaza: '',
+    commonCounters: '',
+    weightClass: '',
+    ageDivision: '',
   });
 
   useEffect(() => {
+    // Check auth
+    const isAuthenticated = localStorage.getItem('judo-auth');
+    if (!isAuthenticated) {
+      router.push('/login');
+      return;
+    }
     loadAthlete();
   }, []);
 
@@ -49,6 +66,11 @@ export default function AthletePage() {
           tokuiWaza: data.tokuiWaza,
           developmentAreas: data.developmentAreas,
           notes: data.notes,
+          stance: data.stance || '',
+          kumiKata: data.kumiKata,
+          neWaza: data.neWaza,
+          weightClass: data.weightClass,
+          ageDivision: data.ageDivision,
         });
       }
     } catch (error) {
@@ -62,7 +84,10 @@ export default function AthletePage() {
     e.preventDefault();
     try {
       const id = params.id as string;
-      updateAthlete(id, formData);
+      updateAthlete(id, {
+        ...formData,
+        stance: formData.stance || null,
+      });
       setEditing(false);
       loadAthlete();
     } catch (error) {
@@ -95,12 +120,24 @@ export default function AthletePage() {
         club: noteFormData.club || null,
         notes: noteFormData.notes,
         tournament: noteFormData.tournament || null,
+        stance: noteFormData.stance || null,
+        kumiKata: noteFormData.kumiKata,
+        neWaza: noteFormData.neWaza,
+        commonCounters: noteFormData.commonCounters,
+        weightClass: noteFormData.weightClass,
+        ageDivision: noteFormData.ageDivision,
       });
       setNoteFormData({
         opponentLabel: '',
         club: '',
         notes: '',
         tournament: '',
+        stance: '',
+        kumiKata: '',
+        neWaza: '',
+        commonCounters: '',
+        weightClass: '',
+        ageDivision: '',
       });
       setShowAddNote(false);
       loadAthlete();
@@ -140,35 +177,40 @@ export default function AthletePage() {
   }
 
   return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6 no-print">
-          <Link href="/" className="text-blue-600 hover:text-blue-800">
-            ← Back to Athletes
-          </Link>
-        </div>
+    <div className="min-h-screen">
+      {/* Header */}
+      <header className="app-header flex items-center justify-between px-8 no-print">
+        <Link href="/" className="flex items-center gap-3 text-white hover:opacity-80 transition-opacity">
+          <span className="text-xl">←</span>
+          <div>
+            <p className="eyebrow text-white mb-1">Competitor Analysis</p>
+            <h1 className="wordmark text-xl">SILICON VALLEY JUDO</h1>
+          </div>
+        </Link>
+      </header>
 
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex justify-between items-start mb-4 no-print">
-            <h1 className="text-3xl font-bold text-gray-900">
+      <div className="max-w-5xl mx-auto p-8">
+        <div className="card p-6 mb-6">
+          <div className="flex justify-between items-start mb-6 no-print">
+            <h2 className="text-3xl">
               {athlete.firstName} {athlete.lastInitial}.
-            </h1>
+            </h2>
             <div className="flex gap-2">
               <Link
                 href={`/athletes/${athlete.id}/print`}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                className="btn-secondary text-sm"
               >
                 Print Profile
               </Link>
               <button
                 onClick={() => setEditing(!editing)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="btn-primary text-sm"
               >
-                {editing ? 'Cancel Edit' : 'Edit'}
+                {editing ? 'Cancel' : 'Edit'}
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                className="btn-secondary border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-sm"
               >
                 Delete
               </button>
@@ -176,10 +218,10 @@ export default function AthletePage() {
           </div>
 
           {editing ? (
-            <form onSubmit={handleUpdate} className="space-y-4">
+            <form onSubmit={handleUpdate} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                     First Name
                   </label>
                   <input
@@ -189,11 +231,11 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setFormData({ ...formData, firstName: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                     Last Initial
                   </label>
                   <input
@@ -204,13 +246,60 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setFormData({ ...formData, lastInitial: e.target.value.toUpperCase() })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                   />
                 </div>
               </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                    Stance
+                  </label>
+                  <select
+                    value={formData.stance}
+                    onChange={(e) =>
+                      setFormData({ ...formData, stance: e.target.value as Stance | '' })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  >
+                    <option value="">Not set</option>
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                    Weight Class
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.weightClass}
+                    onChange={(e) =>
+                      setFormData({ ...formData, weightClass: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                    Age Division
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.ageDivision}
+                    onChange={(e) =>
+                      setFormData({ ...formData, ageDivision: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tokui-waza
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  Tokui-waza (favorite techniques)
                 </label>
                 <input
                   type="text"
@@ -218,11 +307,40 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, tokuiWaza: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  Kumi-kata (grip style)
+                </label>
+                <input
+                  type="text"
+                  value={formData.kumiKata}
+                  onChange={(e) =>
+                    setFormData({ ...formData, kumiKata: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  Ne-waza (ground game)
+                </label>
+                <input
+                  type="text"
+                  value={formData.neWaza}
+                  onChange={(e) =>
+                    setFormData({ ...formData, neWaza: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                   Development Areas
                 </label>
                 <input
@@ -231,11 +349,12 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, developmentAreas: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                   Notes
                 </label>
                 <textarea
@@ -244,33 +363,71 @@ export default function AthletePage() {
                     setFormData({ ...formData, notes: e.target.value })
                   }
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 />
               </div>
+
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="btn-primary"
               >
                 Save Changes
               </button>
             </form>
           ) : (
             <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 pb-4 border-b border-gray-200">
+                {athlete.stance && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Stance</h4>
+                    <p className="text-gray-900 capitalize">{athlete.stance}</p>
+                  </div>
+                )}
+                {athlete.weightClass && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Weight Class</h4>
+                    <p className="text-gray-900">{athlete.weightClass}</p>
+                  </div>
+                )}
+                {athlete.ageDivision && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Division</h4>
+                    <p className="text-gray-900">{athlete.ageDivision}</p>
+                  </div>
+                )}
+              </div>
+
               {athlete.tokuiWaza && (
                 <div>
-                  <h3 className="font-semibold text-gray-700 mb-1">Tokui-waza</h3>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Tokui-waza</h3>
                   <p className="text-gray-900">{athlete.tokuiWaza}</p>
                 </div>
               )}
+
+              {athlete.kumiKata && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Kumi-kata</h3>
+                  <p className="text-gray-900">{athlete.kumiKata}</p>
+                </div>
+              )}
+
+              {athlete.neWaza && (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Ne-waza</h3>
+                  <p className="text-gray-900">{athlete.neWaza}</p>
+                </div>
+              )}
+
               {athlete.developmentAreas && (
                 <div>
-                  <h3 className="font-semibold text-gray-700 mb-1">Development Areas</h3>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Development Areas</h3>
                   <p className="text-gray-900">{athlete.developmentAreas}</p>
                 </div>
               )}
+
               {athlete.notes && (
                 <div>
-                  <h3 className="font-semibold text-gray-700 mb-1">Notes</h3>
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Notes</h3>
                   <p className="text-gray-900 whitespace-pre-wrap">{athlete.notes}</p>
                 </div>
               )}
@@ -278,22 +435,22 @@ export default function AthletePage() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-4 no-print">
-            <h2 className="text-2xl font-bold text-gray-900">Opponent Notes</h2>
+        <div className="card p-6">
+          <div className="flex justify-between items-center mb-6 no-print">
+            <h3 className="text-2xl">Opponent Notes</h3>
             <button
               onClick={() => setShowAddNote(!showAddNote)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="btn-primary text-sm"
             >
               {showAddNote ? 'Cancel' : 'Add Note'}
             </button>
           </div>
 
           {showAddNote && (
-            <form onSubmit={handleAddNote} className="mb-6 p-4 bg-gray-50 rounded-lg space-y-4 no-print">
+            <form onSubmit={handleAddNote} className="mb-6 p-6 bg-gray-50 rounded-lg space-y-6 no-print">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                     Opponent Name * (first + last initial)
                   </label>
                   <input
@@ -304,11 +461,11 @@ export default function AthletePage() {
                       setNoteFormData({ ...noteFormData, opponentLabel: e.target.value })
                     }
                     placeholder="e.g. Sarah M"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                     Club
                   </label>
                   <input
@@ -317,12 +474,59 @@ export default function AthletePage() {
                     onChange={(e) =>
                       setNoteFormData({ ...noteFormData, club: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                    Stance
+                  </label>
+                  <select
+                    value={noteFormData.stance}
+                    onChange={(e) =>
+                      setNoteFormData({ ...noteFormData, stance: e.target.value as Stance | '' })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  >
+                    <option value="">Not set</option>
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                    <option value="unknown">Unknown</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                    Weight Class
+                  </label>
+                  <input
+                    type="text"
+                    value={noteFormData.weightClass}
+                    onChange={(e) =>
+                      setNoteFormData({ ...noteFormData, weightClass: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                    Age Division
+                  </label>
+                  <input
+                    type="text"
+                    value={noteFormData.ageDivision}
+                    onChange={(e) =>
+                      setNoteFormData({ ...noteFormData, ageDivision: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                   Tournament
                 </label>
                 <input
@@ -331,11 +535,55 @@ export default function AthletePage() {
                   onChange={(e) =>
                     setNoteFormData({ ...noteFormData, tournament: e.target.value })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 />
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  Kumi-kata (grip style)
+                </label>
+                <input
+                  type="text"
+                  value={noteFormData.kumiKata}
+                  onChange={(e) =>
+                    setNoteFormData({ ...noteFormData, kumiKata: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  Ne-waza (ground game)
+                </label>
+                <input
+                  type="text"
+                  value={noteFormData.neWaza}
+                  onChange={(e) =>
+                    setNoteFormData({ ...noteFormData, neWaza: e.target.value })
+                  }
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                  Common Counters
+                </label>
+                <input
+                  type="text"
+                  value={noteFormData.commonCounters}
+                  onChange={(e) =>
+                    setNoteFormData({ ...noteFormData, commonCounters: e.target.value })
+                  }
+                  placeholder="e.g. Ko-soto-gake on failed attacks"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wide">
                   Scouting Notes *
                 </label>
                 <textarea
@@ -345,12 +593,13 @@ export default function AthletePage() {
                     setNoteFormData({ ...noteFormData, notes: e.target.value })
                   }
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
                 />
               </div>
+
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="btn-primary"
               >
                 Add Note
               </button>
@@ -364,29 +613,75 @@ export default function AthletePage() {
           ) : (
             <div className="space-y-4">
               {athlete.opponentNotes.map((note) => (
-                <div key={note.id} className="p-4 bg-gray-50 rounded-lg print-section">
-                  <div className="flex justify-between items-start mb-2">
+                <div key={note.id} className="p-6 bg-gray-50 rounded-lg print-section">
+                  <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="font-semibold text-gray-900">
+                      <h4 className="font-bold text-lg text-gray-900">
                         vs. {note.opponentLabel}
                         {note.club && (
                           <span className="text-gray-600 font-normal ml-2">
                             ({note.club})
                           </span>
                         )}
-                      </h3>
+                      </h4>
                       {note.tournament && (
-                        <p className="text-sm text-gray-600">{note.tournament}</p>
+                        <p className="text-sm text-gray-600 mt-1">{note.tournament}</p>
                       )}
                     </div>
                     <button
                       onClick={() => handleDeleteNote(note.id)}
-                      className="text-red-600 hover:text-red-800 text-sm no-print"
+                      className="text-red-600 hover:text-red-800 text-sm font-semibold uppercase tracking-wide no-print"
                     >
                       Delete
                     </button>
                   </div>
-                  <p className="text-gray-900 whitespace-pre-wrap">{note.notes}</p>
+
+                  <div className="grid grid-cols-3 gap-4 mb-4 pb-4 border-b border-gray-300">
+                    {note.stance && (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Stance</p>
+                        <p className="text-sm capitalize">{note.stance}</p>
+                      </div>
+                    )}
+                    {note.weightClass && (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Weight</p>
+                        <p className="text-sm">{note.weightClass}</p>
+                      </div>
+                    )}
+                    {note.ageDivision && (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Division</p>
+                        <p className="text-sm">{note.ageDivision}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {note.kumiKata && (
+                    <div className="mb-3">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Kumi-kata</p>
+                      <p className="text-sm text-gray-900">{note.kumiKata}</p>
+                    </div>
+                  )}
+
+                  {note.neWaza && (
+                    <div className="mb-3">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Ne-waza</p>
+                      <p className="text-sm text-gray-900">{note.neWaza}</p>
+                    </div>
+                  )}
+
+                  {note.commonCounters && (
+                    <div className="mb-3">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Common Counters</p>
+                      <p className="text-sm text-gray-900">{note.commonCounters}</p>
+                    </div>
+                  )}
+
+                  <div className="mt-4 pt-4 border-t border-gray-300">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Scouting Notes</p>
+                    <p className="text-gray-900 whitespace-pre-wrap">{note.notes}</p>
+                  </div>
                 </div>
               ))}
             </div>

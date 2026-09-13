@@ -1,4 +1,4 @@
-import { Athlete, OpponentNote, AthleteWithNotes } from './types';
+import { Athlete, OpponentNote, AthleteWithNotes, Stance } from './types';
 
 const STORAGE_KEY_ATHLETES = 'judo-athletes';
 const STORAGE_KEY_NOTES = 'judo-opponent-notes';
@@ -51,6 +51,11 @@ export function createAthlete(data: {
   tokuiWaza?: string;
   developmentAreas?: string;
   notes?: string;
+  stance?: Stance;
+  kumiKata?: string;
+  neWaza?: string;
+  weightClass?: string;
+  ageDivision?: string;
 }): Athlete {
   if (!isBrowser()) throw new Error('Cannot create athlete in non-browser environment');
   
@@ -66,6 +71,11 @@ export function createAthlete(data: {
     tokuiWaza: data.tokuiWaza || '',
     developmentAreas: data.developmentAreas || '',
     notes: data.notes || '',
+    stance: data.stance || null,
+    kumiKata: data.kumiKata || '',
+    neWaza: data.neWaza || '',
+    weightClass: data.weightClass || '',
+    ageDivision: data.ageDivision || '',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
@@ -144,6 +154,12 @@ export function createOpponentNote(data: {
   club?: string | null;
   notes: string;
   tournament?: string | null;
+  stance?: Stance;
+  kumiKata?: string;
+  neWaza?: string;
+  commonCounters?: string;
+  weightClass?: string;
+  ageDivision?: string;
 }): OpponentNote {
   if (!isBrowser()) throw new Error('Cannot create opponent note in non-browser environment');
   
@@ -154,6 +170,12 @@ export function createOpponentNote(data: {
     club: data.club || null,
     notes: data.notes,
     tournament: data.tournament || null,
+    stance: data.stance || null,
+    kumiKata: data.kumiKata || '',
+    neWaza: data.neWaza || '',
+    commonCounters: data.commonCounters || '',
+    weightClass: data.weightClass || '',
+    ageDivision: data.ageDivision || '',
     createdAt: new Date().toISOString(),
   };
   
@@ -215,6 +237,11 @@ export function seedDataIfEmpty(): void {
     tokuiWaza: 'Seoi-nage, Uchi-mata',
     developmentAreas: 'Ne-waza transitions, grip fighting speed',
     notes: 'Strong thrower, needs work on ground game. Competes in -48kg division.',
+    stance: 'right',
+    kumiKata: 'Traditional high lapel grip, quick hand changes',
+    neWaza: 'Working on turtle attacks, solid pins',
+    weightClass: '-48kg',
+    ageDivision: 'Juvenile',
   });
   
   const alex = createAthlete({
@@ -223,6 +250,11 @@ export function seedDataIfEmpty(): void {
     tokuiWaza: 'Osoto-gari, Harai-goshi',
     developmentAreas: 'Left-side attacks, tournament cardio',
     notes: 'Powerful right-sided player. Currently working on switching stances. -66kg division.',
+    stance: 'right',
+    kumiKata: 'Deep sleeve control, defensive posture',
+    neWaza: 'Strong top game, needs escape work',
+    weightClass: '-66kg',
+    ageDivision: 'Cadet',
   });
   
   const jordan = createAthlete({
@@ -231,6 +263,11 @@ export function seedDataIfEmpty(): void {
     tokuiWaza: 'Ko-uchi-gari, Sasae-tsurikomi-ashi',
     developmentAreas: 'Follow-through on attacks, defensive positioning',
     notes: 'Technical player with good footwork. Needs to commit more fully to attacks. -57kg division.',
+    stance: 'left',
+    kumiKata: 'Over-the-top grip, good at breaking grips',
+    neWaza: 'Prefers standing, learning submissions',
+    weightClass: '-57kg',
+    ageDivision: 'Junior',
   });
   
   // Create sample opponent notes
@@ -240,6 +277,12 @@ export function seedDataIfEmpty(): void {
     club: 'Peninsula Judo',
     notes: 'Very aggressive, likes left uchi-mata. Watch for counter with ko-soto-gake.',
     tournament: 'Bay Area Open 2024',
+    stance: 'left',
+    kumiKata: 'High collar grip, pulls down',
+    neWaza: 'Strong pins, avoid bottom position',
+    commonCounters: 'Ko-soto-gake, tai-otoshi on failed attacks',
+    weightClass: '-48kg',
+    ageDivision: 'Juvenile',
   });
   
   createOpponentNote({
@@ -248,6 +291,12 @@ export function seedDataIfEmpty(): void {
     club: 'San Jose Judo',
     notes: 'Strong ne-waza specialist. Stay standing, avoid ground exchanges unless winning.',
     tournament: 'NorCal Championships',
+    stance: 'right',
+    kumiKata: 'Low posture, defensive grips',
+    neWaza: 'Excellent transitions, multiple submission threats',
+    commonCounters: 'Pulls guard, arm bars from bottom',
+    weightClass: '-48kg',
+    ageDivision: 'Juvenile',
   });
   
   createOpponentNote({
@@ -256,6 +305,12 @@ export function seedDataIfEmpty(): void {
     club: 'Monterey Judo Club',
     notes: 'Taller opponent, good at keeping distance. Close the gap fast, work inside grip.',
     tournament: 'Bay Area Open 2024',
+    stance: 'right',
+    kumiKata: 'Long-arm control, stiff arms',
+    neWaza: 'Average ground game',
+    commonCounters: 'Uchi-mata when you close distance',
+    weightClass: '-66kg',
+    ageDivision: 'Cadet',
   });
   
   createOpponentNote({
@@ -264,6 +319,12 @@ export function seedDataIfEmpty(): void {
     club: 'East Bay Judo',
     notes: 'Defensive player, hard to score on. Be patient, set up combinations.',
     tournament: null,
+    stance: 'unknown',
+    kumiKata: 'Defensive, breaks grips constantly',
+    neWaza: 'Turtles up immediately',
+    commonCounters: 'Counter-attacks off your entries',
+    weightClass: '-57kg',
+    ageDivision: 'Junior',
   });
   
   localStorage.setItem(STORAGE_KEY_INITIALIZED, 'true');
