@@ -13,7 +13,9 @@ type OptOutDeleteModalProps = {
     opponentNotesCount: number;
     promotionsCount: number;
     tournamentEntriesCount: number;
-  };
+  } | null;
+  isLoadingPreview?: boolean;
+  previewError?: string | null;
 };
 
 export default function OptOutDeleteModal({
@@ -22,12 +24,14 @@ export default function OptOutDeleteModal({
   onClose,
   onConfirm,
   deletePreview,
+  isLoadingPreview = false,
+  previewError = null,
 }: OptOutDeleteModalProps) {
   const [confirmText, setConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const expectedConfirmText = `${athlete.firstName} ${athlete.lastInitial}`;
+  const expectedConfirmText = `${athlete.firstName} ${athlete.lastInitial}.`;
   const isConfirmValid = confirmText.trim() === expectedConfirmText;
 
   useEffect(() => {
@@ -58,7 +62,7 @@ export default function OptOutDeleteModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[150] p-4">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">
@@ -81,28 +85,51 @@ export default function OptOutDeleteModal({
             </p>
           </div>
 
-          <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900">
-              The following will be permanently deleted:
-            </h4>
-            <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
-              <li>
-                Athlete profile ({athlete.firstName} {athlete.lastInitial}.)
-              </li>
-              <li>
-                {deletePreview.opponentNotesCount} opponent scouting{' '}
-                {deletePreview.opponentNotesCount === 1 ? 'note' : 'notes'}
-              </li>
-              <li>
-                {deletePreview.promotionsCount} belt promotion{' '}
-                {deletePreview.promotionsCount === 1 ? 'record' : 'records'}
-              </li>
-              <li>
-                {deletePreview.tournamentEntriesCount} tournament{' '}
-                {deletePreview.tournamentEntriesCount === 1 ? 'entry' : 'entries'}
-              </li>
-            </ul>
-          </div>
+          {isLoadingPreview ? (
+            <div className="space-y-3">
+              <h4 className="font-semibold text-gray-900">
+                Loading deletion preview...
+              </h4>
+              <div className="animate-pulse space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            </div>
+          ) : previewError ? (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h4 className="font-semibold text-yellow-900 mb-2">
+                ⚠️ Could not load deletion preview
+              </h4>
+              <p className="text-sm text-yellow-800 mb-2">{previewError}</p>
+              <p className="text-sm text-yellow-800">
+                You can still proceed with deletion, but counts may not be accurate.
+              </p>
+            </div>
+          ) : deletePreview ? (
+            <div className="space-y-3">
+              <h4 className="font-semibold text-gray-900">
+                The following will be permanently deleted:
+              </h4>
+              <ul className="list-disc list-inside space-y-2 text-sm text-gray-700">
+                <li>
+                  Athlete profile ({athlete.firstName} {athlete.lastInitial}.)
+                </li>
+                <li>
+                  {deletePreview.opponentNotesCount} opponent scouting{' '}
+                  {deletePreview.opponentNotesCount === 1 ? 'note' : 'notes'}
+                </li>
+                <li>
+                  {deletePreview.promotionsCount} belt promotion{' '}
+                  {deletePreview.promotionsCount === 1 ? 'record' : 'records'}
+                </li>
+                <li>
+                  {deletePreview.tournamentEntriesCount} tournament{' '}
+                  {deletePreview.tournamentEntriesCount === 1 ? 'entry' : 'entries'}
+                </li>
+              </ul>
+            </div>
+          ) : null}
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h4 className="font-semibold text-blue-900 mb-2">
