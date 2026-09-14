@@ -138,3 +138,86 @@ export type Coach = {
   invitedAt: string;
   isAdmin: boolean;
 };
+
+// Activity Log Types (Mock Data + Future DB)
+export type DataSource = 'mock' | 'smoothcomp' | 'mindbody' | 'coach';
+
+export type Ruleset = 'ijf_post_2017' | 'ijf_pre_2017' | 'local_with_yuko' | 'other';
+
+export type MatchResult = 'win' | 'loss';
+
+export type TerminalMethod = 
+  | 'ippon'
+  | 'wazari_awasete_ippon' 
+  | 'yuko'
+  | 'decision'
+  | 'walkover'
+  | 'hansoku_make'
+  | 'fusen_gachi'
+  | 'kiken_gachi';
+
+export type ScoreEventType = 'ippon' | 'wazari' | 'yuko' | 'koka';
+
+export type PenaltyType = 'shido' | 'hansoku_make';
+
+export type ScoreEvent = {
+  id: string;
+  sequenceOrder: number;
+  eventType: ScoreEventType;
+  points: number;
+  techniqueId?: string;
+  techniqueLabel?: string;
+  notes?: string;
+};
+
+export type PenaltyEvent = {
+  id: string;
+  sequenceOrder: number;
+  penaltyType: PenaltyType;
+  recipient: 'athlete' | 'opponent';
+  reason?: string;
+};
+
+export type Match = {
+  id: string;
+  tournamentId: string;
+  athleteId: string;
+  opponentFirstName: string;
+  opponentLastInitial: string;
+  result: MatchResult;
+  terminalMethod: TerminalMethod;
+  goldenScore: boolean;
+  scoreEvents: ScoreEvent[];
+  penaltyEvents: PenaltyEvent[];
+  dataSource: DataSource;
+  createdAt: string;
+};
+
+export type Tournament = {
+  id: string;
+  athleteId: string;
+  name: string;
+  date: string;
+  division: string;
+  place?: number;
+  medal?: 'gold' | 'silver' | 'bronze';
+  ruleset: Ruleset;
+  matches: Match[];
+  dataSource: DataSource;
+  createdAt: string;
+};
+
+export type CareerTimelineEvent = {
+  date: string;
+  type: 'judo_start' | 'promotion';
+  label: string;
+  fromBelt?: JudoBelt;
+  toBelt?: JudoBelt;
+};
+
+export type AthleteActivity = {
+  athleteId: string;
+  judoStartDate?: string;
+  careerTimeline: CareerTimelineEvent[];
+  tournaments: Tournament[];
+};
