@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#1e3a5f" stroke="#d4af37" stroke-width="5"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#d4af37" stroke-width="2"/>
+  
+  <circle cx="100" cy="60" r="25" fill="#d4af37"/>
+  
+  <g transform="translate(100, 100)">
+    <path d="M -15 -15 L -15 0 L 15 0 L 15 -15 Z" fill="#d4af37"/>
+    <path d="M -12 0 L -12 10 L 12 10 L 12 0 Z" fill="#d4af37"/>
+    <path d="M -9 10 L -9 20 L 9 20 L 9 10 Z" fill="#d4af37"/>
+    <path d="M -6 20 L -6 30 L 6 30 L 6 20 Z" fill="#d4af37"/>
+  </g>
+  
+  <g transform="translate(100, 60)">
+    <path d="M -30 10 L -25 5 L -20 8 L -15 10" stroke="#d4af37" stroke-width="2" fill="none"/>
+    <path d="M -25 12 L -20 15 L -15 18 L -10 20" stroke="#d4af37" stroke-width="1.5" fill="none"/>
+    <path d="M -20 20 L -15 23 L -10 26 L -5 28" stroke="#d4af37" stroke-width="1" fill="none"/>
+    
+    <path d="M 30 10 L 25 5 L 20 8 L 15 10" stroke="#d4af37" stroke-width="2" fill="none"/>
+    <path d="M 25 12 L 20 15 L 15 18 L 10 20" stroke="#d4af37" stroke-width="1.5" fill="none"/>
+    <path d="M 20 20 L 15 23 L 10 26 L 5 28" stroke="#d4af37" stroke-width="1" fill="none"/>
+  </g>
+  
+  <g transform="translate(100, 155)">
+    <path d="M -40 8 L 40 8 L 35 0 L -35 0 Z" fill="#d4af37"/>
+    <path d="M -5 0 L 5 0 L 3 -5 L -3 -5 Z" fill="#d4af37"/>
+  </g>
+  
+  <g transform="translate(100, 167)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="9" font-weight="bold" 
+          fill="#1e3a5f" text-anchor="middle">SHIAI DEBUT</text>
+  </g>
+</svg>

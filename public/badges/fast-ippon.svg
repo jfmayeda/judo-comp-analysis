@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#1e3a5f" stroke="#d4af37" stroke-width="5"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#d4af37" stroke-width="2"/>
+  
+  <g transform="translate(100, 100)">
+    <polygon points="0,-30 -8,-10 -25,-10 -12,2 -16,18 0,8 16,18 12,2 25,-10 8,-10" fill="#d4af37"/>
+  </g>
+  
+  <path d="M 100 50 L 85 70 L 90 70 L 90 100 L 85 100 L 100 120 L 115 100 L 110 100 L 110 70 L 115 70 Z" 
+        fill="#d4af37" stroke="#d4af37" stroke-width="2"/>
+  
+  <g transform="translate(40, 85)">
+    <path d="M 0 0 L 15 5 L 12 0 L 15 -5 Z" fill="#d4af37"/>
+    <path d="M 5 0 L 20 5 L 17 0 L 20 -5 Z" fill="#d4af37"/>
+    <path d="M 10 0 L 25 5 L 22 0 L 25 -5 Z" fill="#d4af37"/>
+  </g>
+  
+  <g transform="translate(135, 85)">
+    <path d="M 0 0 L 15 5 L 12 0 L 15 -5 Z" fill="#d4af37"/>
+    <path d="M 5 0 L 20 5 L 17 0 L 20 -5 Z" fill="#d4af37"/>
+    <path d="M 10 0 L 25 5 L 22 0 L 25 -5 Z" fill="#d4af37"/>
+  </g>
+  
+  <g transform="translate(100, 155)">
+    <path d="M -35 0 Q -35 8 -20 8 L 20 8 Q 35 8 35 0 L 35 -5 L -35 -5 Z" 
+          fill="#d4af37" stroke="#1e3a5f" stroke-width="1"/>
+    <text x="0" y="2" font-family="Arial, sans-serif" font-size="10" font-weight="bold" 
+          fill="#1e3a5f" text-anchor="middle">FAST IPPON</text>
+  </g>
+</svg>
