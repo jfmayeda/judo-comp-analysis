@@ -12,6 +12,8 @@ import {
   setTournamentDayAthletes,
 } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
+import { OfflineBanner } from '@/components/offline-banner';
+import { SyncButton } from '@/components/sync-button';
 
 export default function TournamentDayPage() {
   const router = useRouter();
@@ -138,6 +140,9 @@ export default function TournamentDayPage() {
 
   return (
     <div className="min-h-screen">
+      {/* Offline Banner */}
+      <OfflineBanner />
+      
       {/* Header */}
       <header className="app-header">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
@@ -165,7 +170,7 @@ export default function TournamentDayPage() {
 
         {/* Tournament Day Selector & Actions */}
         <div className="card p-6 mb-6">
-          <div className="flex gap-4 items-end mb-6">
+          <div className="flex gap-4 items-end mb-4">
             <div className="flex-1">
               <label className="eyebrow block text-gray-700 mb-2">
                 Tournament Day
@@ -205,6 +210,17 @@ export default function TournamentDayPage() {
               Assign Coaches →
             </Link>
           </div>
+
+          {/* Sync Button */}
+          {selectedTournamentDay && (
+            <div className="pt-4 border-t border-gray-200 mb-4">
+              <SyncButton
+                tournamentDayId={selectedTournamentDay.id}
+                athleteIds={Array.from(selectedAthleteIds)}
+                disabled={selectedAthleteIds.size === 0}
+              />
+            </div>
+          )}
 
           {selectedAthletes.length > 0 && (
             <div className="pt-4 border-t border-gray-200">

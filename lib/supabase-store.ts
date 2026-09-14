@@ -163,6 +163,29 @@ export async function updateAthlete(
   return dbAthleteToAthlete(updated);
 }
 
+export async function getDeletePreview(athleteId: string): Promise<{
+  athleteName: string;
+  opponentNotesCount: number;
+  promotionsCount: number;
+  tournamentEntriesCount: number;
+}> {
+  const supabase = getSupabaseClient();
+  
+  const [athlete, notes, promotions, entries] = await Promise.all([
+    getAthleteById(athleteId),
+    getOpponentNotesByAthleteId(athleteId),
+    getPromotionsByAthleteId(athleteId),
+    supabase.from('tournament_day_entries').select('id').eq('athlete_id', athleteId),
+  ]);
+
+  return {
+    athleteName: athlete ? `${athlete.firstName} ${athlete.lastInitial}` : 'Unknown',
+    opponentNotesCount: notes.length,
+    promotionsCount: promotions.length,
+    tournamentEntriesCount: entries.data?.length || 0,
+  };
+}
+
 export async function deleteAthlete(id: string): Promise<void> {
   const supabase = getSupabaseClient();
   
