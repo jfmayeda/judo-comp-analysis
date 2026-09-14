@@ -14,16 +14,18 @@ import {
   createPromotion,
   deletePromotion,
   getAllCoaches,
+  getDeletePreview,
 } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
 import TechniqueDisplay from '@/components/TechniqueDisplay';
+import OptOutDeleteModal from '@/components/OptOutDeleteModal';
 import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
 
 export default function AthletePage() {
   const params = useParams();
   const router = useRouter();
-  const { user, loading: authLoading, isAllowlisted } = useAuth();
+  const { user, loading: authLoading, isAllowlisted, isAdmin } = useAuth();
   const [athlete, setAthlete] = useState<AthleteWithNotes | null>(null);
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,13 @@ export default function AthletePage() {
   const [showAddNote, setShowAddNote] = useState(false);
   const [showAddPromotion, setShowAddPromotion] = useState(false);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePreview, setDeletePreview] = useState<{
+    athleteName: string;
+    opponentNotesCount: number;
+    promotionsCount: number;
+    tournamentEntriesCount: number;
+  } | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastInitial: '',
@@ -147,16 +156,26 @@ export default function AthletePage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm(`Delete ${athlete?.firstName} ${athlete?.lastInitial}. and all related notes?`)) {
-      return;
+  const handleOpenDeleteModal = async () => {
+    try {
+      const id = params.id as string;
+      const preview = await getDeletePreview(id);
+      setDeletePreview(preview);
+      setShowDeleteModal(true);
+    } catch (error: any) {
+      console.error('Error loading delete preview:', error);
+      alert('Failed to load delete preview. Please try again.');
     }
+  };
+
+  const handleConfirmDelete = async () => {
     try {
       const id = params.id as string;
       await deleteAthlete(id);
       router.push('/');
     } catch (error: any) {
       console.error('Error deleting athlete:', error);
+      throw error;
     }
   };
 
@@ -308,12 +327,14 @@ export default function AthletePage() {
               >
                 {editing ? 'Cancel' : 'Edit'}
               </button>
-              <button
-                onClick={handleDelete}
-                className="btn-danger text-sm"
-              >
-                Delete
-              </button>
+              {isAdmin && (
+                <button
+                  onClick={handleOpenDeleteModal}
+                  className="btn-danger text-sm"
+                >
+                  Opt-Out / Delete
+                </button>
+              )}
             </div>
           </div>
 
@@ -1073,6 +1094,16 @@ export default function AthletePage() {
           )}
         </div>
       </div>
+
+      {athlete && deletePreview && (
+        <OptOutDeleteModal
+          athlete={athlete}
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleConfirmDelete}
+          deletePreview={deletePreview}
+        />
+      )}
     </div>
   );
 }
