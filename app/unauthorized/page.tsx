@@ -33,7 +33,7 @@ export default function UnauthorizedPage() {
               Your account ({user?.email}) is not authorized to access this application.
             </p>
             <p className="text-gray-600 text-sm">
-              This app is for invited Silicon Valley Judo coaches only. If you believe you should have access, please contact your head coach or administrator.
+              This app is for invited Silicon Valley Judo coaches and families only. If you believe you should have access, please contact your administrator.
             </p>
           </div>
 
@@ -48,7 +48,7 @@ export default function UnauthorizedPage() {
         </div>
 
         <p className="text-center text-white text-sm mt-6 opacity-80">
-          Privacy-first competitor analysis for Silicon Valley Judo coaches
+          Privacy-first competitor analysis for Silicon Valley Judo
         </p>
       </div>
     </div>

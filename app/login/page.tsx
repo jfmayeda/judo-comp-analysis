@@ -15,15 +15,21 @@ function LoginForm() {
   const [useMagicLink, setUseMagicLink] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAllowlisted, isFamily, linkedAthleteIds } = useAuth();
   const supabase = getSupabaseClient();
 
   useEffect(() => {
     if (!authLoading && user) {
-      const redirectTo = searchParams.get('redirectTo') || '/';
-      router.push(redirectTo);
+      // Route coaches to home (roster), family to their linked athlete
+      if (isFamily && linkedAthleteIds.length > 0) {
+        router.push(`/athletes/${linkedAthleteIds[0]}`);
+      } else if (isAllowlisted) {
+        const redirectTo = searchParams.get('redirectTo') || '/';
+        router.push(redirectTo);
+      }
+      // If neither coach nor family, unauthorized page will be shown by the athlete page guard
     }
-  }, [user, authLoading, router, searchParams]);
+  }, [user, authLoading, isAllowlisted, isFamily, linkedAthleteIds, router, searchParams]);
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,14 +46,24 @@ function LoginForm() {
       if (signInError) throw signInError;
 
       if (data.user) {
-        // Check if user is allowlisted
+        // Check if user is allowlisted coach
         const isAllowlisted = await checkCoachAllowlist();
         if (!isAllowlisted) {
-          await supabase.auth.signOut();
-          setError('ACCESS NOT AUTHORIZED - Your email is not on the coach allowlist. Please contact your administrator.');
-          return;
+          // Check if user is family
+          const { data: familyData, error: familyError } = await supabase
+            .from('family_access')
+            .select('athlete_id')
+            .eq('email', email.toLowerCase())
+            .limit(1);
+
+          if (familyError || !familyData || familyData.length === 0) {
+            await supabase.auth.signOut();
+            setError('ACCESS NOT AUTHORIZED - Your email is not authorized. Please contact your administrator.');
+            return;
+          }
         }
 
+        // Auth check passed, context will handle routing
         const redirectTo = searchParams.get('redirectTo') || '/';
         router.push(redirectTo);
       }
@@ -105,7 +121,7 @@ function LoginForm() {
         {/* Login Card */}
         <div className="card p-8">
           <div className="mb-6">
-            <h2 className="text-xl mb-2 text-center text-gray-900 font-bold uppercase tracking-wide">Coach Login</h2>
+            <h2 className="text-xl mb-2 text-center text-gray-900 font-bold uppercase tracking-wide">Sign In</h2>
             <p className="text-center text-gray-600 text-sm">
               Access athlete profiles and tournament-day scouting notes
             </p>
@@ -135,7 +151,7 @@ function LoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="form-input w-full"
-                  placeholder="coach@svjudo.com"
+                  placeholder="your@email.com"
                 />
               </div>
               <div>
@@ -171,7 +187,7 @@ function LoginForm() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="form-input w-full"
-                  placeholder="coach@svjudo.com"
+                  placeholder="your@email.com"
                 />
               </div>
               <p className="text-sm text-gray-600">
@@ -202,7 +218,7 @@ function LoginForm() {
         </div>
 
         <p className="text-center text-white text-sm mt-6 opacity-80">
-          Privacy-first competitor analysis for Silicon Valley Judo coaches
+          Privacy-first competitor analysis for Silicon Valley Judo
         </p>
       </div>
     </div>

@@ -26,7 +26,7 @@ import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
 export default function AthletePage() {
   const params = useParams();
   const router = useRouter();
-  const { user, loading: authLoading, isAllowlisted, isAdmin } = useAuth();
+  const { user, loading: authLoading, isAllowlisted, isAdmin, isFamily, linkedAthleteIds } = useAuth();
   const [athlete, setAthlete] = useState<AthleteWithNotes | null>(null);
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +83,11 @@ export default function AthletePage() {
     toBelt: 'unset' as JudoBelt,
     notes: '',
   });
+  const [familyEmails, setFamilyEmails] = useState<Array<{ id: string; email: string; createdAt: string }>>([]);
+  const [newFamilyEmail, setNewFamilyEmail] = useState('');
+  const [invitingFamily, setInvitingFamily] = useState(false);
+  const [familyMessage, setFamilyMessage] = useState<string | null>(null);
+  const [familyError, setFamilyError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -92,15 +97,19 @@ export default function AthletePage() {
       return;
     }
 
-    if (isAllowlisted === false) {
+    // Check if user has access (coach OR family for this specific athlete)
+    const athleteId = params.id as string;
+    const hasAccess = isAllowlisted || (isFamily && linkedAthleteIds.includes(athleteId));
+    
+    if (!hasAccess) {
       router.push('/unauthorized');
       return;
     }
 
-    if (isAllowlisted === true) {
+    if (hasAccess) {
       loadAthlete();
     }
-  }, [user, authLoading, isAllowlisted, router]);
+  }, [user, authLoading, isAllowlisted, isFamily, linkedAthleteIds, params.id, router]);
 
   const loadAthlete = async () => {
     try {
@@ -137,6 +146,13 @@ export default function AthletePage() {
       
       const promotionsData = await getPromotionsByAthleteId(id);
       setPromotions(promotionsData);
+      
+      // Load family access if admin
+      if (isAdmin) {
+        const { getFamilyAccessForAthlete } = await import('@/lib/supabase-store');
+        const familyData = await getFamilyAccessForAthlete(id);
+        setFamilyEmails(familyData);
+      }
     } catch (error) {
       console.error('Error loading athlete:', error);
     } finally {
@@ -293,6 +309,42 @@ export default function AthletePage() {
     }
   };
 
+  const handleInviteFamily = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setInvitingFamily(true);
+    setFamilyError(null);
+    setFamilyMessage(null);
+
+    try {
+      const { inviteFamily } = await import('@/lib/supabase-store');
+      await inviteFamily(params.id as string, newFamilyEmail);
+      setFamilyMessage(`Invitation sent to ${newFamilyEmail}! They will receive a magic link to sign in.`);
+      setNewFamilyEmail('');
+      await loadAthlete();
+    } catch (err: any) {
+      console.error('Invite family error:', err);
+      setFamilyError(err.message || 'Failed to invite family member');
+    } finally {
+      setInvitingFamily(false);
+    }
+  };
+
+  const handleRevokeFamily = async (accessId: string, email: string) => {
+    if (!confirm(`Revoke access for ${email}? They will immediately lose access to this athlete's profile.`)) {
+      return;
+    }
+
+    try {
+      const { revokeFamilyAccess } = await import('@/lib/supabase-store');
+      await revokeFamilyAccess(accessId);
+      setFamilyMessage(`Access revoked for ${email}`);
+      await loadAthlete();
+    } catch (error: any) {
+      console.error('Error revoking family access:', error);
+      setFamilyError(error.message || 'Failed to revoke family access');
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen navy-field flex items-center justify-center">
@@ -333,12 +385,14 @@ export default function AthletePage() {
               {athlete.firstName} {athlete.lastInitial}.
             </h2>
             <div className="flex gap-2">
-              <Link
-                href={`/athletes/${athlete.id}/print`}
-                className="btn-secondary text-sm"
-              >
-                Print Profile
-              </Link>
+              {!isFamily && (
+                <Link
+                  href={`/athletes/${athlete.id}/print`}
+                  className="btn-secondary text-sm"
+                >
+                  Print Profile
+                </Link>
+              )}
               <button
                 onClick={() => setEditing(!editing)}
                 className="btn-primary text-sm"
@@ -459,68 +513,80 @@ export default function AthletePage() {
 
               <div className="border-t border-gray-200 pt-6">
                 <h4 className="text-lg font-semibold mb-4 text-gray-900">Preferred Coach Assignment</h4>
-                <div className="space-y-4">
-                  <div>
-                    <label className="eyebrow block text-gray-700 mb-2">
-                      Preferred Coach
-                    </label>
-                    <select
-                      value={formData.preferredCoachId || ''}
-                      onChange={(e) =>
-                        setFormData({ ...formData, preferredCoachId: e.target.value || null })
-                      }
-                      className="form-input w-full"
-                    >
-                      <option value="">No preference</option>
-                      {coaches.map(coach => (
-                        <option key={coach.id} value={coach.id}>
-                          {coach.email.split('@')[0]}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-gray-600 mt-1">
-                      Select a preferred coach for tournament assignments
-                    </p>
+                {isFamily ? (
+                  <div className="text-sm text-gray-600">
+                    <p>Coach assignment preferences are managed by coaches only.</p>
+                    {formData.preferredCoachId && (
+                      <p className="mt-2">
+                        <span className="font-semibold">Current preferred coach:</span>{' '}
+                        {coaches.find(c => c.id === formData.preferredCoachId)?.email.split('@')[0] || 'Assigned'}
+                      </p>
+                    )}
                   </div>
-
-                  {formData.preferredCoachId && (
-                    <>
-                      <label className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={formData.isCoachLocked}
-                          onChange={(e) =>
-                            setFormData({ ...formData, isCoachLocked: e.target.checked })
-                          }
-                          className="mt-1 rounded"
-                        />
-                        <div>
-                          <span className="font-medium text-gray-900">Lock to preferred coach 🔒</span>
-                          <p className="text-xs text-gray-600">
-                            This athlete must always be assigned their preferred coach
-                          </p>
-                        </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="eyebrow block text-gray-700 mb-2">
+                        Preferred Coach
                       </label>
+                      <select
+                        value={formData.preferredCoachId || ''}
+                        onChange={(e) =>
+                          setFormData({ ...formData, preferredCoachId: e.target.value || null })
+                        }
+                        className="form-input w-full"
+                      >
+                        <option value="">No preference</option>
+                        {coaches.map(coach => (
+                          <option key={coach.id} value={coach.id}>
+                            {coach.email.split('@')[0]}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Select a preferred coach for tournament assignments
+                      </p>
+                    </div>
 
-                      <label className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          checked={formData.coachIsExclusive}
-                          onChange={(e) =>
-                            setFormData({ ...formData, coachIsExclusive: e.target.checked })
-                          }
-                          className="mt-1 rounded"
-                        />
-                        <div>
-                          <span className="font-medium text-gray-900">Coach is exclusive ⭐</span>
-                          <p className="text-xs text-gray-600">
-                            This coach is dedicated to this athlete only and should not coach others
-                          </p>
-                        </div>
-                      </label>
-                    </>
-                  )}
-                </div>
+                    {formData.preferredCoachId && (
+                      <>
+                        <label className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.isCoachLocked}
+                            onChange={(e) =>
+                              setFormData({ ...formData, isCoachLocked: e.target.checked })
+                            }
+                            className="mt-1 rounded"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Lock to preferred coach 🔒</span>
+                            <p className="text-xs text-gray-600">
+                              This athlete must always be assigned their preferred coach
+                            </p>
+                          </div>
+                        </label>
+
+                        <label className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.coachIsExclusive}
+                            onChange={(e) =>
+                              setFormData({ ...formData, coachIsExclusive: e.target.checked })
+                            }
+                            className="mt-1 rounded"
+                          />
+                          <div>
+                            <span className="font-medium text-gray-900">Coach is exclusive ⭐</span>
+                            <p className="text-xs text-gray-600">
+                              This coach is dedicated to this athlete only and should not coach others
+                            </p>
+                          </div>
+                        </label>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -699,15 +765,99 @@ export default function AthletePage() {
           )}
         </div>
 
+        {isAdmin && (
+          <div className="card p-6 mb-6 no-print">
+            <h3 className="text-2xl mb-4">Family Access</h3>
+            
+            {familyError && (
+              <div className="mb-4 p-3 rounded text-sm bg-red-50 text-red-800 border border-red-200">
+                {familyError}
+              </div>
+            )}
+
+            {familyMessage && (
+              <div className="mb-4 p-3 rounded text-sm bg-green-50 text-green-800 border border-green-200">
+                {familyMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleInviteFamily} className="mb-6 space-y-4">
+              <div>
+                <label className="eyebrow block text-gray-700 mb-2">
+                  Parent/Guardian Email
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    required
+                    value={newFamilyEmail}
+                    onChange={(e) => setNewFamilyEmail(e.target.value)}
+                    className="form-input flex-1"
+                    placeholder="parent@example.com"
+                  />
+                  <button
+                    type="submit"
+                    disabled={invitingFamily}
+                    className="btn-primary"
+                  >
+                    {invitingFamily ? 'Sending...' : 'Invite'}
+                  </button>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  Family members will receive a magic link to view and edit this athlete's profile only.
+                </p>
+              </div>
+            </form>
+
+            {familyEmails.length === 0 ? (
+              <p className="text-gray-600 text-sm">No family members invited yet.</p>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-gray-700 mb-3">Current Family Access ({familyEmails.length})</p>
+                {familyEmails.map((access) => (
+                  <div
+                    key={access.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded border border-gray-200"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-900">{access.email}</p>
+                      <p className="text-xs text-gray-600">
+                        Invited {new Date(access.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleRevokeFamily(access.id, access.email)}
+                      className="btn-secondary border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-sm"
+                    >
+                      Revoke
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-gray-700">
+              <p className="font-semibold mb-1">Privacy & Security</p>
+              <ul className="list-disc list-inside space-y-1 text-gray-600 text-xs">
+                <li>Family can view and edit safe profile fields (tokui-waza, development areas, stance)</li>
+                <li>Family CANNOT delete athletes, manage coach assignments, or see other athletes</li>
+                <li>Revoking access is immediate and permanent</li>
+              </ul>
+            </div>
+          </div>
+        )}
+
         <div className="card p-6 mb-6">
           <div className="flex justify-between items-center mb-6 no-print">
             <h3 className="text-2xl">Promotions</h3>
-            <button
-              onClick={() => setShowAddPromotion(!showAddPromotion)}
-              className="btn-primary text-sm"
-            >
-              {showAddPromotion ? 'Cancel' : 'Add Promotion'}
-            </button>
+            {!isFamily && (
+              <button
+                onClick={() => setShowAddPromotion(!showAddPromotion)}
+                className="btn-primary text-sm"
+              >
+                {showAddPromotion ? 'Cancel' : 'Add Promotion'}
+              </button>
+            )}
           </div>
 
           {showAddPromotion && (
@@ -819,6 +969,7 @@ export default function AthletePage() {
                   <button
                     onClick={() => handleDeletePromotion(promotion.id)}
                     className="text-red-600 hover:text-red-800 text-sm font-semibold uppercase tracking-wide no-print ml-4"
+                    style={{ display: isFamily ? 'none' : 'block' }}
                   >
                     Delete
                   </button>
@@ -1051,6 +1202,7 @@ export default function AthletePage() {
                     <button
                       onClick={() => handleDeleteNote(note.id)}
                       className="text-red-600 hover:text-red-800 text-sm font-semibold uppercase tracking-wide no-print"
+                      style={{ display: isFamily ? 'none' : 'block' }}
                     >
                       Delete
                     </button>

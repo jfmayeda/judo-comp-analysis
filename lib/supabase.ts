@@ -214,6 +214,29 @@ export type Database = {
           is_admin?: boolean;
         };
       };
+      family_access: {
+        Row: {
+          id: string;
+          athlete_id: string;
+          email: string;
+          invited_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          athlete_id: string;
+          email: string;
+          invited_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          athlete_id?: string;
+          email?: string;
+          invited_by?: string | null;
+          created_at?: string;
+        };
+      };
     };
   };
 };

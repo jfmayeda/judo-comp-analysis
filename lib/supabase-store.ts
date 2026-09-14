@@ -1653,6 +1653,81 @@ export async function removeCoach(coachId: string): Promise<void> {
   }
 }
 
+// Family Access Management
+export async function getFamilyAccessForAthlete(athleteId: string): Promise<Array<{ id: string; email: string; createdAt: string }>> {
+  const supabase = getSupabaseClient();
+  
+  const { data, error } = await supabase
+    .from('family_access')
+    .select('id, email, created_at')
+    .eq('athlete_id', athleteId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching family access:', error);
+    throw new Error('Failed to fetch family access');
+  }
+
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    email: row.email,
+    createdAt: row.created_at,
+  }));
+}
+
+export async function inviteFamily(athleteId: string, email: string): Promise<void> {
+  const supabase = getSupabaseClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User must be authenticated');
+  }
+
+  // Insert family access grant
+  const { error: insertError } = await supabase
+    .from('family_access')
+    .insert([{
+      athlete_id: athleteId,
+      email: email.toLowerCase(),
+      invited_by: user.id,
+    }] as any);
+
+  if (insertError) {
+    console.error('Error inviting family:', insertError);
+    if (insertError.code === '23505') {
+      throw new Error('This email is already invited for this athlete');
+    }
+    throw new Error('Failed to invite family member');
+  }
+
+  // Send magic link invitation
+  const { error: inviteError } = await supabase.auth.signInWithOtp({
+    email: email.toLowerCase(),
+    options: {
+      emailRedirectTo: `${window.location.origin}/athletes/${athleteId}`,
+    },
+  });
+
+  if (inviteError) {
+    console.error('Error sending invitation email:', inviteError);
+    // Don't throw - the DB entry is created, email is optional
+  }
+}
+
+export async function revokeFamilyAccess(accessId: string): Promise<void> {
+  const supabase = getSupabaseClient();
+  
+  const { error } = await supabase
+    .from('family_access')
+    .delete()
+    .eq('id', accessId);
+
+  if (error) {
+    console.error('Error revoking family access:', error);
+    throw new Error('Failed to revoke family access');
+  }
+}
+
 function dbTechniqueToTechnique(dbTechnique: {
   id: string;
   name: string;

@@ -10,6 +10,8 @@ type AuthContextType = {
   loading: boolean;
   isAllowlisted: boolean | null;
   isAdmin: boolean | null;
+  isFamily: boolean | null;
+  linkedAthleteIds: string[];
   signOut: () => Promise<void>;
 };
 
@@ -19,6 +21,8 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isAllowlisted: null,
   isAdmin: null,
+  isFamily: null,
+  linkedAthleteIds: [],
   signOut: async () => {},
 });
 
@@ -28,16 +32,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAllowlisted, setIsAllowlisted] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isFamily, setIsFamily] = useState<boolean | null>(null);
+  const [linkedAthleteIds, setLinkedAthleteIds] = useState<string[]>([]);
   const supabase = getSupabaseClient();
 
   const checkAllowlist = async (userId: string, userEmail: string | undefined) => {
     if (!userEmail) {
       setIsAllowlisted(false);
       setIsAdmin(false);
+      setIsFamily(false);
+      setLinkedAthleteIds([]);
       return;
     }
 
     try {
+      // Check if user is a coach
       const { data, error } = await supabase
         .from('coach_allowlist')
         .select('is_admin')
@@ -48,20 +57,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error checking allowlist:', error);
         setIsAllowlisted(false);
         setIsAdmin(false);
-        return;
-      }
-
-      if (data) {
+      } else if (data) {
+        // User is a coach
         setIsAllowlisted(true);
         setIsAdmin(data.is_admin);
+        setIsFamily(false);
+        setLinkedAthleteIds([]);
+        return;
       } else {
         setIsAllowlisted(false);
         setIsAdmin(false);
+      }
+
+      // Check if user is family (only if not a coach)
+      const { data: familyData, error: familyError } = await supabase
+        .from('family_access')
+        .select('athlete_id')
+        .eq('email', userEmail.toLowerCase());
+
+      if (familyError) {
+        console.error('Error checking family access:', familyError);
+        setIsFamily(false);
+        setLinkedAthleteIds([]);
+      } else if (familyData && familyData.length > 0) {
+        // User is family with access to athlete(s)
+        setIsFamily(true);
+        setLinkedAthleteIds(familyData.map((row: any) => row.athlete_id));
+      } else {
+        // User is neither coach nor family
+        setIsFamily(false);
+        setLinkedAthleteIds([]);
       }
     } catch (error) {
       console.error('Error checking allowlist:', error);
       setIsAllowlisted(false);
       setIsAdmin(false);
+      setIsFamily(false);
+      setLinkedAthleteIds([]);
     }
   };
 
@@ -94,6 +126,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setIsAllowlisted(null);
           setIsAdmin(null);
+          setIsFamily(null);
+          setLinkedAthleteIds([]);
         }
         
         setLoading(false);
@@ -112,6 +146,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(null);
       setIsAllowlisted(null);
       setIsAdmin(null);
+      setIsFamily(null);
+      setLinkedAthleteIds([]);
       
       // Clear offline cache on logout for user isolation
       if (typeof window !== 'undefined' && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -135,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAllowlisted, isAdmin, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAllowlisted, isAdmin, isFamily, linkedAthleteIds, signOut }}>
       {children}
     </AuthContext.Provider>
   );
