@@ -262,10 +262,10 @@ const BADGE_CATALOG: BadgeDefinition[] = [
     tiers: { white: 1, blue: 3, brown: 8, black: 15 },
   },
   {
-    id: 'weight-made',
+    id: 'made-weight',
     name: 'Made Weight',
     description: 'Successful weigh-ins completed',
-    imagePath: '/badges/weight-made.svg',
+    imagePath: '/badges/made-weight.svg',
     category: 'participation',
     tiers: { white: 1, blue: 3, brown: 8, black: 20 },
   },
@@ -423,7 +423,7 @@ function getMockProgressForAthlete(athleteId: string, firstName: string): Map<st
     counts.set('mat-presence', 12);
     counts.set('iron-streak', 8);
     counts.set('travel-club', 6);
-    counts.set('weight-made', 11);
+    counts.set('made-weight', 11);
     counts.set('first-medal', 4);
     counts.set('gold-medal', 2);
     counts.set('student-of-the-game', 9);
