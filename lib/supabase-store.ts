@@ -991,7 +991,7 @@ export async function getTodaysTournamentAssignment(athleteId: string): Promise<
     return null;
   }
   
-  const tournamentDayId = tournamentDays[0].id;
+  const tournamentDayId = (tournamentDays[0] as { id: string }).id;
   
   const { data, error } = await supabase
     .from('tournament_day_entries')
@@ -1004,7 +1004,7 @@ export async function getTodaysTournamentAssignment(athleteId: string): Promise<
     return null;
   }
   
-  return dbTournamentDayEntryToTournamentDayEntry(data[0]);
+  return dbTournamentDayEntryToTournamentDayEntry(data[0] as never);
 }
 
 export async function updateTournamentDayEntry(
