@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#1e3a5f" stroke="#d4af37" stroke-width="5"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#d4af37" stroke-width="2"/>
+  
+  <!-- Foot sweep motion -->
+  <g transform="translate(100, 95)">
+    <!-- Standing leg -->
+    <line x1="-10" y1="-15" x2="-10" y2="15" stroke="#d4af37" stroke-width="4"/>
+    
+    <!-- Sweeping leg with motion -->
+    <path d="M 0 -5 Q 15 0 25 10" fill="none" stroke="#d4af37" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Motion lines -->
+    <path d="M 10 5 Q 20 8 28 13" fill="none" stroke="#d4af37" stroke-width="2" opacity="0.6"/>
+    <path d="M 8 0 Q 18 3 26 8" fill="none" stroke="#d4af37" stroke-width="2" opacity="0.4"/>
+    
+    <!-- Opponent's leg being swept -->
+    <line x1="20" y1="0" x2="30" y2="15" stroke="#888" stroke-width="3" stroke-dasharray="3,2"/>
+    
+    <!-- Impact star -->
+    <polygon points="25,12 27,15 30,15 27,17 28,20 25,18 22,20 23,17 20,15 23,15" fill="#d4af37"/>
+  </g>
+  
+  <g transform="translate(100, 175)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="10" font-weight="bold" 
+          fill="#d4af37" text-anchor="middle">ASHI</text>
+  </g>
+</svg>

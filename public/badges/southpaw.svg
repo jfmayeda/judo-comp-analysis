@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#1e3a5f" stroke="#d4af37" stroke-width="5"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#d4af37" stroke-width="2"/>
+  
+  <!-- Lightning bolt pointing left -->
+  <path d="M 120 60 L 75 95 L 90 95 L 70 130 L 110 100 L 95 100 Z" 
+        fill="#d4af37" stroke="#d4af37" stroke-width="2"/>
+  
+  <!-- Directional arrow left -->
+  <g transform="translate(50, 155)">
+    <path d="M 0 0 L -10 -5 L -10 5 Z" fill="#d4af37"/>
+    <rect x="0" y="-2" width="20" height="4" fill="#d4af37"/>
+  </g>
+  
+  <g transform="translate(100, 175)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="10" font-weight="bold" 
+          fill="#d4af37" text-anchor="middle">SOUTHPAW</text>
+  </g>
+</svg>

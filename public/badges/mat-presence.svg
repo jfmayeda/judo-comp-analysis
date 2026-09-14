@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#1e3a5f" stroke="#4CAF50" stroke-width="5"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#4CAF50" stroke-width="2"/>
+  
+  <!-- Clock + checkmark -->
+  <g transform="translate(100, 85)">
+    <!-- Clock face -->
+    <circle cx="0" cy="0" r="20" fill="none" stroke="#4CAF50" stroke-width="3"/>
+    <line x1="0" y1="0" x2="0" y2="-12" stroke="#4CAF50" stroke-width="2"/>
+    <line x1="0" y1="0" x2="10" y2="0" stroke="#4CAF50" stroke-width="2"/>
+    
+    <!-- Check mark below -->
+    <path d="M -10 30 L -2 38 L 12 20" fill="none" stroke="#4CAF50" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <g transform="translate(100, 175)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="8" font-weight="bold" 
+          fill="#4CAF50" text-anchor="middle">MAT PRESENCE</text>
+  </g>
+</svg>

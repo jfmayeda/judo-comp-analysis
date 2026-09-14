@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#1e3a5f" stroke="#20b2aa" stroke-width="5"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#20b2aa" stroke-width="2"/>
+  
+  <!-- Escape symbol - breaking free -->
+  <g transform="translate(100, 95)">
+    <!-- Broken chain/bonds -->
+    <line x1="-25" y1="-10" x2="-10" y2="-10" stroke="#20b2aa" stroke-width="3"/>
+    <circle cx="-28" cy="-10" r="4" fill="none" stroke="#20b2aa" stroke-width="2"/>
+    <line x1="-8" y1="-12" x2="-2" y2="-5" stroke="#888" stroke-width="2" stroke-dasharray="2,2"/>
+    
+    <line x1="25" y1="-10" x2="10" y2="-10" stroke="#20b2aa" stroke-width="3"/>
+    <circle cx="28" cy="-10" r="4" fill="none" stroke="#20b2aa" stroke-width="2"/>
+    <line x1="8" y1="-12" x2="2" y2="-5" stroke="#888" stroke-width="2" stroke-dasharray="2,2"/>
+    
+    <!-- Figure escaping upward -->
+    <circle cx="0" cy="0" r="6" fill="#20b2aa"/>
+    <rect x="-4" y="7" width="8" height="12" rx="2" fill="#20b2aa"/>
+    
+    <!-- Motion lines -->
+    <path d="M -15 10 L -20 15" stroke="#20b2aa" stroke-width="2" opacity="0.5"/>
+    <path d="M 15 10 L 20 15" stroke="#20b2aa" stroke-width="2" opacity="0.5"/>
+    <path d="M -10 5 L -12 10" stroke="#20b2aa" stroke-width="2" opacity="0.5"/>
+    <path d="M 10 5 L 12 10" stroke="#20b2aa" stroke-width="2" opacity="0.5"/>
+  </g>
+  
+  <g transform="translate(100, 175)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="8" font-weight="bold" 
+          fill="#20b2aa" text-anchor="middle">ESCAPE ARTIST</text>
+  </g>
+</svg>

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#1e3a5f" stroke="#d4af37" stroke-width="5"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#d4af37" stroke-width="2"/>
+  
+  <!-- Podium medal -->
+  <g transform="translate(100, 90)">
+    <!-- Ribbon -->
+    <rect x="-5" y="-25" width="10" height="20" rx="1" fill="#d4af37"/>
+    <polygon points="-5,0 0,-5 5,0 5,8 2,6 0,8 -2,6 -5,8" fill="#d4af37"/>
+    
+    <!-- Medal circle -->
+    <circle cx="0" cy="15" r="18" fill="#d4af37"/>
+    <circle cx="0" cy="15" r="14" fill="none" stroke="#1e3a5f" stroke-width="2"/>
+    
+    <!-- Number 1 -->
+    <text x="0" y="23" font-family="Arial, sans-serif" font-size="20" font-weight="bold" 
+          fill="#1e3a5f" text-anchor="middle">1</text>
+  </g>
+  
+  <g transform="translate(100, 175)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="8" font-weight="bold" 
+          fill="#d4af37" text-anchor="middle">FIRST MEDAL</text>
+  </g>
+</svg>

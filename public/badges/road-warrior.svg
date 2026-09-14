@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#1e3a5f" stroke="#4CAF50" stroke-width="5"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#4CAF50" stroke-width="2"/>
+  
+  <!-- Road with location pins -->
+  <g transform="translate(100, 95)">
+    <!-- Winding road path -->
+    <path d="M -35 25 Q -20 15 -10 0 T 20 -15 T 40 -20" 
+          fill="none" stroke="#4CAF50" stroke-width="3" stroke-dasharray="8,4"/>
+    
+    <!-- Location pins -->
+    <g transform="translate(-30, 20)">
+      <circle cx="0" cy="0" r="6" fill="#4CAF50"/>
+      <circle cx="0" cy="0" r="3" fill="#fff"/>
+    </g>
+    <g transform="translate(-5, 5)">
+      <circle cx="0" cy="0" r="6" fill="#4CAF50"/>
+      <circle cx="0" cy="0" r="3" fill="#fff"/>
+    </g>
+    <g transform="translate(15, -10)">
+      <circle cx="0" cy="0" r="6" fill="#4CAF50"/>
+      <circle cx="0" cy="0" r="3" fill="#fff"/>
+    </g>
+    <g transform="translate(35, -18)">
+      <circle cx="0" cy="0" r="6" fill="#4CAF50"/>
+      <circle cx="0" cy="0" r="3" fill="#fff"/>
+    </g>
+  </g>
+  
+  <g transform="translate(100, 175)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="8" font-weight="bold" 
+          fill="#4CAF50" text-anchor="middle">ROAD WARRIOR</text>
+  </g>
+</svg>
