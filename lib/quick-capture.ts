@@ -1,5 +1,12 @@
 import { checkCoachAllowlist } from './auth-utils';
 import {
+  collectTechniqueIds,
+  deriveScoreFlavor,
+  formatCaptureScoreSummary,
+  parseCaptureScoreEvents,
+  withSequenceOrders,
+} from './capture-score';
+import {
   createOpponentNote,
   getOpponentById,
 } from './supabase-store';
@@ -110,9 +117,14 @@ export async function saveQuickCapture(
     input.opponent
   );
 
+  const scoreEvents = withSequenceOrders(input.scoreEvents ?? []);
   const howText = input.howText?.trim() ?? '';
   const note = input.note.trim();
-  const notes = [howText, note].filter(Boolean).join('\n');
+  const summary = formatCaptureScoreSummary({
+    result: input.result,
+    events: scoreEvents,
+  });
+  const notes = [howText, note].filter(Boolean).join('\n') || summary;
 
   return createOpponentNote({
     athleteId: input.athleteId,
@@ -120,8 +132,9 @@ export async function saveQuickCapture(
     opponentLabel,
     club,
     notes,
-    techniqueIds: input.techniqueIds ?? [],
+    techniqueIds: collectTechniqueIds(scoreEvents),
     result: input.result,
-    scoreFlavor: input.scoreFlavor ?? null,
+    scoreFlavor: deriveScoreFlavor(scoreEvents),
+    scoreEvents: parseCaptureScoreEvents(scoreEvents),
   });
 }
