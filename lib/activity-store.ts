@@ -1,19 +1,32 @@
 import { AthleteActivity, CareerTimelineEvent } from './types';
 import { getMockActivityForAthlete, hasMockData } from './activity-mock-data';
-import { getPromotionsByAthleteId } from './supabase-store';
+import { getPromotionsByAthleteId, getAthleteById } from './supabase-store';
 import { formatBeltName } from './belt-utils';
 
 export async function getAthleteActivity(athleteId: string): Promise<AthleteActivity | null> {
-  const mockActivity = getMockActivityForAthlete(athleteId);
+  const athlete = await getAthleteById(athleteId);
   
-  if (mockActivity) {
-    const promotions = await getPromotionsByAthleteId(athleteId);
-    const timeline = buildCareerTimeline(mockActivity.judoStartDate, promotions);
+  if (!athlete) {
+    return null;
+  }
+  
+  const isDemoOrSampleAthlete = 
+    athlete.notes.includes('[SAMPLE DATA') ||
+    (athlete.firstName === 'Demo' && athlete.lastInitial === 'A') ||
+    (athlete.firstName === 'Sample' && athlete.lastInitial === 'B');
+  
+  if (isDemoOrSampleAthlete) {
+    const mockActivity = getMockActivityForAthlete(athleteId);
     
-    return {
-      ...mockActivity,
-      careerTimeline: timeline,
-    };
+    if (mockActivity) {
+      const promotions = await getPromotionsByAthleteId(athleteId);
+      const timeline = buildCareerTimeline(mockActivity.judoStartDate, promotions);
+      
+      return {
+        ...mockActivity,
+        careerTimeline: timeline,
+      };
+    }
   }
 
   return null;

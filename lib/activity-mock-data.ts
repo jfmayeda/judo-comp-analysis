@@ -3,10 +3,6 @@ import { AthleteActivity, Tournament, Match, CareerTimelineEvent } from './types
 export const MOCK_ATHLETE_IDS = new Set<string>();
 
 export function getMockActivityForAthlete(athleteId: string): AthleteActivity | null {
-  if (!MOCK_ATHLETE_IDS.has(athleteId)) {
-    return null;
-  }
-
   const judoStartDate = '2020-09-01';
   
   const tournaments: Tournament[] = [
