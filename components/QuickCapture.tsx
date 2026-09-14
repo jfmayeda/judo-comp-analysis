@@ -3,16 +3,21 @@
 import { useEffect, useMemo, useState } from 'react';
 import TechniquePicker from '@/components/TechniquePicker';
 import {
+  formatCaptureScoreSummary,
+  SCORE_EVENT_LABELS,
+  withSequenceOrders,
+} from '@/lib/capture-score';
+import {
   CAPTURE_RESULT_LABELS,
-  SCORE_FLAVOR_LABELS,
   saveQuickCapture,
 } from '@/lib/quick-capture';
-import { getAllOpponents } from '@/lib/supabase-store';
+import { getAllOpponents, getTechniquesByIds } from '@/lib/supabase-store';
 import {
   CaptureOpponent,
   CaptureResult,
+  CaptureScoreEventType,
+  DraftScoreEvent,
   Opponent,
-  ScoreFlavor,
 } from '@/lib/types';
 
 type OpponentMode = CaptureOpponent['kind'];
@@ -23,13 +28,47 @@ type QuickCaptureProps = {
   onCancel: () => void;
 };
 
-const SCORE_FLAVORS: ScoreFlavor[] = [
-  'ippon',
-  'waza_ari',
-  'osaekomi',
-  'golden_score',
-  'other',
+const SCORING_ADDS: Array<{
+  eventType: Exclude<CaptureScoreEventType, 'shido'>;
+  label: string;
+}> = [
+  { eventType: 'ippon', label: 'Ippon' },
+  { eventType: 'wazari', label: 'Waza-ari' },
+  { eventType: 'osaekomi', label: 'Osaekomi' },
+  { eventType: 'golden_score', label: 'Golden score' },
 ];
+
+function SelectChip({
+  pressed,
+  onClick,
+  children,
+}: {
+  pressed: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onClick}
+      className="chip-toggle"
+    >
+      {children}
+    </button>
+  );
+}
+
+function draftEventLine(event: DraftScoreEvent, index: number): string {
+  if (event.eventType === 'shido') {
+    const who = event.recipient === 'athlete' ? 'us' : 'them';
+    return `${index + 1}. Shido (${who})`;
+  }
+  const label = SCORE_EVENT_LABELS[event.eventType];
+  return event.techniqueLabel
+    ? `${index + 1}. ${label} via ${event.techniqueLabel}`
+    : `${index + 1}. ${label}`;
+}
 
 export default function QuickCapture({
   athleteId,
@@ -43,9 +82,11 @@ export default function QuickCapture({
   const [sharedOpponentId, setSharedOpponentId] = useState('');
   const [oneOffFirst, setOneOffFirst] = useState('');
   const [oneOffInitial, setOneOffInitial] = useState('');
-  const [techniqueIds, setTechniqueIds] = useState<string[]>([]);
+  const [events, setEvents] = useState<DraftScoreEvent[]>([]);
+  const [techniqueTargetIndex, setTechniqueTargetIndex] = useState<number | null>(
+    null
+  );
   const [howText, setHowText] = useState('');
-  const [scoreFlavor, setScoreFlavor] = useState<ScoreFlavor | null>(null);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +116,65 @@ export default function QuickCapture({
         oneOffFirst.trim() !== '' &&
         oneOffInitial.trim().length === 1));
 
+  const captureSummary =
+    result === null
+      ? null
+      : formatCaptureScoreSummary({
+          result,
+          events: withSequenceOrders(events),
+        });
+
+  const techniqueTarget =
+    techniqueTargetIndex !== null ? events[techniqueTargetIndex] : undefined;
+  const scoringTarget =
+    techniqueTarget && techniqueTarget.eventType !== 'shido'
+      ? techniqueTarget
+      : null;
+
+  const addScoringEvent = (
+    eventType: Exclude<CaptureScoreEventType, 'shido'>
+  ) => {
+    const next = [...events, { eventType }];
+    setEvents(next);
+    setTechniqueTargetIndex(next.length - 1);
+  };
+
+  const addShido = (recipient: 'athlete' | 'opponent') => {
+    setEvents((current) => [...current, { eventType: 'shido', recipient }]);
+    setTechniqueTargetIndex(null);
+  };
+
+  const removeEvent = (index: number) => {
+    setEvents((current) => current.filter((_, i) => i !== index));
+    setTechniqueTargetIndex((current) => {
+      if (current === null) return null;
+      if (current === index) return null;
+      if (current > index) return current - 1;
+      return current;
+    });
+  };
+
+  const handleTechniqueChange = async (ids: string[]) => {
+    if (techniqueTargetIndex === null) return;
+    const techniqueId = ids[ids.length - 1];
+    let techniqueLabel: string | undefined;
+    if (techniqueId) {
+      const techs = await getTechniquesByIds([techniqueId]);
+      techniqueLabel = techs[0]?.name;
+    }
+    setEvents((current) =>
+      current.map((event, index) => {
+        if (index !== techniqueTargetIndex || event.eventType === 'shido') {
+          return event;
+        }
+        return {
+          eventType: event.eventType,
+          ...(techniqueId ? { techniqueId, techniqueLabel } : {}),
+        };
+      })
+    );
+  };
+
   const handleSave = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!result || !canSave) return;
@@ -99,9 +199,8 @@ export default function QuickCapture({
         athleteId,
         opponent,
         result,
-        techniqueIds,
+        scoreEvents: events,
         howText,
-        scoreFlavor,
         note,
       });
       onSaved();
@@ -124,7 +223,7 @@ export default function QuickCapture({
             Quick capture
           </h3>
           <p className="text-sm text-gray-600 mt-1">
-            After the match. Result, opponent, how, short note.
+            After the match. Result, opponent, score sequence, short note.
           </p>
         </div>
         <button
@@ -140,18 +239,13 @@ export default function QuickCapture({
         <legend className="eyebrow block text-gray-700 mb-2">Result *</legend>
         <div className="grid grid-cols-3 gap-2">
           {(['win', 'loss', 'other'] as const).map((value) => (
-            <button
+            <SelectChip
               key={value}
-              type="button"
+              pressed={result === value}
               onClick={() => setResult(value)}
-              className={`min-h-[48px] rounded-full text-sm font-semibold uppercase tracking-wide border-2 ${
-                result === value
-                  ? 'bg-brand-blue text-white border-brand-blue'
-                  : 'bg-white text-gray-800 border-gray-300'
-              }`}
             >
               {CAPTURE_RESULT_LABELS[value]}
-            </button>
+            </SelectChip>
           ))}
         </div>
       </fieldset>
@@ -166,18 +260,13 @@ export default function QuickCapture({
               ['unknown', 'Unknown'],
             ] as const
           ).map(([value, label]) => (
-            <button
+            <SelectChip
               key={value}
-              type="button"
+              pressed={opponentMode === value}
               onClick={() => setOpponentMode(value)}
-              className={`min-h-[44px] rounded-full text-xs md:text-sm font-semibold uppercase tracking-wide border-2 ${
-                opponentMode === value
-                  ? 'bg-brand-blue text-white border-brand-blue'
-                  : 'bg-white text-gray-800 border-gray-300'
-              }`}
             >
               {label}
-            </button>
+            </SelectChip>
           ))}
         </div>
 
@@ -200,12 +289,9 @@ export default function QuickCapture({
                   <button
                     key={opponent.id}
                     type="button"
+                    aria-pressed={sharedOpponentId === opponent.id}
                     onClick={() => setSharedOpponentId(opponent.id)}
-                    className={`w-full text-left px-3 py-3 min-h-[44px] text-sm ${
-                      sharedOpponentId === opponent.id
-                        ? 'bg-blue-50 font-semibold'
-                        : 'bg-white'
-                    }`}
+                    className="list-choice"
                   >
                     {opponent.firstName} {opponent.lastInitial}.
                     {opponent.club ? ` · ${opponent.club}` : ''}
@@ -249,45 +335,101 @@ export default function QuickCapture({
         )}
       </fieldset>
 
+      <fieldset>
+        <legend className="eyebrow block text-gray-700 mb-2">
+          Score sequence
+        </legend>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {SCORING_ADDS.map((item) => (
+            <button
+              key={item.eventType}
+              type="button"
+              className="chip-toggle"
+              onClick={() => addScoringEvent(item.eventType)}
+            >
+              {item.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="chip-toggle"
+            onClick={() => addShido('athlete')}
+          >
+            Shido us
+          </button>
+          <button
+            type="button"
+            className="chip-toggle"
+            onClick={() => addShido('opponent')}
+          >
+            Shido them
+          </button>
+        </div>
+
+        {events.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            Tap to add scores in order. Technique is optional on throws and pins.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {events.map((item, index) => (
+              <li
+                key={`${item.eventType}-${index}`}
+                className="flex flex-wrap items-center gap-2"
+              >
+                <span className="text-sm font-semibold text-gray-900 flex-1 min-w-[8rem]">
+                  {draftEventLine(item, index)}
+                </span>
+                {item.eventType !== 'shido' && (
+                  <SelectChip
+                    pressed={techniqueTargetIndex === index}
+                    onClick={() =>
+                      setTechniqueTargetIndex((current) =>
+                        current === index ? null : index
+                      )
+                    }
+                  >
+                    How
+                  </SelectChip>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeEvent(index)}
+                  className="text-sm font-semibold uppercase tracking-wide text-red-700 min-h-[44px]"
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {scoringTarget && (
+          <div className="mt-3">
+            <TechniquePicker
+              label={`Technique for ${SCORE_EVENT_LABELS[scoringTarget.eventType]} (optional)`}
+              selectedIds={
+                scoringTarget.techniqueId ? [scoringTarget.techniqueId] : []
+              }
+              onChange={handleTechniqueChange}
+              placeholder="Type to search a throw or pin"
+            />
+          </div>
+        )}
+      </fieldset>
+
       <div>
-        <TechniquePicker
-          label="How (tokui / ne list)"
-          selectedIds={techniqueIds}
-          onChange={setTechniqueIds}
-          placeholder="Type to search a technique"
-        />
+        <label className="eyebrow block text-gray-700 mb-2">
+          How (free text)
+        </label>
         <input
           type="text"
           value={howText}
           onChange={(e) => setHowText(e.target.value)}
-          className="form-input w-full mt-2"
+          className="form-input w-full"
           placeholder="Or free text if it is not in the list"
         />
       </div>
-
-      <fieldset>
-        <legend className="eyebrow block text-gray-700 mb-2">
-          Score flavor
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {SCORE_FLAVORS.map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() =>
-                setScoreFlavor((current) => (current === value ? null : value))
-              }
-              className={`min-h-[44px] px-3 rounded-full text-xs font-semibold uppercase tracking-wide border-2 ${
-                scoreFlavor === value
-                  ? 'bg-brand-blue text-white border-brand-blue'
-                  : 'bg-white text-gray-800 border-gray-300'
-              }`}
-            >
-              {SCORE_FLAVOR_LABELS[value]}
-            </button>
-          ))}
-        </div>
-      </fieldset>
 
       <div>
         <label className="eyebrow block text-gray-700 mb-2">Note</label>
@@ -299,6 +441,12 @@ export default function QuickCapture({
           placeholder="One or two lines. Phone keyboard handles voice."
         />
       </div>
+
+      {captureSummary && (
+        <p className="text-sm font-semibold text-gray-900" data-testid="capture-summary">
+          {captureSummary}
+        </p>
+      )}
 
       {error && (
         <p className="text-sm text-red-700" role="alert">

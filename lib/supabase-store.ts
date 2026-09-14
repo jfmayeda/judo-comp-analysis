@@ -1,4 +1,5 @@
-import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent, Technique, JudoBelt, Promotion, Coach, CaptureResult, ScoreFlavor } from './types';
+import { parseCaptureScoreEvents } from './capture-score';
+import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent, Technique, JudoBelt, Promotion, Coach, CaptureResult, CaptureScoreEvent, ScoreFlavor } from './types';
 import { getSupabaseClient } from './supabase';
 import type { Database } from './supabase';
 import { enableMockDataForAthlete } from './activity-mock-data';
@@ -294,6 +295,7 @@ export async function createOpponentNote(data: {
   newazaTechniqueIds?: string[];
   result?: CaptureResult | null;
   scoreFlavor?: ScoreFlavor | null;
+  scoreEvents?: CaptureScoreEvent[];
 }): Promise<OpponentNote> {
   const supabase = getSupabaseClient();
 
@@ -322,6 +324,7 @@ export async function createOpponentNote(data: {
       newaza_technique_ids: data.newazaTechniqueIds || [],
       result: data.result ?? null,
       score_flavor: data.scoreFlavor ?? null,
+      score_events: data.scoreEvents ?? [],
       created_by: user.id,
     }] as never)
     .select()
@@ -1413,6 +1416,7 @@ function dbOpponentNoteToOpponentNote(dbNote: {
   newaza_technique_ids?: string[];
   result?: string | null;
   score_flavor?: string | null;
+  score_events?: unknown;
   created_at: string;
 }): OpponentNote {
   const result =
@@ -1447,6 +1451,7 @@ function dbOpponentNoteToOpponentNote(dbNote: {
     newazaTechniqueIds: dbNote.newaza_technique_ids || [],
     result,
     scoreFlavor,
+    scoreEvents: parseCaptureScoreEvents(dbNote.score_events),
     createdAt: dbNote.created_at,
   };
 }

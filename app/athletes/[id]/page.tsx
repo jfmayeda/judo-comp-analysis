@@ -26,7 +26,7 @@ import BadgesSection from '@/components/BadgesSection';
 import OptOutDeleteModal from '@/components/OptOutDeleteModal';
 import QuickCapture from '@/components/QuickCapture';
 import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
-import { CAPTURE_RESULT_LABELS, SCORE_FLAVOR_LABELS } from '@/lib/quick-capture';
+import { noteCaptureHeadline } from '@/lib/capture-score';
 
 export default function AthletePage() {
   const params = useParams();
@@ -1073,7 +1073,9 @@ export default function AthletePage() {
             </p>
           ) : (
             <div className="space-y-4">
-              {athlete.opponentNotes.map((note) => (
+              {athlete.opponentNotes.map((note) => {
+                const captureHeadline = noteCaptureHeadline(note);
+                return (
                 <div key={note.id} className="p-6 bg-gray-50 rounded-lg print-section">
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -1085,14 +1087,9 @@ export default function AthletePage() {
                           </span>
                         )}
                       </h4>
-                      {(note.result || note.scoreFlavor) && (
+                      {captureHeadline && (
                         <p className="text-sm font-semibold text-brand-blue mt-1">
-                          {[
-                            note.result ? CAPTURE_RESULT_LABELS[note.result] : null,
-                            note.scoreFlavor ? SCORE_FLAVOR_LABELS[note.scoreFlavor] : null,
-                          ]
-                            .filter(Boolean)
-                            .join(' · ')}
+                          {captureHeadline}
                         </p>
                       )}
                       {note.tournament && (
@@ -1160,7 +1157,8 @@ export default function AthletePage() {
                     <p className="text-gray-900 whitespace-pre-wrap">{note.notes}</p>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { QRCodeSVG } from 'qrcode.react';
 import { AthleteWithNotes, TournamentDayEntry, Coach } from '@/lib/types';
 import { getAthleteWithNotes, getTodaysTournamentAssignment, getAllCoaches } from '@/lib/supabase-store';
+import { noteCaptureHeadline } from '@/lib/capture-score';
 
 export default function PrintProfilePage() {
   const params = useParams();
@@ -192,6 +193,9 @@ export default function PrintProfilePage() {
                     <div className="mb-2">
                       <h3 className="text-base font-bold text-gray-900 inline">vs. {note.opponentLabel}</h3>
                       {note.club && <span className="text-sm text-gray-600 ml-2">({note.club})</span>}
+                      {noteCaptureHeadline(note) && (
+                        <p className="text-sm font-semibold text-gray-900 mt-1">{noteCaptureHeadline(note)}</p>
+                      )}
                       
                       <div className="flex flex-wrap gap-x-3 text-xs text-gray-600 mt-1">
                         {note.tournament && <span>• {note.tournament}</span>}
