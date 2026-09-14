@@ -379,7 +379,106 @@ export async function deleteOpponentNote(id: string): Promise<void> {
   }
 }
 
-// Seed data for authenticated coaches
+// Marker to identify mock demo athletes in the database
+const MOCK_DEMO_MARKER = '[SAMPLE DATA - DO NOT MODIFY]';
+
+// Check if an athlete is a mock demo athlete
+function isMockDemoAthlete(athlete: Athlete): boolean {
+  return (
+    athlete.notes.includes(MOCK_DEMO_MARKER) ||
+    (athlete.firstName === 'Demo' && athlete.lastInitial === 'A') ||
+    (athlete.firstName === 'Sample' && athlete.lastInitial === 'B')
+  );
+}
+
+// Ensure mock demo data exists (idempotent)
+export async function ensureMockDemoData(): Promise<void> {
+  const supabase = getSupabaseClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    throw new Error('User must be authenticated to ensure demo data');
+  }
+
+  const existingAthletes = await getAllAthletes();
+  
+  const hasDemoA = existingAthletes.some(a => a.firstName === 'Demo' && a.lastInitial === 'A');
+  const hasSampleB = existingAthletes.some(a => a.firstName === 'Sample' && a.lastInitial === 'B');
+
+  if (!hasDemoA) {
+    await createAthlete({
+      firstName: 'Demo',
+      lastInitial: 'A',
+      tokuiWaza: 'Seoi-nage, Uchi-mata',
+      developmentAreas: 'Ne-waza transitions, grip fighting speed',
+      notes: `Strong thrower, needs work on ground game. Competes in -48kg division. ${MOCK_DEMO_MARKER}`,
+      stance: 'right',
+      kumiKata: 'Traditional high lapel grip, quick hand changes',
+      neWaza: 'Working on turtle attacks, solid pins',
+      weightClass: '-48kg',
+      ageDivision: 'Juvenile',
+    });
+  }
+
+  if (!hasSampleB) {
+    await createAthlete({
+      firstName: 'Sample',
+      lastInitial: 'B',
+      tokuiWaza: 'Osoto-gari, Harai-goshi',
+      developmentAreas: 'Left-side attacks, tournament cardio',
+      notes: `Powerful right-sided player. Currently working on switching stances. -66kg division. ${MOCK_DEMO_MARKER}`,
+      stance: 'right',
+      kumiKata: 'Deep sleeve control, defensive posture',
+      neWaza: 'Strong top game, needs escape work',
+      weightClass: '-66kg',
+      ageDivision: 'Cadet',
+    });
+  }
+
+  const updatedAthletes = await getAllAthletes();
+  const demoA = updatedAthletes.find(a => a.firstName === 'Demo' && a.lastInitial === 'A');
+  const sampleB = updatedAthletes.find(a => a.firstName === 'Sample' && a.lastInitial === 'B');
+
+  if (demoA) {
+    const existingNotes = await getOpponentNotesByAthleteId(demoA.id);
+    if (existingNotes.length === 0) {
+      await createOpponentNote({
+        athleteId: demoA.id,
+        opponentLabel: 'Sarah M',
+        club: 'Peninsula Judo',
+        notes: `Very aggressive, likes left uchi-mata. Watch for counter with ko-soto-gake. ${MOCK_DEMO_MARKER}`,
+        tournament: 'Bay Area Open 2024',
+        stance: 'left',
+        kumiKata: 'High collar grip, pulls down',
+        neWaza: 'Strong pins, avoid bottom position',
+        commonCounters: 'Ko-soto-gake, tai-otoshi on failed attacks',
+        weightClass: '-48kg',
+        ageDivision: 'Juvenile',
+      });
+    }
+  }
+
+  if (sampleB) {
+    const existingNotes = await getOpponentNotesByAthleteId(sampleB.id);
+    if (existingNotes.length === 0) {
+      await createOpponentNote({
+        athleteId: sampleB.id,
+        opponentLabel: 'Ryan P',
+        club: 'Monterey Judo Club',
+        notes: `Taller opponent, good at keeping distance. Close the gap fast, work inside grip. ${MOCK_DEMO_MARKER}`,
+        tournament: 'Bay Area Open 2024',
+        stance: 'right',
+        kumiKata: 'Long-arm control, stiff arms',
+        neWaza: 'Average ground game',
+        commonCounters: 'Uchi-mata when you close distance',
+        weightClass: '-66kg',
+        ageDivision: 'Cadet',
+      });
+    }
+  }
+}
+
+// Seed data for authenticated coaches (legacy - kept for compatibility)
 export async function seedData(): Promise<void> {
   const supabase = getSupabaseClient();
 

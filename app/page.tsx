@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AthleteWithNotes, Stance, JudoBelt } from '@/lib/types';
-import { getAllAthletesWithNotes, createAthlete, seedData } from '@/lib/supabase-store';
+import { getAllAthletesWithNotes, createAthlete, seedData, ensureMockDemoData } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
 import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
@@ -52,6 +52,7 @@ export default function Home() {
 
   const loadAthletes = async () => {
     try {
+      await ensureMockDemoData();
       const data = await getAllAthletesWithNotes();
       setAthletes(data);
     } catch (error) {
