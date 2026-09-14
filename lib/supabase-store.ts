@@ -976,6 +976,37 @@ export async function setTournamentDayAthletes(
   }
 }
 
+export async function getTodaysTournamentAssignment(athleteId: string): Promise<TournamentDayEntry | null> {
+  const supabase = getSupabaseClient();
+  
+  const today = new Date().toISOString().split('T')[0];
+  
+  const { data: tournamentDays, error: tdError } = await supabase
+    .from('tournament_days')
+    .select('id')
+    .eq('day', today)
+    .limit(1);
+  
+  if (tdError || !tournamentDays || tournamentDays.length === 0) {
+    return null;
+  }
+  
+  const tournamentDayId = (tournamentDays[0] as { id: string }).id;
+  
+  const { data, error } = await supabase
+    .from('tournament_day_entries')
+    .select('*')
+    .eq('tournament_day_id', tournamentDayId)
+    .eq('athlete_id', athleteId)
+    .limit(1);
+  
+  if (error || !data || data.length === 0) {
+    return null;
+  }
+  
+  return dbTournamentDayEntryToTournamentDayEntry(data[0] as never);
+}
+
 export async function updateTournamentDayEntry(
   entryId: string,
   data: {
