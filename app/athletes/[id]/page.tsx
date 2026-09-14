@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import { AthleteWithNotes, Stance, JudoBelt, Promotion, Coach } from '@/lib/types';
+import { AthleteWithNotes, Stance, JudoBelt, Promotion, Coach, TournamentDayEntry } from '@/lib/types';
 import {
   getAthleteWithNotes,
   updateAthlete,
@@ -15,8 +15,10 @@ import {
   deletePromotion,
   getAllCoaches,
   getDeletePreview,
+  getTodaysTournamentAssignment,
 } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
+import { MatSideCoachCard } from '@/components/MatSideCoachCard';
 import TechniquePicker from '@/components/TechniquePicker';
 import TechniqueDisplay from '@/components/TechniqueDisplay';
 import ActivitySection from '@/components/ActivitySection';
@@ -30,6 +32,7 @@ export default function AthletePage() {
   const { user, loading: authLoading, isAllowlisted, isAdmin } = useAuth();
   const [athlete, setAthlete] = useState<AthleteWithNotes | null>(null);
   const [coaches, setCoaches] = useState<Coach[]>([]);
+  const [todaysAssignment, setTodaysAssignment] = useState<TournamentDayEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
@@ -106,12 +109,14 @@ export default function AthletePage() {
   const loadAthlete = async () => {
     try {
       const id = params.id as string;
-      const [data, coachesData] = await Promise.all([
+      const [data, coachesData, assignmentData] = await Promise.all([
         getAthleteWithNotes(id),
         getAllCoaches(),
+        getTodaysTournamentAssignment(id),
       ]);
       
       setCoaches(coachesData);
+      setTodaysAssignment(assignmentData);
       
       if (data) {
         setAthlete(data);
@@ -327,13 +332,24 @@ export default function AthletePage() {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto p-8">
-        <div className="card p-6 mb-6">
-          <div className="flex justify-between items-start mb-6 no-print">
-            <h2 className="text-3xl">
+      <div className="max-w-5xl mx-auto p-4 md:p-8">
+        {/* 30-Second Coach Card - Sticky on Desktop, Top on Mobile */}
+        <div className="mb-6 md:sticky md:top-20 md:z-10 no-print">
+          <MatSideCoachCard 
+            athlete={athlete}
+            assignment={todaysAssignment}
+            coachName={todaysAssignment?.assignedCoachId 
+              ? coaches.find(c => c.id === todaysAssignment.assignedCoachId)?.email.split('@')[0] 
+              : null}
+          />
+        </div>
+
+        <div className="card p-4 md:p-6 mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6 no-print">
+            <h2 className="text-2xl md:text-3xl">
               {athlete.firstName} {athlete.lastInitial}.
             </h2>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Link
                 href={`/athletes/${athlete.id}/print`}
                 className="btn-secondary text-sm"
@@ -833,9 +849,9 @@ export default function AthletePage() {
 
         <BadgesSection athleteId={athlete.id} />
 
-        <div className="card p-6">
+        <div id="opponent-notes" className="card p-4 md:p-6">
           <div className="flex justify-between items-center mb-6 no-print">
-            <h3 className="text-2xl">Opponent Notes</h3>
+            <h3 className="text-xl md:text-2xl">Opponent Notes</h3>
             <button
               onClick={() => setShowAddNote(!showAddNote)}
               className="btn-primary text-sm"

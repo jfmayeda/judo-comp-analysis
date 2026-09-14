@@ -159,18 +159,19 @@ export default function TournamentDayPage() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-8">
-        <div className="mb-8">
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+        <div className="mb-6 md:mb-8">
           <p className="eyebrow mb-2">Tournament Day</p>
-          <h2 className="text-3xl mb-2">Who's Fighting Today</h2>
-          <p className="text-gray-700">
+          <h2 className="text-2xl md:text-3xl mb-2">Who's Fighting Today</h2>
+          <p className="text-gray-700 text-sm md:text-base">
             Select competing athletes and print the tournament pack for matside coaching
           </p>
         </div>
 
         {/* Tournament Day Selector & Actions */}
-        <div className="card p-6 mb-6">
-          <div className="flex gap-4 items-end mb-4">
+        <div className="card p-4 md:p-6 mb-6">
+          <div className="flex flex-col gap-4 mb-4">
+            {/* Row 1: Tournament Selector */}
             <div className="flex-1">
               <label className="eyebrow block text-gray-700 mb-2">
                 Tournament Day
@@ -179,7 +180,7 @@ export default function TournamentDayPage() {
                 <select
                   value={selectedTournamentDay.id}
                   onChange={(e) => handleTournamentDayChange(e.target.value)}
-                  className="form-input w-full"
+                  className="form-input w-full text-base"
                 >
                   {tournamentDays.map(td => (
                     <option key={td.id} value={td.id}>
@@ -189,67 +190,105 @@ export default function TournamentDayPage() {
                 </select>
               )}
             </div>
-            <button
-              onClick={handleSave}
-              disabled={saving || !selectedTournamentDay}
-              className="btn-primary"
-            >
-              {saving ? 'Saving...' : 'Save Selection'}
-            </button>
-            <button
-              onClick={handlePrintPack}
-              disabled={selectedAthleteIds.size === 0}
-              className="btn-secondary"
-            >
-              Print Pack ({selectedAthleteIds.size})
-            </button>
-            <Link
-              href="/tournament-day/assign"
-              className="btn-primary inline-block text-center"
-            >
-              Assign Coaches →
-            </Link>
+            
+            {/* Row 2: Action Buttons - Phone Friendly */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <button
+                onClick={handleSave}
+                disabled={saving || !selectedTournamentDay}
+                className="btn-primary text-base py-3 min-h-[48px]"
+              >
+                {saving ? 'Saving...' : '💾 Save Selection'}
+              </button>
+              <button
+                onClick={handlePrintPack}
+                disabled={selectedAthleteIds.size === 0}
+                className="btn-secondary text-base py-3 min-h-[48px]"
+              >
+                🖨️ Print All ({selectedAthleteIds.size})
+              </button>
+              <Link
+                href="/tournament-day/assign"
+                className="btn-primary inline-flex items-center justify-center text-center text-base py-3 min-h-[48px]"
+              >
+                📋 Assign Coaches
+              </Link>
+            </div>
           </div>
 
-          {/* Sync Button */}
+          {/* Offline Sync Status - Prominent */}
           {selectedTournamentDay && (
-            <div className="pt-4 border-t border-gray-200 mb-4">
-              <SyncButton
-                tournamentDayId={selectedTournamentDay.id}
-                athleteIds={Array.from(selectedAthleteIds)}
-                disabled={selectedAthleteIds.size === 0}
-              />
-            </div>
-          )}
-
-          {selectedAthletes.length > 0 && (
-            <div className="pt-4 border-t border-gray-200">
-              <p className="text-sm text-gray-600 mb-2">
-                <span className="font-semibold">{selectedAthletes.length} athlete{selectedAthletes.length !== 1 ? 's' : ''} selected:</span>
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {selectedAthletes.map(athlete => (
-                  <div
-                    key={athlete.id}
-                    className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-900 rounded-full text-sm"
-                  >
-                    <span className="font-semibold">{athlete.firstName} {athlete.lastInitial}.</span>
-                    {athlete.weightClass && <span className="text-blue-700">• {athlete.weightClass}</span>}
-                    {athlete.opponentNotes.length > 0 && (
-                      <span className="text-blue-700">• {athlete.opponentNotes.length} note{athlete.opponentNotes.length !== 1 ? 's' : ''}</span>
-                    )}
-                  </div>
-                ))}
+            <div className="pt-4 border-t-2 border-gray-200">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <p className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-3">
+                  📱 Offline Readiness
+                </p>
+                <SyncButton
+                  tournamentDayId={selectedTournamentDay.id}
+                  athleteIds={Array.from(selectedAthleteIds)}
+                  disabled={selectedAthleteIds.size === 0}
+                />
               </div>
             </div>
           )}
+
         </div>
+        
+        {/* Today's Roster - Quick Links */}
+        {selectedAthletes.length > 0 && (
+          <div className="card p-4 md:p-6 mb-6">
+            <h3 className="text-lg md:text-xl font-bold mb-4 text-gray-900">
+              Today's Roster ({selectedAthletes.length})
+            </h3>
+            <div className="space-y-3">
+              {selectedAthletes.map(athlete => (
+                <div
+                  key={athlete.id}
+                  className="flex items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
+                >
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-base md:text-lg text-gray-900 mb-1">
+                      {athlete.firstName} {athlete.lastInitial}.
+                    </h4>
+                    <div className="flex flex-wrap gap-2 text-xs md:text-sm text-gray-600">
+                      {athlete.weightClass && <span>• {athlete.weightClass}</span>}
+                      {athlete.stance && <span>• {athlete.stance}</span>}
+                      {athlete.opponentNotes.length > 0 && (
+                        <span>• {athlete.opponentNotes.length} opponent note{athlete.opponentNotes.length !== 1 ? 's' : ''}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 ml-4 flex-shrink-0">
+                    <Link
+                      href={`/athletes/${athlete.id}`}
+                      className="px-3 md:px-4 py-2 text-sm font-semibold text-brand-blue hover:text-brand-blue-hover border-2 border-brand-blue rounded-full hover:bg-blue-50 transition-colors min-h-[44px] flex items-center"
+                    >
+                      View
+                    </Link>
+                    <Link
+                      href={`/athletes/${athlete.id}/print`}
+                      target="_blank"
+                      className="px-3 md:px-4 py-2 text-sm font-semibold bg-brand-blue text-white hover:bg-brand-blue-hover rounded-full transition-colors min-h-[44px] flex items-center"
+                    >
+                      Print
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Athlete Selection Grid */}
+        <div className="mb-6">
+          <h3 className="text-lg md:text-xl font-bold mb-4 text-gray-900">
+            Select Athletes for Tournament
+          </h3>
+        </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {athletes.length === 0 ? (
             <div className="col-span-full text-center py-12">
-              <p className="text-gray-600">
+              <p className="text-gray-600 text-sm md:text-base">
                 No athletes in roster. <Link href="/" className="text-brand-blue hover:text-brand-blue-hover font-semibold">Add athletes</Link> to get started.
               </p>
             </div>
@@ -260,23 +299,23 @@ export default function TournamentDayPage() {
                 <div
                   key={athlete.id}
                   onClick={() => handleToggleAthlete(athlete.id)}
-                  className={`card p-6 cursor-pointer transition-all ${
+                  className={`card p-4 md:p-6 cursor-pointer transition-all min-h-[44px] ${
                     isSelected 
                       ? 'ring-2 ring-brand-blue bg-blue-50' 
                       : 'hover:shadow-lg'
                   }`}
                 >
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-xl font-bold text-gray-900">
+                    <h3 className="text-lg md:text-xl font-bold text-gray-900">
                       {athlete.firstName} {athlete.lastInitial}.
                     </h3>
-                    <div className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                    <div className={`w-8 h-8 md:w-6 md:h-6 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0 ${
                       isSelected 
                         ? 'bg-brand-blue border-brand-blue' 
                         : 'border-gray-300'
                     }`}>
                       {isSelected && (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       )}

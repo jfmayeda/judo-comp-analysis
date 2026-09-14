@@ -282,19 +282,19 @@ export default function AssignmentBoardPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto p-8">
-        <div className="mb-8">
+      <div className="max-w-7xl mx-auto p-4 md:p-8">
+        <div className="mb-6 md:mb-8">
           <p className="eyebrow mb-2">Tournament Day</p>
-          <h2 className="text-3xl mb-2">Coach Assignment Board</h2>
-          <p className="text-gray-700">
+          <h2 className="text-2xl md:text-3xl mb-2">Coach Assignment Board</h2>
+          <p className="text-gray-700 text-sm md:text-base">
             Assign coaches to athletes, set mat numbers and time windows
           </p>
         </div>
 
         {/* Tournament Day Selector */}
-        <div className="card p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-4 items-start md:items-end mb-4">
-            <div className="flex-1 w-full">
+        <div className="card p-4 md:p-6 mb-6">
+          <div className="flex flex-col gap-4 mb-4">
+            <div>
               <label className="eyebrow block text-gray-700 mb-2">
                 Tournament Day
               </label>
@@ -302,7 +302,7 @@ export default function AssignmentBoardPage() {
                 <select
                   value={selectedTournamentDay.id}
                   onChange={(e) => handleTournamentDayChange(e.target.value)}
-                  className="form-input w-full"
+                  className="form-input w-full text-base"
                 >
                   {tournamentDays.map(td => (
                     <option key={td.id} value={td.id}>
@@ -313,20 +313,20 @@ export default function AssignmentBoardPage() {
               )}
             </div>
             
-            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => setViewMode('all')}
-                className={`px-4 py-2 rounded transition-colors ${
+                className={`px-3 py-2 md:px-4 md:py-2 rounded transition-colors text-sm md:text-base font-semibold min-h-[44px] ${
                   viewMode === 'all' 
                     ? 'bg-brand-blue text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                 }`}
               >
-                All Entries
+                All
               </button>
               <button
                 onClick={() => setViewMode('by-coach')}
-                className={`px-4 py-2 rounded transition-colors ${
+                className={`px-3 py-2 md:px-4 md:py-2 rounded transition-colors text-sm md:text-base font-semibold min-h-[44px] ${
                   viewMode === 'by-coach' 
                     ? 'bg-brand-blue text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -336,7 +336,7 @@ export default function AssignmentBoardPage() {
               </button>
               <button
                 onClick={() => setViewMode('by-mat')}
-                className={`px-4 py-2 rounded transition-colors ${
+                className={`px-3 py-2 md:px-4 md:py-2 rounded transition-colors text-sm md:text-base font-semibold min-h-[44px] ${
                   viewMode === 'by-mat' 
                     ? 'bg-brand-blue text-white' 
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -349,25 +349,26 @@ export default function AssignmentBoardPage() {
 
           {/* Auto-Assign Actions */}
           {entries.length > 0 && (
-            <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-gray-200">
-              <button
-                onClick={handleAutoAssign}
-                disabled={saving !== null}
-                className="btn-primary px-6 py-3 text-sm font-semibold disabled:opacity-50"
-              >
-                🤖 Auto-Assign Coaches
-              </button>
-              <button
-                onClick={handleClearAllAssignments}
-                disabled={saving !== null}
-                className="px-6 py-3 text-sm font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 rounded transition-colors disabled:opacity-50"
-              >
-                Clear All (Keep Locked)
-              </button>
-              <div className="flex-1" />
-              <div className="text-xs text-gray-600 self-center">
-                Auto-assign respects locked and exclusive coaches
+            <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gray-200">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <button
+                  onClick={handleAutoAssign}
+                  disabled={saving !== null}
+                  className="btn-primary px-4 py-3 text-sm md:text-base font-semibold disabled:opacity-50 min-h-[48px]"
+                >
+                  🤖 Auto-Assign Coaches
+                </button>
+                <button
+                  onClick={handleClearAllAssignments}
+                  disabled={saving !== null}
+                  className="px-4 py-3 text-sm md:text-base font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 rounded transition-colors disabled:opacity-50 min-h-[48px]"
+                >
+                  Clear All (Keep Locked)
+                </button>
               </div>
+              <p className="text-xs md:text-sm text-gray-600 text-center">
+                Auto-assign respects locked and exclusive coaches
+              </p>
             </div>
           )}
 
@@ -379,26 +380,26 @@ export default function AssignmentBoardPage() {
               </Link>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 text-sm">
               <div className="bg-blue-50 p-3 rounded">
-                <p className="text-xs text-gray-600 mb-1">Total Entries</p>
-                <p className="text-2xl font-bold text-brand-blue">{entries.length}</p>
+                <p className="text-xs text-gray-600 mb-1">Total</p>
+                <p className="text-xl md:text-2xl font-bold text-brand-blue">{entries.length}</p>
               </div>
               <div className="bg-green-50 p-3 rounded">
                 <p className="text-xs text-gray-600 mb-1">Assigned</p>
-                <p className="text-2xl font-bold text-green-700">
+                <p className="text-xl md:text-2xl font-bold text-green-700">
                   {entries.filter(e => e.assignedCoachId || e.noCoachNeeded).length}
                 </p>
               </div>
               <div className="bg-yellow-50 p-3 rounded">
                 <p className="text-xs text-gray-600 mb-1">Unassigned</p>
-                <p className="text-2xl font-bold text-yellow-700">
+                <p className="text-xl md:text-2xl font-bold text-yellow-700">
                   {entries.filter(e => !e.assignedCoachId && !e.noCoachNeeded).length}
                 </p>
               </div>
               <div className="bg-purple-50 p-3 rounded">
-                <p className="text-xs text-gray-600 mb-1">No Coach Needed</p>
-                <p className="text-2xl font-bold text-purple-700">
+                <p className="text-xs text-gray-600 mb-1">No Coach</p>
+                <p className="text-xl md:text-2xl font-bold text-purple-700">
                   {entries.filter(e => e.noCoachNeeded).length}
                 </p>
               </div>
@@ -417,10 +418,10 @@ export default function AssignmentBoardPage() {
                 : null;
               
               return (
-                <div key={entry.id} className="card p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">
+                <div key={entry.id} className="card p-4 md:p-6">
+                  <div className="flex flex-col md:flex-row items-start justify-between mb-4 gap-3">
+                    <div className="flex-1">
+                      <h3 className="text-lg md:text-xl font-bold text-gray-900">
                         {entry.athlete.firstName} {entry.athlete.lastInitial}.
                       </h3>
                       {entry.athlete.weightClass && (
@@ -451,7 +452,7 @@ export default function AssignmentBoardPage() {
                   </div>
 
                   {!entry.noCoachNeeded && (
-                    <div className="grid md:grid-cols-3 gap-4">
+                    <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-3 md:gap-4">
                       <div>
                         <label className="eyebrow text-xs text-gray-500 block mb-2">
                           Assigned Coach
@@ -462,7 +463,7 @@ export default function AssignmentBoardPage() {
                             assignedCoachId: e.target.value || null 
                           })}
                           disabled={saving === entry.id}
-                          className="form-input w-full"
+                          className="form-input w-full text-base min-h-[44px]"
                         >
                           <option value="">Select coach...</option>
                           {coaches.map(coach => (
@@ -488,7 +489,7 @@ export default function AssignmentBoardPage() {
                           })}
                           disabled={saving === entry.id}
                           placeholder="e.g., 1, 2, 3"
-                          className="form-input w-full"
+                          className="form-input w-full text-base min-h-[44px]"
                         />
                       </div>
 
@@ -504,7 +505,7 @@ export default function AssignmentBoardPage() {
                           })}
                           disabled={saving === entry.id}
                           placeholder="e.g., 9:00-10:00 AM"
-                          className="form-input w-full"
+                          className="form-input w-full text-base min-h-[44px]"
                         />
                       </div>
                     </div>
