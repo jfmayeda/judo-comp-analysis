@@ -94,6 +94,43 @@ export type ScoreFlavor =
   | 'golden_score'
   | 'other';
 
+export type CaptureScoreEventType =
+  | 'ippon'
+  | 'wazari'
+  | 'osaekomi'
+  | 'shido'
+  | 'golden_score';
+
+export type ScoreRecipient = 'athlete' | 'opponent';
+
+type ScoringEventType = Exclude<CaptureScoreEventType, 'shido'>;
+
+export type ScoringCaptureEvent = {
+  eventType: ScoringEventType;
+  sequenceOrder: number;
+  techniqueId?: string;
+  techniqueLabel?: string;
+};
+
+export type ShidoCaptureEvent = {
+  eventType: 'shido';
+  sequenceOrder: number;
+  recipient: ScoreRecipient;
+};
+
+export type CaptureScoreEvent = ScoringCaptureEvent | ShidoCaptureEvent;
+
+export type DraftScoreEvent =
+  | {
+      eventType: ScoringEventType;
+      techniqueId?: string;
+      techniqueLabel?: string;
+    }
+  | {
+      eventType: 'shido';
+      recipient: ScoreRecipient;
+    };
+
 export type CaptureOpponent =
   | { kind: 'shared'; opponentId: string }
   | { kind: 'oneOff'; firstName: string; lastInitial: string }
@@ -103,9 +140,8 @@ export type QuickCaptureInput = {
   athleteId: string;
   opponent: CaptureOpponent;
   result: CaptureResult;
-  techniqueIds?: string[];
+  scoreEvents?: DraftScoreEvent[];
   howText?: string;
-  scoreFlavor?: ScoreFlavor | null;
   note: string;
 };
 
@@ -128,6 +164,7 @@ export type OpponentNote = {
   newazaTechniqueIds: string[];
   result: CaptureResult | null;
   scoreFlavor: ScoreFlavor | null;
+  scoreEvents: CaptureScoreEvent[];
   createdAt: string;
 };
 
