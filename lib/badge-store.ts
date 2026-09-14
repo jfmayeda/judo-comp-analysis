@@ -1,4 +1,4 @@
-import { hasMockData } from './activity-mock-data';
+import { getAthleteById } from './supabase-store';
 
 export type BadgeTier = 'bronze' | 'silver' | 'gold';
 
@@ -82,11 +82,7 @@ const BADGE_CATALOG: BadgeDefinition[] = [
   },
 ];
 
-function getMockBadgesForAthlete(athleteId: string): EarnedBadge[] | null {
-  if (!hasMockData(athleteId)) {
-    return null;
-  }
-
+function getMockBadgesForAthlete(athleteId: string): EarnedBadge[] {
   return [
     {
       badgeId: 'shiai-debut',
@@ -127,11 +123,22 @@ export function getAllBadgeDefinitions(): BadgeDefinition[] {
 }
 
 export async function getAthleteBadges(athleteId: string): Promise<BadgeWithDefinition[]> {
-  const mockBadges = getMockBadgesForAthlete(athleteId);
+  const athlete = await getAthleteById(athleteId);
   
-  if (!mockBadges) {
+  if (!athlete) {
     return [];
   }
+  
+  const isDemoOrSampleAthlete = 
+    athlete.notes.includes('[SAMPLE DATA') ||
+    (athlete.firstName === 'Demo' && athlete.lastInitial === 'A') ||
+    (athlete.firstName === 'Sample' && athlete.lastInitial === 'B');
+  
+  if (!isDemoOrSampleAthlete) {
+    return [];
+  }
+
+  const mockBadges = getMockBadgesForAthlete(athleteId);
 
   return mockBadges.map(earned => {
     const definition = BADGE_CATALOG.find(def => def.id === earned.badgeId);
