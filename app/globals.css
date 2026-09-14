@@ -238,6 +238,30 @@
     width: auto;
   }
   
+  .app-header .eyebrow {
+    color: var(--color-white);
+  }
+  
+  .app-header .btn-secondary,
+  .app-header .btn-secondary:link,
+  .app-header .btn-secondary:visited {
+    color: var(--color-white);
+    border-color: var(--color-white);
+    background: transparent;
+  }
+  
+  .app-header .btn-secondary:hover,
+  .app-header .btn-secondary:focus {
+    background: var(--color-white);
+    color: var(--color-navy-2);
+    border-color: var(--color-white);
+  }
+  
+  .app-header .btn-secondary:active {
+    background: var(--color-white);
+    color: var(--color-navy-2);
+  }
+  
   /* Mobile: stack header items vertically for clarity */
   @media (max-width: 767px) {
     .app-header {
