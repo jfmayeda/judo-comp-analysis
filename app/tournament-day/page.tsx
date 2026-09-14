@@ -260,6 +260,12 @@ export default function TournamentDayPage() {
                   </div>
                   <div className="flex gap-2 ml-4 flex-shrink-0">
                     <Link
+                      href={`/athletes/${athlete.id}#quick-capture`}
+                      className="px-3 md:px-4 py-2 text-sm font-semibold bg-brand-blue text-white hover:bg-brand-blue-hover rounded-full transition-colors min-h-[44px] flex items-center"
+                    >
+                      Capture
+                    </Link>
+                    <Link
                       href={`/athletes/${athlete.id}`}
                       className="px-3 md:px-4 py-2 text-sm font-semibold text-brand-blue hover:text-brand-blue-hover border-2 border-brand-blue rounded-full hover:bg-blue-50 transition-colors min-h-[44px] flex items-center"
                     >
@@ -268,7 +274,7 @@ export default function TournamentDayPage() {
                     <Link
                       href={`/athletes/${athlete.id}/print`}
                       target="_blank"
-                      className="px-3 md:px-4 py-2 text-sm font-semibold bg-brand-blue text-white hover:bg-brand-blue-hover rounded-full transition-colors min-h-[44px] flex items-center"
+                      className="px-3 md:px-4 py-2 text-sm font-semibold text-brand-blue hover:text-brand-blue-hover border-2 border-brand-blue rounded-full hover:bg-blue-50 transition-colors min-h-[44px] flex items-center"
                     >
                       Print
                     </Link>

@@ -85,6 +85,30 @@ export type Opponent = {
   createdBy: string;
 };
 
+export type CaptureResult = 'win' | 'loss' | 'other';
+
+export type ScoreFlavor =
+  | 'ippon'
+  | 'waza_ari'
+  | 'osaekomi'
+  | 'golden_score'
+  | 'other';
+
+export type CaptureOpponent =
+  | { kind: 'shared'; opponentId: string }
+  | { kind: 'oneOff'; firstName: string; lastInitial: string }
+  | { kind: 'unknown' };
+
+export type QuickCaptureInput = {
+  athleteId: string;
+  opponent: CaptureOpponent;
+  result: CaptureResult;
+  techniqueIds?: string[];
+  howText?: string;
+  scoreFlavor?: ScoreFlavor | null;
+  note: string;
+};
+
 export type OpponentNote = {
   id: string;
   athleteId: string;
@@ -102,6 +126,8 @@ export type OpponentNote = {
   techniqueIds: string[];
   tokuiTechniqueIds: string[];
   newazaTechniqueIds: string[];
+  result: CaptureResult | null;
+  scoreFlavor: ScoreFlavor | null;
   createdAt: string;
 };
 

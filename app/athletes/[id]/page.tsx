@@ -24,7 +24,9 @@ import TechniqueDisplay from '@/components/TechniqueDisplay';
 import ActivitySection from '@/components/ActivitySection';
 import BadgesSection from '@/components/BadgesSection';
 import OptOutDeleteModal from '@/components/OptOutDeleteModal';
+import QuickCapture from '@/components/QuickCapture';
 import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
+import { CAPTURE_RESULT_LABELS, SCORE_FLAVOR_LABELS } from '@/lib/quick-capture';
 
 export default function AthletePage() {
   const params = useParams();
@@ -36,6 +38,7 @@ export default function AthletePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
+  const [showQuickCapture, setShowQuickCapture] = useState(false);
   const [showAddPromotion, setShowAddPromotion] = useState(false);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -105,6 +108,13 @@ export default function AthletePage() {
       loadAthlete();
     }
   }, [user, authLoading, isAllowlisted, router]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.location.hash === '#quick-capture') {
+      setShowQuickCapture(true);
+    }
+  }, []);
 
   const loadAthlete = async () => {
     try {
@@ -341,8 +351,20 @@ export default function AthletePage() {
             coachName={todaysAssignment?.assignedCoachId 
               ? coaches.find(c => c.id === todaysAssignment.assignedCoachId)?.email.split('@')[0] 
               : null}
+            onQuickCapture={() => setShowQuickCapture(true)}
           />
         </div>
+
+        {showQuickCapture && (
+          <QuickCapture
+            athleteId={athlete.id}
+            onCancel={() => setShowQuickCapture(false)}
+            onSaved={async () => {
+              setShowQuickCapture(false);
+              await loadAthlete();
+            }}
+          />
+        )}
 
         <div className="card p-4 md:p-6 mb-6">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6 no-print">
@@ -1063,6 +1085,16 @@ export default function AthletePage() {
                           </span>
                         )}
                       </h4>
+                      {(note.result || note.scoreFlavor) && (
+                        <p className="text-sm font-semibold text-brand-blue mt-1">
+                          {[
+                            note.result ? CAPTURE_RESULT_LABELS[note.result] : null,
+                            note.scoreFlavor ? SCORE_FLAVOR_LABELS[note.scoreFlavor] : null,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </p>
+                      )}
                       {note.tournament && (
                         <p className="text-sm text-gray-600 mt-1">{note.tournament}</p>
                       )}
