@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#1e3a5f" stroke="#4CAF50" stroke-width="5"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#4CAF50" stroke-width="2"/>
+  
+  <!-- Scale with checkmark -->
+  <g transform="translate(100, 95)">
+    <!-- Scale platform -->
+    <rect x="-25" y="0" width="50" height="6" rx="2" fill="#4CAF50"/>
+    
+    <!-- Scale post -->
+    <rect x="-3" y="-20" width="6" height="20" rx="1" fill="#4CAF50"/>
+    
+    <!-- Dial/gauge -->
+    <circle cx="0" cy="-25" r="12" fill="none" stroke="#4CAF50" stroke-width="2"/>
+    <line x1="0" y1="-25" x2="7" y2="-32" stroke="#4CAF50" stroke-width="2"/>
+    
+    <!-- Check mark -->
+    <path d="M -8 15 L -2 21 L 10 9" fill="none" stroke="#4CAF50" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  
+  <g transform="translate(100, 175)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="8" font-weight="bold" 
+          fill="#4CAF50" text-anchor="middle">MADE WEIGHT</text>
+  </g>
+</svg>

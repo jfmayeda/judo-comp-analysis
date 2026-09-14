@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#1e3a5f" stroke="#d4af37" stroke-width="5"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#d4af37" stroke-width="2"/>
+  
+  <!-- Book with judo symbol -->
+  <g transform="translate(100, 90)">
+    <!-- Open book -->
+    <path d="M -25,-5 L -25,20 Q -25,25 -20,25 L -2,25 L -2,-5 Z" fill="#d4af37"/>
+    <path d="M 25,-5 L 25,20 Q 25,25 20,25 L 2,25 L 2,-5 Z" fill="#d4af37"/>
+    <path d="M -2,-5 L -2,25" stroke="#1e3a5f" stroke-width="2"/>
+    
+    <!-- Judo gi figure (reading) -->
+    <circle cx="0" cy="-20" r="6" fill="#d4af37"/>
+    <rect x="-4" y="-12" width="8" height="10" rx="1" fill="#d4af37"/>
+    
+    <!-- Lightbulb (learning) -->
+    <circle cx="25" cy="-20" r="7" fill="none" stroke="#d4af37" stroke-width="2"/>
+    <rect x="22" y="-10" width="6" height="4" rx="1" fill="#d4af37"/>
+    <line x1="25" y1="-27" x2="25" y2="-30" stroke="#d4af37" stroke-width="2"/>
+    <line x1="18" y1="-24" x2="16" y2="-26" stroke="#d4af37" stroke-width="2"/>
+    <line x1="32" y1="-24" x2="34" y2="-26" stroke="#d4af37" stroke-width="2"/>
+  </g>
+  
+  <g transform="translate(100, 175)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="7" font-weight="bold" 
+          fill="#d4af37" text-anchor="middle">STUDENT OF THE GAME</text>
+  </g>
+</svg>

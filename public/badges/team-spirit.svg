@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#1e3a5f" stroke="#4CAF50" stroke-width="5"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="#4CAF50" stroke-width="2"/>
+  
+  <!-- Group of figures together -->
+  <g transform="translate(100, 95)">
+    <!-- Left figure -->
+    <circle cx="-18" cy="-10" r="5" fill="#4CAF50"/>
+    <rect x="-21" y="-4" width="6" height="12" rx="1" fill="#4CAF50"/>
+    
+    <!-- Center figure (slightly forward) -->
+    <circle cx="0" cy="-15" r="6" fill="#4CAF50"/>
+    <rect x="-4" y="-8" width="8" height="14" rx="1" fill="#4CAF50"/>
+    
+    <!-- Right figure -->
+    <circle cx="18" cy="-10" r="5" fill="#4CAF50"/>
+    <rect x="15" y="-4" width="6" height="12" rx="1" fill="#4CAF50"/>
+    
+    <!-- Connected hands -->
+    <line x1="-15" y1="0" x2="-4" y2="0" stroke="#4CAF50" stroke-width="2"/>
+    <line x1="4" y1="0" x2="15" y2="0" stroke="#4CAF50" stroke-width="2"/>
+    
+    <!-- Heart above -->
+    <path d="M -3,15 Q -6,12 -6,9 Q -6,6 -3,6 Q 0,9 0,9 Q 0,9 3,6 Q 6,6 6,9 Q 6,12 3,15 L 0,18 Z" 
+          fill="#4CAF50"/>
+  </g>
+  
+  <g transform="translate(100, 175)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="8" font-weight="bold" 
+          fill="#4CAF50" text-anchor="middle">TEAM SPIRIT</text>
+  </g>
+</svg>
