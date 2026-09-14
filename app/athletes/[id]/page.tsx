@@ -40,6 +40,8 @@ export default function AthletePage() {
     promotionsCount: number;
     tournamentEntriesCount: number;
   } | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastInitial: '',
@@ -156,17 +158,32 @@ export default function AthletePage() {
     }
   };
 
-  const handleOpenDeleteModal = async () => {
-    try {
-      const id = params.id as string;
-      const preview = await getDeletePreview(id);
-      setDeletePreview(preview);
-      setShowDeleteModal(true);
-    } catch (error: any) {
-      console.error('Error loading delete preview:', error);
-      alert('Failed to load delete preview. Please try again.');
-    }
+  const handleOpenDeleteModal = () => {
+    setShowDeleteModal(true);
+    setDeletePreview(null);
+    setPreviewError(null);
   };
+
+  useEffect(() => {
+    if (!showDeleteModal) return;
+
+    const loadPreview = async () => {
+      setIsLoadingPreview(true);
+      setPreviewError(null);
+      try {
+        const id = params.id as string;
+        const preview = await getDeletePreview(id);
+        setDeletePreview(preview);
+      } catch (error: any) {
+        console.error('Error loading delete preview:', error);
+        setPreviewError(error.message || 'Failed to load deletion preview');
+      } finally {
+        setIsLoadingPreview(false);
+      }
+    };
+
+    loadPreview();
+  }, [showDeleteModal, params.id]);
 
   const handleConfirmDelete = async () => {
     try {
@@ -1095,13 +1112,15 @@ export default function AthletePage() {
         </div>
       </div>
 
-      {athlete && deletePreview && (
+      {athlete && (
         <OptOutDeleteModal
           athlete={athlete}
           isOpen={showDeleteModal}
           onClose={() => setShowDeleteModal(false)}
           onConfirm={handleConfirmDelete}
           deletePreview={deletePreview}
+          isLoadingPreview={isLoadingPreview}
+          previewError={previewError}
         />
       )}
     </div>
