@@ -206,18 +206,27 @@ Sample athlete (attach to existing athlete OR create new "Demo Athlete"):
 **Recommendation**: Option 1 - attach to 1-2 existing athletes with prominent badge
 
 **Sample tournament**:
-- Name: "Bay Area Open 2024"
+- Name: "Bay Area Open 2024 (SAMPLE)"
 - Date: "2024-06-15"
 - Division: "Juvenile -48kg"
 - Place: 2nd (silver)
 - Ruleset: `local_with_yuko`
 - Matches:
-  1. vs Sarah M - Win by ippon (seoi-nage)
-  2. vs Emma L - Win by wazari-awasete-ippon (golden score)
+  1. vs Competitor A. - Win by ippon (seoi-nage)
+  2. vs Competitor B. - Win by wazari-awasete-ippon (golden score)
      - Events: wazari (uchi-mata), wazari (ko-uchi-gari)
-  3. vs Taylor K - Loss by decision
+  3. vs Opponent C. - Loss by decision
      - Events: yuko (opponent), wazari (opponent)
-  4. Finals vs Jordan T - Loss by hansoku-make (3 shidos)
+  4. Finals vs Opponent D. - Loss by hansoku-make (3 shidos)
+
+**Mock Athletes Created**:
+- Demo A. (Juvenile -48kg, green belt) - with promotions & 2 tournaments
+- Sample B. (Junior -57kg, orange belt) - with promotions
+
+**Mock Opponents Created** (shared directory):
+- Competitor A., B. (Mock Dojo)
+- Opponent C., D. (Demo Club)
+- Rival E., F. (Sample Academy)
 
 ---
 

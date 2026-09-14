@@ -371,6 +371,99 @@ export async function seedData(): Promise<void> {
     throw new Error('Data already exists. Clear existing data before seeding.');
   }
 
+  // Create mock opponents first (shared directory)
+  const mockOpponents = await createMockOpponents();
+
+  // Create mock SVJ athletes with activity log demo data
+  const demo1 = await createAthlete({
+    firstName: 'Demo',
+    lastInitial: 'A',
+    tokuiWaza: '',
+    developmentAreas: 'Mock athlete for activity log demo',
+    notes: 'SAMPLE DATA - Mock athlete showcasing tournament history features',
+    stance: 'right',
+    kumiKata: 'Traditional high grip',
+    neWaza: 'Working on transitions',
+    weightClass: '-48kg',
+    ageDivision: 'Juvenile',
+    currentBelt: 'green',
+  });
+  
+  enableMockDataForAthlete(demo1.id);
+
+  await createPromotion({
+    athleteId: demo1.id,
+    promotionDate: '2020-09-01',
+    fromBelt: 'unset',
+    toBelt: 'white',
+    notes: 'Started training (SAMPLE DATA)',
+  });
+
+  await createPromotion({
+    athleteId: demo1.id,
+    promotionDate: '2021-06-15',
+    fromBelt: 'white',
+    toBelt: 'yellow',
+    notes: 'First promotion (SAMPLE DATA)',
+  });
+
+  await createPromotion({
+    athleteId: demo1.id,
+    promotionDate: '2022-03-20',
+    fromBelt: 'yellow',
+    toBelt: 'orange',
+    notes: 'Good progress (SAMPLE DATA)',
+  });
+
+  await createPromotion({
+    athleteId: demo1.id,
+    promotionDate: '2023-01-15',
+    fromBelt: 'orange',
+    toBelt: 'green',
+    notes: 'Tournament success (SAMPLE DATA)',
+  });
+
+  const demo2 = await createAthlete({
+    firstName: 'Sample',
+    lastInitial: 'B',
+    tokuiWaza: '',
+    developmentAreas: 'Mock athlete for activity log demo',
+    notes: 'SAMPLE DATA - Mock athlete showcasing competitive record',
+    stance: 'left',
+    kumiKata: 'High collar control',
+    neWaza: 'Strong pins',
+    weightClass: '-57kg',
+    ageDivision: 'Junior',
+    currentBelt: 'orange',
+  });
+  
+  enableMockDataForAthlete(demo2.id);
+
+  await createPromotion({
+    athleteId: demo2.id,
+    promotionDate: '2021-02-01',
+    fromBelt: 'unset',
+    toBelt: 'white',
+    notes: 'First belt (SAMPLE DATA)',
+  });
+
+  await createPromotion({
+    athleteId: demo2.id,
+    promotionDate: '2022-01-10',
+    fromBelt: 'white',
+    toBelt: 'yellow',
+    notes: 'Solid fundamentals (SAMPLE DATA)',
+  });
+
+  await createPromotion({
+    athleteId: demo2.id,
+    promotionDate: '2023-06-05',
+    fromBelt: 'yellow',
+    toBelt: 'orange',
+    notes: 'Competition experience (SAMPLE DATA)',
+  });
+
+  // Create real production athletes (no activity log data)
   const maya = await createAthlete({
     firstName: 'Maya',
     lastInitial: 'H',
@@ -382,40 +475,6 @@ export async function seedData(): Promise<void> {
     neWaza: 'Working on turtle attacks, solid pins',
     weightClass: '-48kg',
     ageDivision: 'Juvenile',
-  });
-  
-  enableMockDataForAthlete(maya.id);
-
-  await createPromotion({
-    athleteId: maya.id,
-    promotionDate: '2020-12-15',
-    fromBelt: 'unset',
-    toBelt: 'white',
-    notes: 'First belt',
-  });
-
-  await createPromotion({
-    athleteId: maya.id,
-    promotionDate: '2021-06-01',
-    fromBelt: 'white',
-    toBelt: 'yellow',
-    notes: 'Good progress on basic throws',
-  });
-
-  await createPromotion({
-    athleteId: maya.id,
-    promotionDate: '2022-03-15',
-    fromBelt: 'yellow',
-    toBelt: 'orange',
-    notes: 'Strong tournament performance',
-  });
-
-  await createPromotion({
-    athleteId: maya.id,
-    promotionDate: '2023-01-10',
-    fromBelt: 'orange',
-    toBelt: 'green',
-    notes: 'Demonstrated excellent technique',
   });
 
   const alex = await createAthlete({
@@ -499,6 +558,90 @@ export async function seedData(): Promise<void> {
     weightClass: '-57kg',
     ageDivision: 'Junior',
   });
+}
+
+async function createMockOpponents(): Promise<{ [key: string]: Opponent }> {
+  const opponents: { [key: string]: Opponent } = {};
+
+  opponents.competitor1 = await createOpponent({
+    firstName: 'Competitor',
+    lastInitial: 'A',
+    club: 'Mock Dojo (Sample)',
+    stance: 'right',
+    kumiKata: 'Traditional grip',
+    neWaza: 'Strong pins',
+    commonCounters: 'Counter-throws',
+    weightClass: '-48kg',
+    ageDivision: 'Juvenile',
+    notes: 'SAMPLE DATA - Mock competitor for activity log demo',
+  });
+
+  opponents.competitor2 = await createOpponent({
+    firstName: 'Competitor',
+    lastInitial: 'B',
+    club: 'Mock Dojo (Sample)',
+    stance: 'left',
+    kumiKata: 'High collar control',
+    neWaza: 'Submission specialist',
+    commonCounters: 'Defensive counters',
+    weightClass: '-48kg',
+    ageDivision: 'Juvenile',
+    notes: 'SAMPLE DATA - Mock competitor for activity log demo',
+  });
+
+  opponents.competitor3 = await createOpponent({
+    firstName: 'Opponent',
+    lastInitial: 'C',
+    club: 'Demo Club (Sample)',
+    stance: 'right',
+    kumiKata: 'Sleeve control',
+    neWaza: 'Turtle defense',
+    commonCounters: 'Fast footwork',
+    weightClass: '-48kg',
+    ageDivision: 'Juvenile',
+    notes: 'SAMPLE DATA - Mock opponent for activity log demo',
+  });
+
+  opponents.competitor4 = await createOpponent({
+    firstName: 'Opponent',
+    lastInitial: 'D',
+    club: 'Demo Club (Sample)',
+    stance: 'unknown',
+    kumiKata: 'Defensive posture',
+    neWaza: 'Limited ground game',
+    commonCounters: 'Stalling tactics',
+    weightClass: '-48kg',
+    ageDivision: 'Juvenile',
+    notes: 'SAMPLE DATA - Mock opponent for activity log demo',
+  });
+
+  opponents.competitor5 = await createOpponent({
+    firstName: 'Rival',
+    lastInitial: 'E',
+    club: 'Sample Academy',
+    stance: 'left',
+    kumiKata: 'Aggressive gripping',
+    neWaza: 'Transition attacks',
+    commonCounters: 'Ko-uchi counters',
+    weightClass: '-57kg',
+    ageDivision: 'Junior',
+    notes: 'SAMPLE DATA - Mock rival for activity log demo',
+  });
+
+  opponents.competitor6 = await createOpponent({
+    firstName: 'Rival',
+    lastInitial: 'F',
+    club: 'Sample Academy',
+    stance: 'right',
+    kumiKata: 'Inside position',
+    neWaza: 'Pin specialist',
+    commonCounters: 'Drop techniques',
+    weightClass: '-57kg',
+    ageDivision: 'Junior',
+    notes: 'SAMPLE DATA - Mock rival for activity log demo',
+  });
+
+  return opponents;
 }
 
 // Tournament Day CRUD

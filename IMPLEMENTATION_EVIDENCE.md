@@ -55,7 +55,9 @@ EXIT CODE: 0 ✅
 
 ### ✅ 3. Activity Section Features
 
-**What's visible on athlete detail page:**
+**UPDATED: Self-Contained Mock Demo**
+
+**What's visible on Demo A. and Sample B. athlete pages:**
 
 1. **Section Header**
    - "Activity" heading
@@ -63,23 +65,36 @@ EXIT CODE: 0 ✅
 
 2. **Career Timeline**
    - Visual dot-and-line progression
-   - Shows: 2020 Start → 2020 White → 2021 Yellow → 2022 Orange → 2023 Green
+   - Demo A.: 2020 Start → 2020 White → 2021 Yellow → 2022 Orange → 2023 Green
+   - Sample B.: 2021 Start → 2021 White → 2022 Yellow → 2023 Orange
    - Built from: `judoStartDate` + promotions table
 
+**Mock Athletes Created** (fresh, not production):
+- **Demo A.** (Juvenile -48kg, green belt) - Notes: "SAMPLE DATA - Mock athlete showcasing tournament history features"
+- **Sample B.** (Junior -57kg, orange belt) - Notes: "SAMPLE DATA - Mock athlete showcasing competitive record"
+
+**Mock Opponents Created** (shared directory):
+- Competitor A., B. (Mock Dojo) - Notes: "SAMPLE DATA - Mock competitor for activity log demo"
+- Opponent C., D. (Demo Club) - Notes: "SAMPLE DATA - Mock opponent for activity log demo"
+- Rival E., F. (Sample Academy) - Notes: "SAMPLE DATA - Mock rival for activity log demo"
+
+**Production Athletes** (no activity data):
+- Maya H., Alex K., Jordan T. - Clean, no mock activity attached
+
 3. **Tournament Cards** (newest first)
-   - **Bay Area Open 2024** - 2nd place 🥈
+   - **Bay Area Open 2024 (SAMPLE)** - 2nd place 🥈
      - Division: Juvenile -48kg
      - 4 matches:
-       - ✓ vs Sarah M. - Win (Ippon) → Ippon via seoi-nage
-       - ✓ vs Emma L. - Win (Wazari-awasete-ippon) ⏱️ → Golden Score → Wazari (uchi-mata) → Wazari (ko-uchi-gari)
-       - ✗ vs Taylor K. - Loss (Decision) → Opponent: Yuko, Wazari
-       - ✗ vs Jordan T. - Loss (Hansoku-make) → 3 shidos → Disqualification
+       - ✓ vs Competitor A. - Win (Ippon) → Ippon via seoi-nage
+       - ✓ vs Competitor B. - Win (Wazari-awasete-ippon) ⏱️ → Golden Score → Wazari (uchi-mata) → Wazari (ko-uchi-gari)
+       - ✗ vs Opponent C. - Loss (Decision) → Opponent: Yuko, Wazari
+       - ✗ vs Opponent D. - Loss (Hansoku-make) → 3 shidos → Disqualification
    
-   - **NorCal Spring Championships** - 3rd place 🥉
+   - **NorCal Spring Championships (SAMPLE)** - 3rd place 🥉
      - Division: Juvenile -48kg
      - 2 matches:
-       - ✓ vs Alex R. - Win (Wazari-awasete-ippon) → Wazari (o-uchi-gari) → Wazari (seoi-nage)
-       - ✗ vs Casey P. - Loss (Ippon) → Opponent ippon via counter-throw → Shido (gripping below belt)
+       - ✓ vs Rival E. - Win (Wazari-awasete-ippon) → Wazari (o-uchi-gari) → Wazari (seoi-nage)
+       - ✗ vs Rival F. - Loss (Ippon) → Opponent ippon via counter-throw → Shido (gripping below belt)
 
 4. **Match Detail (Expandable)**
    - Click any match row → Shows ordered score/penalty events
