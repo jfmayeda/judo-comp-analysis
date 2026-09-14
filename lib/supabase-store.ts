@@ -1,6 +1,7 @@
 import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent, Technique, JudoBelt, Promotion, Coach } from './types';
 import { getSupabaseClient } from './supabase';
 import type { Database } from './supabase';
+import { enableMockDataForAthlete } from './activity-mock-data';
 
 // Athletes CRUD
 export async function getAllAthletes(): Promise<Athlete[]> {
@@ -381,6 +382,40 @@ export async function seedData(): Promise<void> {
     neWaza: 'Working on turtle attacks, solid pins',
     weightClass: '-48kg',
     ageDivision: 'Juvenile',
+  });
+  
+  enableMockDataForAthlete(maya.id);
+
+  await createPromotion({
+    athleteId: maya.id,
+    promotionDate: '2020-12-15',
+    fromBelt: 'unset',
+    toBelt: 'white',
+    notes: 'First belt',
+  });
+
+  await createPromotion({
+    athleteId: maya.id,
+    promotionDate: '2021-06-01',
+    fromBelt: 'white',
+    toBelt: 'yellow',
+    notes: 'Good progress on basic throws',
+  });
+
+  await createPromotion({
+    athleteId: maya.id,
+    promotionDate: '2022-03-15',
+    fromBelt: 'yellow',
+    toBelt: 'orange',
+    notes: 'Strong tournament performance',
+  });
+
+  await createPromotion({
+    athleteId: maya.id,
+    promotionDate: '2023-01-10',
+    fromBelt: 'orange',
+    toBelt: 'green',
+    notes: 'Demonstrated excellent technique',
   });
 
   const alex = await createAthlete({

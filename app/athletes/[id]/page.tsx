@@ -18,6 +18,7 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
 import TechniqueDisplay from '@/components/TechniqueDisplay';
+import ActivitySection from '@/components/ActivitySection';
 import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
 
 export default function AthletePage() {
@@ -788,6 +789,8 @@ export default function AthletePage() {
             </div>
           )}
         </div>
+
+        <ActivitySection athleteId={athlete.id} />
 
         <div className="card p-6">
           <div className="flex justify-between items-center mb-6 no-print">
