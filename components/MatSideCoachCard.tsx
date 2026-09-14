@@ -7,9 +7,10 @@ interface MatSideCoachCardProps {
   athlete: AthleteWithNotes;
   assignment?: TournamentDayEntry | null;
   coachName?: string | null;
+  onQuickCapture?: () => void;
 }
 
-export function MatSideCoachCard({ athlete, assignment, coachName }: MatSideCoachCardProps) {
+export function MatSideCoachCard({ athlete, assignment, coachName, onQuickCapture }: MatSideCoachCardProps) {
   const tokuiItems = [
     athlete.tokuiWaza,
     ...(athlete.tokuiTechniqueIds || [])
@@ -25,6 +26,7 @@ export function MatSideCoachCard({ athlete, assignment, coachName }: MatSideCoac
     .map(note => ({
       label: note.opponentLabel,
       club: note.club,
+      result: note.result,
       summary: note.notes.length > 100 ? note.notes.slice(0, 100) + '...' : note.notes
     }));
 
@@ -134,6 +136,12 @@ export function MatSideCoachCard({ athlete, assignment, coachName }: MatSideCoac
             {recentOpponentNotes.map((note, idx) => (
               <div key={idx} className="text-sm">
                 <span className="font-semibold text-gray-900">vs. {note.label}</span>
+                {note.result && (
+                  <span className="text-brand-blue font-semibold">
+                    {' '}
+                    · {note.result}
+                  </span>
+                )}
                 {note.club && <span className="text-gray-600"> ({note.club})</span>}
                 <p className="text-gray-700 text-xs mt-1">{note.summary}</p>
               </div>
@@ -144,16 +152,25 @@ export function MatSideCoachCard({ athlete, assignment, coachName }: MatSideCoac
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3 pt-3 border-t border-blue-200">
+        {onQuickCapture && (
+          <button
+            type="button"
+            onClick={onQuickCapture}
+            className="flex-1 text-center px-4 py-2 bg-brand-blue text-white font-semibold text-sm rounded-full hover:bg-brand-blue-hover transition-colors min-h-[44px]"
+          >
+            Quick capture
+          </button>
+        )}
         <Link
           href={`/athletes/${athlete.id}/print`}
           target="_blank"
-          className="flex-1 text-center px-4 py-2 bg-brand-blue text-white font-semibold text-sm rounded-full hover:bg-brand-blue-hover transition-colors"
+          className="flex-1 text-center px-4 py-2 bg-white border-2 border-brand-blue text-brand-blue font-semibold text-sm rounded-full hover:bg-blue-50 transition-colors min-h-[44px]"
         >
           Print Profile
         </Link>
         <Link
           href={`/athletes/${athlete.id}#opponent-notes`}
-          className="flex-1 text-center px-4 py-2 bg-white border-2 border-brand-blue text-brand-blue font-semibold text-sm rounded-full hover:bg-blue-50 transition-colors"
+          className="flex-1 text-center px-4 py-2 bg-white border-2 border-brand-blue text-brand-blue font-semibold text-sm rounded-full hover:bg-blue-50 transition-colors min-h-[44px]"
         >
           Full Notes
         </Link>

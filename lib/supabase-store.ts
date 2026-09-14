@@ -1,4 +1,4 @@
-import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent, Technique, JudoBelt, Promotion, Coach } from './types';
+import { Athlete, OpponentNote, AthleteWithNotes, Stance, TournamentDay, TournamentDayEntry, TournamentDayWithAthletes, Opponent, Technique, JudoBelt, Promotion, Coach, CaptureResult, ScoreFlavor } from './types';
 import { getSupabaseClient } from './supabase';
 import type { Database } from './supabase';
 import { enableMockDataForAthlete } from './activity-mock-data';
@@ -292,6 +292,8 @@ export async function createOpponentNote(data: {
   techniqueIds?: string[];
   tokuiTechniqueIds?: string[];
   newazaTechniqueIds?: string[];
+  result?: CaptureResult | null;
+  scoreFlavor?: ScoreFlavor | null;
 }): Promise<OpponentNote> {
   const supabase = getSupabaseClient();
 
@@ -318,6 +320,8 @@ export async function createOpponentNote(data: {
       technique_ids: data.techniqueIds || [],
       tokui_technique_ids: data.tokuiTechniqueIds || [],
       newaza_technique_ids: data.newazaTechniqueIds || [],
+      result: data.result ?? null,
+      score_flavor: data.scoreFlavor ?? null,
       created_by: user.id,
     }] as never)
     .select()
@@ -1407,8 +1411,23 @@ function dbOpponentNoteToOpponentNote(dbNote: {
   technique_ids: string[];
   tokui_technique_ids?: string[];
   newaza_technique_ids?: string[];
+  result?: string | null;
+  score_flavor?: string | null;
   created_at: string;
 }): OpponentNote {
+  const result =
+    dbNote.result === 'win' || dbNote.result === 'loss' || dbNote.result === 'other'
+      ? dbNote.result
+      : null;
+  const scoreFlavor =
+    dbNote.score_flavor === 'ippon' ||
+    dbNote.score_flavor === 'waza_ari' ||
+    dbNote.score_flavor === 'osaekomi' ||
+    dbNote.score_flavor === 'golden_score' ||
+    dbNote.score_flavor === 'other'
+      ? dbNote.score_flavor
+      : null;
+
   return {
     id: dbNote.id,
     athleteId: dbNote.athlete_id,
@@ -1426,6 +1445,8 @@ function dbOpponentNoteToOpponentNote(dbNote: {
     techniqueIds: dbNote.technique_ids || [],
     tokuiTechniqueIds: dbNote.tokui_technique_ids || [],
     newazaTechniqueIds: dbNote.newaza_technique_ids || [],
+    result,
+    scoreFlavor,
     createdAt: dbNote.created_at,
   };
 }
