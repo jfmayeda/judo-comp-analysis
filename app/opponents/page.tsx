@@ -8,6 +8,7 @@ import { getAllOpponents, createOpponent, updateOpponent, deleteOpponent, search
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
 import TechniqueDisplay from '@/components/TechniqueDisplay';
+import { MetaRow } from '@/components/ui/MetaRow';
 
 export default function OpponentsPage() {
   const router = useRouter();
@@ -438,7 +439,7 @@ export default function OpponentsPage() {
           </div>
         )}
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="card-grid">
           {filteredOpponents.length === 0 && opponents.length === 0 ? (
             <div className="col-span-full">
               <p className="text-gray-600 text-center py-12">
@@ -455,7 +456,7 @@ export default function OpponentsPage() {
             filteredOpponents.map((opponent) => (
               <div
                 key={opponent.id}
-                className="card p-4 md:p-6"
+                className="card"
               >
                 <h3 className="text-xl md:text-2xl font-bold mb-3 text-gray-900">
                   {opponent.firstName} {opponent.lastInitial}.
@@ -466,20 +467,12 @@ export default function OpponentsPage() {
                 )}
                 
                 <div className="space-y-2 mb-4 text-sm">
-                  <div className="flex flex-wrap gap-4">
-                    {opponent.stance && (
-                      <div>
-                        <span className="font-semibold uppercase tracking-wide text-xs text-gray-500">Stance:</span>{' '}
-                        <span className="capitalize">{opponent.stance}</span>
-                      </div>
-                    )}
-                    {opponent.weightClass && (
-                      <div>
-                        <span className="font-semibold uppercase tracking-wide text-xs text-gray-500">Weight:</span>{' '}
-                        {opponent.weightClass}
-                      </div>
-                    )}
-                  </div>
+                  <MetaRow
+                    items={[
+                      { label: 'Stance', value: opponent.stance, capitalize: true },
+                      { label: 'Weight', value: opponent.weightClass },
+                    ]}
+                  />
                   
                   {opponent.ageDivision && (
                     <p>

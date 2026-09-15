@@ -251,16 +251,67 @@
     color: var(--svj-text-inverse);
   }
 
-  /* Cards — neo-SVJ: thick border + offset shadow */
+  /* Cards — neo-SVJ: thick border + offset shadow + default breathing room */
   .card {
     background: var(--svj-surface-card);
     color: var(--svj-text-body);
     border-radius: var(--svj-radius-card);
     border: var(--border-card);
     box-shadow: var(--svj-shadow-neo);
+    padding: var(--svj-space-5);
     transition:
       box-shadow var(--svj-dur-base) var(--svj-ease-standard),
       transform var(--svj-dur-fast) var(--svj-ease-standard);
+  }
+
+  /* Roster/opponent lists: 1 col phone, 2+ desktop. Gap lives here so cards never touch. */
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--svj-space-5);
+  }
+
+  @media (min-width: 768px) {
+    .card-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .card-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .page-shell {
+    max-width: var(--svj-container);
+    margin-inline: auto;
+    padding: var(--svj-space-6) var(--svj-gutter);
+  }
+
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: var(--svj-space-5);
+    row-gap: var(--svj-space-2);
+  }
+
+  .meta-row-item {
+    display: inline-block;
+  }
+
+  .meta-row-label {
+    font-family: var(--font-heading), 'Helvetica Neue', Arial, sans-serif;
+    font-size: var(--svj-fs-caption);
+    font-weight: var(--svj-fw-semibold);
+    letter-spacing: var(--svj-ls-eyebrow);
+    text-transform: uppercase;
+    color: var(--svj-text-muted);
+  }
+
+  .meta-row-value-cap {
+    text-transform: capitalize;
   }
 
   .card:hover {
