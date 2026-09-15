@@ -1,4 +1,4 @@
-import { type ReactElement } from 'react';
+import React, { type ReactElement } from 'react';
 import { type MetaRowItem, visibleMetaItems } from './meta-row';
 
 export type { MetaRowItem };
