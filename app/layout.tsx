@@ -43,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${michroma.variable} ${archivo.variable} ${sourceSans3.variable}`}>
       <head>
-        <meta name="theme-color" content="#0f172a" />
+        <meta name="theme-color" content="#0b1e2e" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="apple-touch-icon" href="/favicon.ico" />
       </head>

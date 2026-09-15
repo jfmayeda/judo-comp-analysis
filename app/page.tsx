@@ -8,6 +8,8 @@ import { getAllAthletesWithNotes, createAthlete, seedData, ensureMockDemoData } 
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
 import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 export default function Home() {
   const router = useRouter();
@@ -148,32 +150,25 @@ export default function Home() {
             <p className="eyebrow text-white text-xs uppercase">COMPETITOR ANALYSIS</p>
           </div>
           <nav className="flex flex-wrap gap-2 w-full md:w-auto justify-start md:justify-end">
-            <Link
-              href="/opponents"
-              className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-xs px-4 py-2"
-            >
+            <Button as={Link} href="/opponents" variant="secondary" size="sm">
               Opponents
-            </Link>
-            <Link
-              href="/tournament-day"
-              className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-xs px-4 py-2"
-            >
+            </Button>
+            <Button as={Link} href="/tournament-day" variant="secondary" size="sm">
               Tournament Day
-            </Link>
+            </Button>
             {isAdmin && (
-              <Link
-                href="/invite"
-                className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-xs px-4 py-2"
-              >
-                Invite Coaches
-              </Link>
+              <>
+                <Button as={Link} href="/invite" variant="secondary" size="sm">
+                  Invite Coaches
+                </Button>
+                <Button as={Link} href="/admin/design-tokens" variant="secondary" size="sm">
+                  Design Tokens
+                </Button>
+              </>
             )}
-            <button
-              onClick={handleLogout}
-              className="btn-secondary text-white border-white hover:bg-white hover:text-gray-900 text-xs px-4 py-2"
-            >
+            <Button onClick={handleLogout} variant="secondary" size="sm">
               Sign Out
-            </button>
+            </Button>
           </nav>
         </div>
       </header>
@@ -184,20 +179,17 @@ export default function Home() {
           <div>
             <p className="eyebrow mb-2">Roster</p>
             <h2 className="text-3xl mb-2">Athletes</h2>
-            <p className="text-gray-700">
+            <p className="text-svj-gray-600">
               {athletes.length} athlete{athletes.length !== 1 ? 's' : ''} • Tokui-waza, development areas, and opponent notes for tournament day
             </p>
           </div>
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="btn-primary"
-          >
+          <Button onClick={() => setShowAddForm(!showAddForm)}>
             {showAddForm ? 'Cancel' : 'Add Athlete'}
-          </button>
+          </Button>
         </div>
 
         {showAddForm && (
-          <div className="card p-6 mb-8">
+          <Card className="p-6 mb-8">
             <h3 className="text-xl mb-6 uppercase tracking-wide">Add New Athlete</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
@@ -398,14 +390,11 @@ export default function Home() {
                 />
               </div>
 
-              <button
-                type="submit"
-                className="btn-primary"
-              >
+              <Button type="submit">
                 Create Athlete
-              </button>
+              </Button>
             </form>
-          </div>
+          </Card>
         )}
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -417,12 +406,13 @@ export default function Home() {
             </div>
           ) : (
             athletes.map((athlete) => (
-              <Link
+              <Card
                 key={athlete.id}
+                as={Link}
                 href={`/athletes/${athlete.id}`}
-                className="card p-6 block group"
+                className="p-6 block group"
               >
-                <h3 className="text-2xl font-bold mb-3 text-gray-900">
+                <h3 className="text-2xl font-bold mb-3 text-svj-navy-900">
                   {athlete.firstName} {athlete.lastInitial}.
                 </h3>
                 
@@ -464,15 +454,15 @@ export default function Home() {
                   )}
                 </div>
 
-                <div className="pt-3 border-t border-gray-200 flex items-center justify-between">
-                  <span className="text-sm text-gray-500">
+                <div className="pt-3 border-t border-svj-gray-200 flex items-center justify-between">
+                  <span className="text-sm text-svj-gray-600">
                     {athlete.opponentNotes.length} opponent note{athlete.opponentNotes.length !== 1 ? 's' : ''}
                   </span>
-                  <span className="text-blue-600 group-hover:translate-x-1 transition-transform duration-200">
+                  <span className="text-svj-blue-600 group-hover:translate-x-1 transition-transform duration-200">
                     →
                   </span>
                 </div>
-              </Link>
+              </Card>
             ))
           )}
         </div>

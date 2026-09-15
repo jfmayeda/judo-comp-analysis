@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AthleteWithNotes, TournamentDay } from '@/lib/types';
@@ -14,6 +14,8 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { OfflineBanner } from '@/components/offline-banner';
 import { SyncButton } from '@/components/sync-button';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 export default function TournamentDayPage() {
   const router = useRouter();
@@ -169,7 +171,7 @@ export default function TournamentDayPage() {
         </div>
 
         {/* Tournament Day Selector & Actions */}
-        <div className="card p-4 md:p-6 mb-6">
+        <Card className="p-4 md:p-6 mb-6">
           <div className="flex flex-col gap-4 mb-4">
             {/* Row 1: Tournament Selector */}
             <div className="flex-1">
@@ -193,26 +195,28 @@ export default function TournamentDayPage() {
             
             {/* Row 2: Action Buttons - Phone Friendly */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <button
+              <Button
                 onClick={handleSave}
                 disabled={saving || !selectedTournamentDay}
-                className="btn-primary text-base py-3 min-h-[48px]"
+                className="text-base py-3 min-h-[48px]"
               >
-                {saving ? 'Saving...' : '💾 Save Selection'}
-              </button>
-              <button
+                {saving ? 'Saving...' : 'Save Selection'}
+              </Button>
+              <Button
                 onClick={handlePrintPack}
                 disabled={selectedAthleteIds.size === 0}
-                className="btn-secondary text-base py-3 min-h-[48px]"
+                variant="secondary"
+                className="text-base py-3 min-h-[48px]"
               >
-                🖨️ Print All ({selectedAthleteIds.size})
-              </button>
-              <Link
+                Print All ({selectedAthleteIds.size})
+              </Button>
+              <Button
+                as={Link}
                 href="/tournament-day/assign"
-                className="btn-primary inline-flex items-center justify-center text-center text-base py-3 min-h-[48px]"
+                className="text-base py-3 min-h-[48px]"
               >
-                📋 Assign Coaches
-              </Link>
+                Assign Coaches
+              </Button>
             </div>
           </div>
 
@@ -232,11 +236,11 @@ export default function TournamentDayPage() {
             </div>
           )}
 
-        </div>
+        </Card>
         
         {/* Today's Roster - Quick Links */}
         {selectedAthletes.length > 0 && (
-          <div className="card p-4 md:p-6 mb-6">
+          <Card className="p-4 md:p-6 mb-6">
             <h3 className="text-lg md:text-xl font-bold mb-4 text-gray-900">
               Today's Roster ({selectedAthletes.length})
             </h3>
@@ -259,30 +263,20 @@ export default function TournamentDayPage() {
                     </div>
                   </div>
                   <div className="flex gap-2 ml-4 flex-shrink-0">
-                    <Link
-                      href={`/athletes/${athlete.id}#quick-capture`}
-                      className="px-3 md:px-4 py-2 text-sm font-semibold bg-brand-blue text-white hover:bg-brand-blue-hover rounded-full transition-colors min-h-[44px] flex items-center"
-                    >
+                    <Button as={Link} href={`/athletes/${athlete.id}#quick-capture`} size="sm">
                       Capture
-                    </Link>
-                    <Link
-                      href={`/athletes/${athlete.id}`}
-                      className="px-3 md:px-4 py-2 text-sm font-semibold text-brand-blue hover:text-brand-blue-hover border-2 border-brand-blue rounded-full hover:bg-blue-50 transition-colors min-h-[44px] flex items-center"
-                    >
+                    </Button>
+                    <Button as={Link} href={`/athletes/${athlete.id}`} variant="secondary" size="sm">
                       View
-                    </Link>
-                    <Link
-                      href={`/athletes/${athlete.id}/print`}
-                      target="_blank"
-                      className="px-3 md:px-4 py-2 text-sm font-semibold text-brand-blue hover:text-brand-blue-hover border-2 border-brand-blue rounded-full hover:bg-blue-50 transition-colors min-h-[44px] flex items-center"
-                    >
+                    </Button>
+                    <Button as={Link} href={`/athletes/${athlete.id}/print`} target="_blank" variant="secondary" size="sm">
                       Print
-                    </Link>
+                    </Button>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Athlete Selection Grid */}
@@ -302,14 +296,11 @@ export default function TournamentDayPage() {
             athletes.map((athlete) => {
               const isSelected = selectedAthleteIds.has(athlete.id);
               return (
-                <div
+                <Card
                   key={athlete.id}
+                  variant={isSelected ? 'selected' : 'default'}
                   onClick={() => handleToggleAthlete(athlete.id)}
-                  className={`card p-4 md:p-6 cursor-pointer transition-all min-h-[44px] ${
-                    isSelected 
-                      ? 'ring-2 ring-brand-blue bg-blue-50' 
-                      : 'hover:shadow-lg'
-                  }`}
+                  className="p-4 md:p-6 cursor-pointer min-h-[44px]"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="text-lg md:text-xl font-bold text-gray-900">
@@ -352,19 +343,21 @@ export default function TournamentDayPage() {
                     </div>
                   </div>
 
-                  <div className="pt-3 mt-3 border-t border-gray-200 flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
+                  <div className="pt-3 mt-3 border-t border-svj-gray-200 flex items-center justify-between">
+                    <span className="text-sm text-svj-gray-600">
                       {athlete.opponentNotes.length} opponent note{athlete.opponentNotes.length !== 1 ? 's' : ''}
                     </span>
-                    <Link
+                    <Button
+                      as={Link}
                       href={`/athletes/${athlete.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-sm text-brand-blue hover:text-brand-blue-hover font-semibold"
+                      onClick={(e: MouseEvent) => e.stopPropagation()}
+                      variant="ghost"
+                      size="sm"
                     >
                       View →
-                    </Link>
+                    </Button>
                   </div>
-                </div>
+                </Card>
               );
             })
           )}
