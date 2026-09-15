@@ -16,6 +16,7 @@ import { OfflineBanner } from '@/components/offline-banner';
 import { SyncButton } from '@/components/sync-button';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { MetaRow } from '@/components/ui/MetaRow';
 
 export default function TournamentDayPage() {
   const router = useRouter();
@@ -285,7 +286,7 @@ export default function TournamentDayPage() {
             Select Athletes for Tournament
           </h3>
         </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="card-grid">
           {athletes.length === 0 ? (
             <div className="col-span-full text-center py-12">
               <p className="text-gray-600 text-sm md:text-base">
@@ -300,7 +301,7 @@ export default function TournamentDayPage() {
                   key={athlete.id}
                   variant={isSelected ? 'selected' : 'default'}
                   onClick={() => handleToggleAthlete(athlete.id)}
-                  className="p-4 md:p-6 cursor-pointer min-h-[44px]"
+                  className="cursor-pointer min-h-[44px]"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="text-lg md:text-xl font-bold text-gray-900">
@@ -327,20 +328,12 @@ export default function TournamentDayPage() {
                       </p>
                     )}
                     
-                    <div className="flex gap-4 text-sm flex-wrap">
-                      {athlete.stance && (
-                        <div>
-                          <span className="eyebrow text-xs text-gray-500">Stance:</span>{' '}
-                          <span className="capitalize">{athlete.stance}</span>
-                        </div>
-                      )}
-                      {athlete.weightClass && (
-                        <div>
-                          <span className="eyebrow text-xs text-gray-500">Weight:</span>{' '}
-                          {athlete.weightClass}
-                        </div>
-                      )}
-                    </div>
+                    <MetaRow
+                      items={[
+                        { label: 'Stance', value: athlete.stance, capitalize: true },
+                        { label: 'Weight', value: athlete.weightClass },
+                      ]}
+                    />
                   </div>
 
                   <div className="pt-3 mt-3 border-t border-svj-gray-200 flex items-center justify-between">
