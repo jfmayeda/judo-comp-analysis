@@ -271,6 +271,13 @@
     gap: var(--svj-space-5);
   }
 
+  /* Create/edit shell above a card-grid: same 24px as card-grid gap (#34). */
+  .roster-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--svj-space-5);
+  }
+
   @media (min-width: 768px) {
     .card-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));

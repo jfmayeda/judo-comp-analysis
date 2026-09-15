@@ -31,6 +31,9 @@ test('form inputs and page shells reserve bottom chrome and clip inside cards', 
   assert.match(css, /\.page-shell\s*\{[^}]*safe-area-inset-bottom/s);
   assert.match(css, /\.has-bottom-chrome\s*\{[^}]*safe-area-inset-bottom/s);
   assert.match(css, /\.card form[\s\S]*overflow-x:\s*clip/);
+  assert.match(css, /\.roster-stack\s*\{[^}]*gap:\s*var\(--svj-space-5\)/s);
+  const home = readFileSync(new URL('app/page.tsx', root), 'utf8');
+  assert.match(home, /roster-stack/);
   assert.match(athlete, /has-bottom-chrome/);
   assert.match(opponents, /has-bottom-chrome/);
 });
