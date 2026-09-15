@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Technique } from '@/lib/types';
 import { getAllTechniques, getTechniquesByIds } from '@/lib/supabase-store';
 
@@ -23,6 +23,7 @@ export default function TechniquePicker({
   label = 'Techniques',
   categoryFilter = null,
 }: TechniquePickerProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const [techniques, setTechniques] = useState<Technique[]>([]);
   const [selectedTechniques, setSelectedTechniques] = useState<Technique[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,15 +69,15 @@ export default function TechniquePicker({
 
   const filteredTechniques = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    
+
     let filtered = techniques;
-    
+
     if (categoryFilter) {
       filtered = filtered.filter(t => t.category === categoryFilter);
     }
-    
+
     const query = searchQuery.toLowerCase();
-    return filtered.filter(t => 
+    return filtered.filter(t =>
       t.name.toLowerCase().includes(query) ||
       t.subcategory.toLowerCase().includes(query)
     );
@@ -95,14 +96,36 @@ export default function TechniquePicker({
       groups[technique.category][technique.subcategory].push(technique);
     });
 
-    return groups;
+    return Object.entries(groups).filter(([, subcategories]) =>
+      Object.keys(subcategories).length > 0
+    );
   }, [filteredTechniques]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [isOpen]);
 
   const handleToggleTechnique = (techniqueId: string) => {
     const newSelectedIds = selectedIds.includes(techniqueId)
       ? selectedIds.filter(id => id !== techniqueId)
       : [...selectedIds, techniqueId];
-    
+
     onChange(newSelectedIds);
   };
 
@@ -111,31 +134,32 @@ export default function TechniquePicker({
     onChange(newSelectedIds);
   };
 
+  const showResults = isOpen && searchQuery.trim().length > 0;
+
   if (loading) {
-    return <div className="text-sm text-gray-500">Loading techniques...</div>;
+    return <div className="text-sm text-svj-gray-600">Loading techniques...</div>;
   }
 
   return (
-    <div className="space-y-2">
+    <div ref={rootRef} className="technique-picker">
       {label && (
-        <label className="eyebrow block text-gray-700">
+        <label className="eyebrow block text-svj-gray-800">
           {label}
         </label>
       )}
 
-      <div className="space-y-2">
+      <div className="technique-picker-body">
         {selectedTechniques.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div className="technique-picker-chips">
             {selectedTechniques.map(technique => (
               <div
                 key={technique.id}
-                className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded text-sm"
+                className="technique-picker-chip"
               >
-                <span className="text-blue-900">{technique.name}</span>
+                <span>{technique.name}</span>
                 <button
                   type="button"
                   onClick={() => handleRemoveTechnique(technique.id)}
-                  className="text-blue-600 hover:text-blue-800 font-bold"
                   aria-label={`Remove ${technique.name}`}
                 >
                   ×
@@ -145,77 +169,73 @@ export default function TechniquePicker({
           </div>
         )}
 
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setIsOpen(true);
-            }}
-            onFocus={() => setIsOpen(true)}
-            placeholder={placeholder}
-            className="form-input w-full"
-          />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
+          placeholder={placeholder}
+          className="form-input"
+          aria-expanded={showResults}
+          aria-controls="technique-picker-results"
+          autoComplete="off"
+        />
 
-          {isOpen && (
-            <>
-              <button
-                type="button"
-                className="fixed inset-0 z-10"
-                onClick={() => setIsOpen(false)}
-                aria-label="Close technique picker"
-              />
-              
-              <div className="absolute z-20 w-full mt-1 max-h-96 overflow-y-auto bg-white border border-gray-300 rounded shadow-lg">
-                {Object.entries(groupedTechniques).map(([category, subcategories]) => (
-                  <div key={category} className="p-2">
-                    <div className="text-xs font-bold uppercase tracking-wide text-gray-500 px-2 py-1 sticky top-0 bg-white">
-                      {category}
+        {showResults && (
+          <div
+            id="technique-picker-results"
+            className="technique-picker-panel"
+            role="listbox"
+          >
+            {groupedTechniques.map(([category, subcategories]) => (
+              <div key={category} className="technique-picker-group">
+                <div className="technique-picker-category">
+                  {category}
+                </div>
+                {Object.entries(subcategories).map(([subcategory, techs]) => (
+                  <div key={subcategory} className="technique-picker-subcategory">
+                    <div className="technique-picker-subhead">
+                      {subcategory}
                     </div>
-                    {Object.entries(subcategories).map(([subcategory, techs]) => (
-                      <div key={subcategory} className="mb-2">
-                        <div className="text-xs font-semibold text-gray-600 px-2 py-1">
-                          {subcategory}
-                        </div>
-                        {techs.map(technique => (
-                          <button
-                            key={technique.id}
-                            type="button"
-                            onClick={() => {
-                              handleToggleTechnique(technique.id);
-                              setSearchQuery('');
-                            }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 ${
-                              selectedIds.includes(technique.id)
-                                ? 'bg-blue-50 text-blue-900 font-medium'
-                                : 'text-gray-700'
-                            }`}
-                          >
-                            {technique.name}
-                            {selectedIds.includes(technique.id) && (
-                              <span className="ml-2 text-blue-600">✓</span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    ))}
+                    {techs.map(technique => {
+                      const selected = selectedIds.includes(technique.id);
+                      return (
+                        <button
+                          key={technique.id}
+                          type="button"
+                          role="option"
+                          aria-selected={selected}
+                          onClick={() => {
+                            handleToggleTechnique(technique.id);
+                            setSearchQuery('');
+                            setIsOpen(false);
+                          }}
+                          className="technique-picker-option"
+                        >
+                          {technique.name}
+                          {selected ? <span aria-hidden> ✓</span> : null}
+                        </button>
+                      );
+                    })}
                   </div>
                 ))}
-                
-                {filteredTechniques.length === 0 && (
-                  <div className="p-4 text-sm text-gray-500 text-center">
-                    No techniques found
-                  </div>
-                )}
               </div>
-            </>
-          )}
-        </div>
+            ))}
+
+            {filteredTechniques.length === 0 && (
+              <div className="technique-picker-empty">
+                No techniques found
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {allowCustom && (
-        <p className="text-xs text-gray-500">
+        <p className="technique-picker-hint">
           Can't find a technique? You can still use the free-text fields for custom entries.
         </p>
       )}
