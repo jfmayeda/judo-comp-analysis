@@ -518,23 +518,8 @@
     max-width: 100%;
   }
 
-  .app-header-menu {
-    min-width: 0;
-    max-width: 100%;
-  }
-
-  .app-header-menu-toggle {
-    list-style: none;
-    cursor: pointer;
-    box-sizing: border-box;
-  }
-
-  .app-header-menu-toggle::-webkit-details-marker {
-    display: none;
-  }
-
   .app-header-nav {
-    display: flex;
+    display: none;
     flex-wrap: wrap;
     gap: var(--svj-space-2);
   }
@@ -549,7 +534,7 @@
   }
 
   .app-header .btn-secondary:hover,
-  .app-header .btn-secondary:focus {
+  .app-header .btn-secondary:focus-visible {
     background: var(--svj-white);
     color: var(--svj-navy-800);
     border-color: var(--svj-white);
@@ -584,20 +569,17 @@
     }
 
     .app-header-tools,
-    .app-header-menu {
-      width: 100%;
-    }
-
     .app-header-menu-toggle {
       width: 100%;
     }
 
-    .app-header-menu .app-header-nav {
+    .app-header-nav.is-open {
+      display: flex;
       flex-direction: column;
-      margin-top: var(--svj-space-3);
+      width: 100%;
     }
 
-    .app-header-menu .app-header-nav .btn-secondary {
+    .app-header-nav .btn-secondary {
       width: 100%;
     }
   }
@@ -626,12 +608,12 @@
       align-items: center;
     }
 
-    .app-header-menu > .app-header-menu-toggle {
+    .app-header-menu-toggle {
       display: none;
     }
 
-    .app-header-menu > .app-header-nav {
-      display: flex !important;
+    .app-header-nav {
+      display: flex;
     }
 
     .page-title-row {

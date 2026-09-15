@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -39,6 +39,7 @@ export function AppHeader({
   const pathname = usePathname() ?? '/';
   const router = useRouter();
   const { isAdmin, signOut } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -120,14 +121,25 @@ export function AppHeader({
           <div className="app-header-tools">
             {extraActions}
             {showNav ? (
-              <details className="app-header-menu">
-                <summary className="btn-secondary btn-sm app-header-menu-toggle">
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="app-header-menu-toggle"
+                  aria-expanded={menuOpen}
+                  aria-controls="app-header-nav"
+                  onClick={() => setMenuOpen((open) => !open)}
+                >
                   Menu
-                </summary>
-                <nav className="app-header-nav" aria-label="App">
+                </Button>
+                <nav
+                  id="app-header-nav"
+                  className={cn('app-header-nav', menuOpen && 'is-open')}
+                  aria-label="App"
+                >
                   {navLinks}
                 </nav>
-              </details>
+              </>
             ) : null}
           </div>
         ) : null}
