@@ -332,7 +332,7 @@ export default function AthletePage() {
     <div className="min-h-screen">
       <AppHeader backHref="/" className="no-print" />
 
-      <div className="max-w-5xl mx-auto p-4 md:p-8">
+      <div className="max-w-5xl mx-auto px-4 md:px-8 pt-4 md:pt-8 has-bottom-chrome">
         {/* 30-Second Coach Card - Sticky on Desktop, Top on Mobile */}
         <div className="mb-6 md:sticky md:top-20 md:z-10 no-print">
           <MatSideCoachCard 

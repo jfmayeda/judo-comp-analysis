@@ -148,8 +148,9 @@ export default function Home() {
           </Button>
         </div>
 
+        <div className="roster-stack">
         {showAddForm && (
-          <Card className="mb-8">
+          <Card>
             <h3 className="text-xl mb-6 uppercase tracking-wide">Add New Athlete</h3>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
@@ -417,6 +418,7 @@ export default function Home() {
               </Card>
             ))
           )}
+        </div>
         </div>
       </div>
     </div>

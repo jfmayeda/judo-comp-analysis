@@ -180,7 +180,7 @@ export default function OpponentsPage() {
       <AppHeader />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-4 md:pt-8 has-bottom-chrome">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
           <div>
             <p className="eyebrow mb-2">Shared Database</p>

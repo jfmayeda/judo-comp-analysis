@@ -271,6 +271,13 @@
     gap: var(--svj-space-5);
   }
 
+  /* Create/edit shell above a card-grid: same 24px as card-grid gap (#34). */
+  .roster-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--svj-space-5);
+  }
+
   @media (min-width: 768px) {
     .card-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -287,6 +294,25 @@
     max-width: var(--svj-container);
     margin-inline: auto;
     padding: var(--svj-space-6) var(--svj-gutter);
+    padding-bottom: calc(var(--svj-space-8) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Phone chrome / home-indicator clearance for forms not using .page-shell */
+  .has-bottom-chrome {
+    padding-bottom: calc(var(--svj-space-8) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Keep inputs/chips/dropdowns inside the card box; do not clip .card itself
+     (overflow on .card would eat the neo offset shadow). */
+  .card form,
+  .card .technique-picker {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  .card .grid > * {
+    min-width: 0;
   }
 
   .meta-row {
@@ -355,6 +381,7 @@
     line-height: 1.4;
     border-width: var(--svj-border-width-neo);
     border-style: solid;
+    scroll-margin-bottom: calc(var(--svj-space-8) + env(safe-area-inset-bottom, 0px));
   }
 
   .btn-primary {
@@ -631,6 +658,11 @@
 
   /* Form Inputs */
   .form-input {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     padding: 0.75rem 1rem;
     border: var(--svj-border-width-hairline) solid var(--svj-gray-200);
     border-radius: var(--svj-radius-input);
@@ -643,9 +675,10 @@
   }
 
   .form-input:focus {
-    outline: none;
+    outline: 2px solid var(--svj-focus-ring);
+    outline-offset: -2px;
     border-color: var(--svj-gray-400);
-    box-shadow: 0 0 0 3px rgba(0, 94, 155, 0.1);
+    box-shadow: none;
   }
 
   .form-input::placeholder {
@@ -742,6 +775,150 @@
   .list-choice:focus-visible {
     outline: 3px solid var(--svj-focus-ring);
     outline-offset: -3px;
+  }
+
+  /* TechniquePicker — opaque in-flow results, neo radius/border, contained chips */
+  .technique-picker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--svj-space-2);
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .technique-picker-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--svj-space-2);
+    min-width: 0;
+  }
+
+  .technique-picker-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--svj-space-2);
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .technique-picker-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--svj-space-2);
+    max-width: 100%;
+    min-width: 0;
+    padding: var(--svj-space-1) var(--svj-space-3);
+    background: var(--svj-paper);
+    color: var(--svj-text-strong);
+    border: var(--svj-border-width-neo) solid var(--svj-navy-900);
+    border-radius: var(--svj-radius-input);
+    font-size: var(--svj-fs-caption);
+    line-height: var(--svj-lh-snug);
+  }
+
+  .technique-picker-chip span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .technique-picker-chip button {
+    flex: none;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--svj-blue-600);
+    font-weight: var(--svj-fw-bold);
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .technique-picker-chip button:hover {
+    color: var(--svj-blue-700);
+  }
+
+  .technique-picker-panel {
+    isolation: isolate;
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 100%;
+    max-height: min(16rem, 45vh);
+    overflow-x: hidden;
+    overflow-y: auto;
+    background-color: var(--svj-white);
+    color: var(--svj-text-body);
+    border: var(--svj-border-width-neo) solid var(--svj-border-strong);
+    border-radius: var(--svj-radius-card);
+    box-shadow: var(--svj-shadow-neo);
+  }
+
+  .technique-picker-group {
+    padding: var(--svj-space-2);
+  }
+
+  .technique-picker-category {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: var(--svj-space-1) var(--svj-space-2);
+    background-color: var(--svj-white);
+    color: var(--svj-text-muted);
+    font-family: var(--font-heading), 'Helvetica Neue', Arial, sans-serif;
+    font-size: var(--svj-fs-caption);
+    font-weight: var(--svj-fw-bold);
+    letter-spacing: var(--svj-ls-eyebrow);
+    text-transform: uppercase;
+  }
+
+  .technique-picker-subcategory {
+    margin-bottom: var(--svj-space-2);
+  }
+
+  .technique-picker-subhead {
+    padding: var(--svj-space-1) var(--svj-space-2);
+    color: var(--svj-text-muted);
+    font-size: var(--svj-fs-caption);
+    font-weight: var(--svj-fw-semibold);
+  }
+
+  .technique-picker-option {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-height: 44px;
+    padding: var(--svj-space-2) var(--svj-space-3);
+    text-align: left;
+    font-size: var(--svj-fs-body-sm);
+    color: var(--svj-text-body);
+    background: var(--svj-white);
+    border: 0;
+    border-radius: var(--svj-radius-control);
+    cursor: pointer;
+  }
+
+  .technique-picker-option:hover,
+  .technique-picker-option:focus-visible {
+    background: var(--svj-paper);
+  }
+
+  .technique-picker-option[aria-selected='true'] {
+    background: var(--svj-paper);
+    color: var(--svj-text-strong);
+    font-weight: var(--svj-fw-medium);
+  }
+
+  .technique-picker-empty {
+    padding: var(--svj-space-4);
+    text-align: center;
+    font-size: var(--svj-fs-body-sm);
+    color: var(--svj-text-muted);
+    background: var(--svj-white);
+  }
+
+  .technique-picker-hint {
+    margin: 0;
+    font-size: var(--svj-fs-caption);
+    color: var(--svj-text-muted);
   }
 }
 

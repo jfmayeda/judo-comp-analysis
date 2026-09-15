@@ -1,10 +1,13 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AthleteWithNotes, TournamentDayEntry } from '@/lib/types';
+import { getTechniquesByIds } from '@/lib/supabase-store';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Pill } from '@/components/ui/Chip';
+import { techniqueChipLabels } from '@/components/technique-chips';
 
 interface MatSideCoachCardProps {
   athlete: AthleteWithNotes;
@@ -14,15 +17,37 @@ interface MatSideCoachCardProps {
 }
 
 export function MatSideCoachCard({ athlete, assignment, coachName, onQuickCapture }: MatSideCoachCardProps) {
-  const tokuiItems = [
-    athlete.tokuiWaza,
-    ...(athlete.tokuiTechniqueIds || [])
-  ].filter(Boolean);
-  
-  const neWazaItems = [
-    athlete.neWaza,
-    ...(athlete.newazaTechniqueIds || [])
-  ].filter(Boolean);
+  const [tokuiNames, setTokuiNames] = useState<string[]>([]);
+  const [newazaNames, setNewazaNames] = useState<string[]>([]);
+
+  const tokuiIdKey = (athlete.tokuiTechniqueIds ?? []).join(',');
+  const newazaIdKey = (athlete.newazaTechniqueIds ?? []).join(',');
+
+  useEffect(() => {
+    const tokuiIds = tokuiIdKey ? tokuiIdKey.split(',') : [];
+    const newazaIds = newazaIdKey ? newazaIdKey.split(',') : [];
+    let cancelled = false;
+
+    Promise.all([
+      getTechniquesByIds(tokuiIds),
+      getTechniquesByIds(newazaIds),
+    ]).then(([tokui, newaza]) => {
+      if (cancelled) return;
+      setTokuiNames(tokui.map((technique) => technique.name));
+      setNewazaNames(newaza.map((technique) => technique.name));
+    }).catch(() => {
+      if (cancelled) return;
+      setTokuiNames([]);
+      setNewazaNames([]);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tokuiIdKey, newazaIdKey]);
+
+  const tokuiItems = techniqueChipLabels(athlete.tokuiWaza, tokuiNames);
+  const neWazaItems = techniqueChipLabels(athlete.neWaza, newazaNames);
 
   const recentOpponentNotes = athlete.opponentNotes
     .slice(0, 3)
@@ -84,8 +109,8 @@ export function MatSideCoachCard({ athlete, assignment, coachName, onQuickCaptur
               Tokui-waza (Tachi)
             </p>
             <div className="flex flex-wrap gap-2">
-              {tokuiItems.slice(0, 3).map((item, idx) => (
-                <Pill key={idx}>{item}</Pill>
+              {tokuiItems.slice(0, 3).map((item) => (
+                <Pill key={item}>{item}</Pill>
               ))}
             </div>
           </div>
@@ -97,8 +122,8 @@ export function MatSideCoachCard({ athlete, assignment, coachName, onQuickCaptur
               Ne-waza
             </p>
             <div className="flex flex-wrap gap-2">
-              {neWazaItems.slice(0, 3).map((item, idx) => (
-                <Pill key={idx} tone="navy">{item}</Pill>
+              {neWazaItems.slice(0, 3).map((item) => (
+                <Pill key={item} tone="navy">{item}</Pill>
               ))}
             </div>
           </div>
