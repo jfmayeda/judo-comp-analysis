@@ -364,7 +364,7 @@ export default function AssignmentBoardPage() {
           {entries.length === 0 ? (
             <div className="text-center py-8 text-svj-gray-600">
               No athletes selected for this tournament day.{' '}
-              <Button as={Link} href="/tournament-day" variant="ghost" size="sm">
+              <Button as={Link} href="/tournament-day" variant="ghost">
                 Select athletes
               </Button>
             </div>
@@ -558,6 +558,7 @@ export default function AssignmentBoardPage() {
             aria-modal="true"
             aria-labelledby="auto-assign-preview-title"
           >
+            <div className="assign-modal-sheet">
             <div className="p-4 md:p-6 border-b-2 border-svj-navy-900 shrink-0">
               <h3 id="auto-assign-preview-title" className="text-2xl font-bold text-svj-navy-900">Auto-Assign Preview</h3>
               <p className="text-sm text-svj-gray-600 mt-1">
@@ -679,6 +680,7 @@ export default function AssignmentBoardPage() {
                   {applyingAutoAssign ? 'Applying...' : `Apply ${autoAssignProposals.length} Assignment${autoAssignProposals.length !== 1 ? 's' : ''}`}
                 </Button>
               )}
+            </div>
             </div>
           </Card>
         </div>
