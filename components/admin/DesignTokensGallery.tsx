@@ -9,18 +9,22 @@ import { Chip, Pill } from '@/components/ui/Chip';
 function Swatch({ token }: { token: DesignToken }) {
   if (token.kind === 'color') {
     return (
-      <div className="flex items-center gap-3">
+      <div>
         <div
-          className="h-12 w-12 shrink-0 border-2 border-svj-navy-900"
-          style={{ background: `var(${token.name})` }}
+          data-token={token.name}
+          className="mb-2"
+          style={{
+            height: 56,
+            width: '100%',
+            background: `var(${token.name})`,
+            border: '2px solid var(--svj-navy-900)',
+          }}
           aria-hidden
         />
-        <div className="min-w-0">
-          <p className="font-heading text-xs uppercase tracking-wide text-svj-navy-900">
-            {token.label}
-          </p>
-          <p className="text-svj-gray-600 text-sm truncate">{token.name}</p>
-        </div>
+        <p className="font-heading text-xs uppercase tracking-wide text-svj-navy-900">
+          {token.label}
+        </p>
+        <p className="text-svj-gray-600 text-sm truncate">{token.name}</p>
       </div>
     );
   }
@@ -38,14 +42,23 @@ function Swatch({ token }: { token: DesignToken }) {
   }
 
   if (token.kind === 'radius') {
+    const isWidth = token.name.includes('border-width');
     return (
       <div>
         <p className="font-heading text-xs uppercase tracking-wide text-svj-navy-900 mb-2">
           {token.label}
         </p>
         <div
-          className="h-12 w-20 bg-svj-blue-600 border-2 border-svj-navy-900"
-          style={{ borderRadius: `var(${token.name})` }}
+          className="h-12 w-20 bg-svj-paper"
+          style={
+            isWidth
+              ? { border: `var(${token.name}) solid var(--svj-navy-900)` }
+              : {
+                  background: 'var(--svj-blue-600)',
+                  border: '2px solid var(--svj-navy-900)',
+                  borderRadius: `var(${token.name})`,
+                }
+          }
         />
         <p className="text-svj-gray-600 text-sm mt-1">{token.name}</p>
       </div>
