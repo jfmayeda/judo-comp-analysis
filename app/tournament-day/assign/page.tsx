@@ -338,7 +338,7 @@ export default function AssignmentBoardPage() {
 
           {entries.length > 0 && (
             <div className="flex flex-col gap-3 mt-4 pt-4 border-t-2 border-svj-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="assign-actions">
                 <Button
                   onClick={handleAutoAssign}
                   disabled={saving !== null}
@@ -369,7 +369,7 @@ export default function AssignmentBoardPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 text-sm">
+            <div className="assign-counts">
               <CountTile label="Total" value={entries.length} />
               <CountTile label="Assigned" value={assignedCount} />
               <CountTile label="Unassigned" value={unassignedCount} />
@@ -424,7 +424,7 @@ export default function AssignmentBoardPage() {
                   </div>
 
                   {!entry.noCoachNeeded && (
-                    <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-3 md:gap-4">
+                    <div className="assign-fields">
                       <div>
                         <label className="eyebrow text-xs block mb-2">
                           Assigned Coach
@@ -550,17 +550,23 @@ export default function AssignmentBoardPage() {
       </div>
 
       {showAutoAssignPreview && (
-        <div className="fixed inset-0 bg-svj-navy-900/80 z-50 flex items-center justify-center p-4">
-          <Card className="max-w-4xl w-full max-h-[90vh] flex flex-col p-0">
-            <div className="p-4 md:p-6 border-b-2 border-svj-navy-900">
-              <h3 className="text-2xl font-bold text-svj-navy-900">Auto-Assign Preview</h3>
+        <div className="assign-modal-overlay">
+          <div className="assign-modal-scrim" aria-hidden />
+          <Card
+            className="assign-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="auto-assign-preview-title"
+          >
+            <div className="p-4 md:p-6 border-b-2 border-svj-navy-900 shrink-0">
+              <h3 id="auto-assign-preview-title" className="text-2xl font-bold text-svj-navy-900">Auto-Assign Preview</h3>
               <p className="text-sm text-svj-gray-600 mt-1">
                 Review proposed assignments before applying
               </p>
             </div>
 
-            <div className="overflow-y-auto flex-1 min-h-0 p-4 md:p-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
+            <div className="overflow-y-auto min-h-0 flex-1 p-4 md:p-6">
+              <div className="assign-counts mb-6">
                 <CountTile label="Proposals" value={autoAssignProposals.length} />
                 <CountTile label="Conflicts" value={autoAssignConflicts.length} />
                 <CountTile label="Already Assigned" value={alreadyAssignedCount} />
@@ -651,7 +657,7 @@ export default function AssignmentBoardPage() {
               )}
             </div>
 
-            <div className="p-4 md:p-6 border-t-2 border-svj-navy-900 bg-svj-paper flex flex-col-reverse sm:flex-row gap-3">
+            <div className="p-4 md:p-6 border-t-2 border-svj-navy-900 bg-svj-paper assign-preview-actions shrink-0">
               <Button
                 onClick={() => {
                   setShowAutoAssignPreview(false);
@@ -683,9 +689,9 @@ export default function AssignmentBoardPage() {
 
 function CountTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-svj-paper p-3 rounded-svj-card border-2 border-svj-navy-900">
+    <div className="bg-svj-paper px-3 py-2 rounded-svj-card border-2 border-svj-navy-900">
       <p className="eyebrow mb-1">{label}</p>
-      <p className="text-xl md:text-2xl font-bold text-svj-navy-900">{value}</p>
+      <p className="text-2xl font-bold leading-none text-svj-navy-900 tabular-nums">{value}</p>
     </div>
   );
 }
