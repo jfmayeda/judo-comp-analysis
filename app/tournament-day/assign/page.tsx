@@ -11,6 +11,7 @@ import {
   updateTournamentDayEntry,
   getAllCoaches,
 } from '@/lib/supabase-store';
+import { AppHeader } from '@/components/AppHeader';
 import { useAuth } from '@/lib/auth-context';
 import { 
   autoAssignCoaches, 
@@ -268,19 +269,7 @@ export default function AssignmentBoardPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="app-header">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
-          <Link href="/tournament-day" className="flex items-center gap-3 text-white hover:opacity-80 transition-opacity">
-            <span className="text-xl">←</span>
-            <img 
-              src="/svj-logo-white.png" 
-              alt="Silicon Valley Judo" 
-              className="app-header-logo"
-            />
-            <p className="eyebrow text-white text-xs uppercase">COACH ASSIGNMENTS</p>
-          </Link>
-        </div>
-      </header>
+      <AppHeader backHref="/tournament-day" eyebrow="Coach Assignments" />
 
       <div className="max-w-7xl mx-auto p-4 md:p-8">
         <div className="mb-6 md:mb-8">

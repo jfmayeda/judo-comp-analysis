@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { AppHeader } from '@/components/AppHeader';
 import { DesignTokensGallery } from '@/components/admin/DesignTokensGallery';
 import { Button } from '@/components/ui/Button';
 
@@ -45,24 +46,14 @@ export default function DesignTokensPage() {
 
   return (
     <div className="min-h-screen">
-      <header className="app-header">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3 text-white">
-            <span className="text-xl" aria-hidden>
-              ←
-            </span>
-            <img
-              src="/svj-logo-white.png"
-              alt="Silicon Valley Judo"
-              className="app-header-logo"
-            />
-            <p className="eyebrow text-white text-xs uppercase">Competitor Analysis</p>
-          </Link>
+      <AppHeader
+        backHref="/"
+        extraActions={
           <Button as={Link} href="/invite" variant="secondary" size="sm">
             Invite Coaches
           </Button>
-        </div>
-      </header>
+        }
+      />
 
       <div className="max-w-4xl mx-auto p-4 md:p-8">
         <div className="mb-8">

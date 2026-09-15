@@ -8,13 +8,14 @@ import { getAllAthletesWithNotes, createAthlete, seedData, ensureMockDemoData } 
 import { useAuth } from '@/lib/auth-context';
 import TechniquePicker from '@/components/TechniquePicker';
 import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
+import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { MetaRow } from '@/components/ui/MetaRow';
 
 export default function Home() {
   const router = useRouter();
-  const { user, loading: authLoading, isAllowlisted, isAdmin, signOut } = useAuth();
+  const { user, loading: authLoading, isAllowlisted } = useAuth();
   const [athletes, setAthletes] = useState<AthleteWithNotes[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -108,15 +109,6 @@ export default function Home() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      router.push('/login');
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   const handleSeedData = async () => {
     if (!confirm('Load sample data? This will add 3 example athletes with scouting notes.')) {
       return;
@@ -139,45 +131,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="app-header">
-        <div className="max-w-[var(--svj-container)] mx-auto px-4 md:px-8 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <img 
-              src="/svj-logo-white.png" 
-              alt="Silicon Valley Judo" 
-              className="app-header-logo"
-            />
-            <p className="eyebrow text-white text-xs uppercase">COMPETITOR ANALYSIS</p>
-          </div>
-          <nav className="flex flex-wrap gap-2 w-full md:w-auto justify-start md:justify-end">
-            <Button as={Link} href="/opponents" variant="secondary" size="sm">
-              Opponents
-            </Button>
-            <Button as={Link} href="/tournament-day" variant="secondary" size="sm">
-              Tournament Day
-            </Button>
-            {isAdmin && (
-              <>
-                <Button as={Link} href="/invite" variant="secondary" size="sm">
-                  Invite Coaches
-                </Button>
-                <Button as={Link} href="/admin/design-tokens" variant="secondary" size="sm">
-                  Design Tokens
-                </Button>
-              </>
-            )}
-            <Button onClick={handleLogout} variant="secondary" size="sm">
-              Sign Out
-            </Button>
-          </nav>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Main Content */}
       <div className="page-shell">
-        <div className="flex justify-between items-center mb-8">
-          <div>
+        <div className="page-title-row">
+          <div className="page-title-copy">
             <p className="eyebrow mb-2">Roster</p>
             <h2 className="text-3xl mb-2">Athletes</h2>
             <p className="text-svj-gray-600">
