@@ -2,6 +2,7 @@
 
 import { Tournament } from '@/lib/types';
 import MatchRow from './MatchRow';
+import { Card } from '@/components/ui/Card';
 
 type TournamentCardProps = {
   tournament: Tournament;
@@ -32,7 +33,7 @@ export default function TournamentCard({ tournament }: TournamentCardProps) {
   const placeStr = formatPlace(tournament.place);
 
   return (
-    <div className="border border-gray-200 rounded-lg p-5 bg-white shadow-sm mb-4">
+    <Card className="p-5 mb-4">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h4 className="text-lg font-bold text-gray-900 mb-1">
@@ -69,6 +70,6 @@ export default function TournamentCard({ tournament }: TournamentCardProps) {
           ))}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

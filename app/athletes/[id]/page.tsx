@@ -27,6 +27,8 @@ import OptOutDeleteModal from '@/components/OptOutDeleteModal';
 import QuickCapture from '@/components/QuickCapture';
 import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
 import { noteCaptureHeadline } from '@/lib/capture-score';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 export default function AthletePage() {
   const params = useParams();
@@ -366,31 +368,22 @@ export default function AthletePage() {
           />
         )}
 
-        <div className="card p-4 md:p-6 mb-6">
+        <Card className="p-4 md:p-6 mb-6">
           <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-6 no-print">
             <h2 className="text-2xl md:text-3xl">
               {athlete.firstName} {athlete.lastInitial}.
             </h2>
             <div className="flex flex-wrap gap-2">
-              <Link
-                href={`/athletes/${athlete.id}/print`}
-                className="btn-secondary text-sm"
-              >
+              <Button as={Link} href={`/athletes/${athlete.id}/print`} variant="secondary" size="sm">
                 Print Profile
-              </Link>
-              <button
-                onClick={() => setEditing(!editing)}
-                className="btn-primary text-sm"
-              >
+              </Button>
+              <Button onClick={() => setEditing(!editing)} size="sm">
                 {editing ? 'Cancel' : 'Edit'}
-              </button>
+              </Button>
               {isAdmin && (
-                <button
-                  onClick={handleOpenDeleteModal}
-                  className="btn-danger text-sm"
-                >
+                <Button onClick={handleOpenDeleteModal} variant="danger" size="sm">
                   Opt-Out / Delete
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -658,12 +651,9 @@ export default function AthletePage() {
                 />
               </div>
 
-              <button
-                type="submit"
-                className="btn-primary"
-              >
+              <Button type="submit">
                 Save Changes
-              </button>
+              </Button>
             </form>
           ) : (
             <div className="space-y-4">
@@ -736,7 +726,7 @@ export default function AthletePage() {
               )}
             </div>
           )}
-        </div>
+        </Card>
 
         <div className="card p-6 mb-6">
           <div className="flex justify-between items-center mb-6 no-print">
