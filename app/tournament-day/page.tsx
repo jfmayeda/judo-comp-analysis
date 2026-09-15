@@ -12,6 +12,7 @@ import {
   setTournamentDayAthletes,
 } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
+import { AppHeader } from '@/components/AppHeader';
 import { OfflineBanner } from '@/components/offline-banner';
 import { SyncButton } from '@/components/sync-button';
 import { Button } from '@/components/ui/Button';
@@ -146,20 +147,7 @@ export default function TournamentDayPage() {
       {/* Offline Banner */}
       <OfflineBanner />
       
-      {/* Header */}
-      <header className="app-header">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
-          <Link href="/" className="flex items-center gap-3 text-white hover:opacity-80 transition-opacity">
-            <span className="text-xl">←</span>
-            <img 
-              src="/svj-logo-white.png" 
-              alt="Silicon Valley Judo" 
-              className="app-header-logo"
-            />
-            <p className="eyebrow text-white text-xs uppercase">COMPETITOR ANALYSIS</p>
-          </Link>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto p-4 md:p-8">
