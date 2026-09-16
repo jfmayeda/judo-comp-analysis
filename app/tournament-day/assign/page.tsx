@@ -13,12 +13,15 @@ import {
 } from '@/lib/supabase-store';
 import { AppHeader } from '@/components/AppHeader';
 import { useAuth } from '@/lib/auth-context';
-import { 
-  autoAssignCoaches, 
-  AssignmentProposal, 
-  ConflictWarning, 
-  getCoachName as getCoachNameUtil 
+import {
+  autoAssignCoaches,
+  AssignmentProposal,
+  ConflictWarning,
+  getCoachName as getCoachNameUtil,
 } from '@/lib/coach-auto-assign';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Chip, Pill } from '@/components/ui/Chip';
 
 type EntryWithAthlete = TournamentDayEntry & {
   athlete: AthleteWithNotes;
@@ -218,7 +221,7 @@ export default function AssignmentBoardPage() {
     );
     
     if (athleteWithExclusiveCoach) {
-      return `⚠️ This coach is exclusive to ${athleteWithExclusiveCoach.firstName} ${athleteWithExclusiveCoach.lastInitial}.`;
+      return `This coach is exclusive to ${athleteWithExclusiveCoach.firstName} ${athleteWithExclusiveCoach.lastInitial}.`;
     }
     
     return null;
@@ -267,24 +270,30 @@ export default function AssignmentBoardPage() {
     ? entries.filter(e => e.assignedCoachId === selectedCoachFilter || (selectedCoachFilter === 'unassigned' && !e.assignedCoachId && !e.noCoachNeeded) || (selectedCoachFilter === 'no-coach-needed' && e.noCoachNeeded))
     : entries;
 
+  const assignedCount = entries.filter(e => e.assignedCoachId || e.noCoachNeeded).length;
+  const unassignedCount = entries.filter(e => !e.assignedCoachId && !e.noCoachNeeded).length;
+  const noCoachCount = entries.filter(e => e.noCoachNeeded).length;
+  const alreadyAssignedCount = entries.filter(e => e.assignedCoachId && !e.noCoachNeeded).length;
+
   return (
     <div className="min-h-screen">
       <AppHeader backHref="/tournament-day" eyebrow="Coach Assignments" />
 
-      <div className="max-w-7xl mx-auto p-4 md:p-8">
-        <div className="mb-6 md:mb-8">
-          <p className="eyebrow mb-2">Tournament Day</p>
-          <h2 className="text-2xl md:text-3xl mb-2">Coach Assignment Board</h2>
-          <p className="text-gray-700 text-sm md:text-base">
-            Assign coaches to athletes, set mat numbers and time windows
-          </p>
+      <div className="page-shell">
+        <div className="page-title-row">
+          <div className="page-title-copy">
+            <p className="eyebrow mb-2">Tournament Day</p>
+            <h2 className="text-2xl md:text-3xl mb-2">Coach Assignment Board</h2>
+            <p className="text-svj-gray-600 text-sm md:text-base">
+              Assign coaches to athletes, set mat numbers and time windows
+            </p>
+          </div>
         </div>
 
-        {/* Tournament Day Selector */}
-        <div className="card p-4 md:p-6 mb-6">
+        <Card className="p-4 md:p-6 mb-6">
           <div className="flex flex-col gap-4 mb-4">
             <div>
-              <label className="eyebrow block text-gray-700 mb-2">
+              <label className="eyebrow block mb-2">
                 Tournament Day
               </label>
               {selectedTournamentDay && (
@@ -303,102 +312,74 @@ export default function AssignmentBoardPage() {
             </div>
             
             <div className="grid grid-cols-3 gap-2">
-              <button
+              <Chip
+                pressed={viewMode === 'all'}
                 onClick={() => setViewMode('all')}
-                className={`px-3 py-2 md:px-4 md:py-2 rounded transition-colors text-sm md:text-base font-semibold min-h-[44px] ${
-                  viewMode === 'all' 
-                    ? 'bg-brand-blue text-white' 
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                className="w-full"
               >
                 All
-              </button>
-              <button
+              </Chip>
+              <Chip
+                pressed={viewMode === 'by-coach'}
                 onClick={() => setViewMode('by-coach')}
-                className={`px-3 py-2 md:px-4 md:py-2 rounded transition-colors text-sm md:text-base font-semibold min-h-[44px] ${
-                  viewMode === 'by-coach' 
-                    ? 'bg-brand-blue text-white' 
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                className="w-full"
               >
                 By Coach
-              </button>
-              <button
+              </Chip>
+              <Chip
+                pressed={viewMode === 'by-mat'}
                 onClick={() => setViewMode('by-mat')}
-                className={`px-3 py-2 md:px-4 md:py-2 rounded transition-colors text-sm md:text-base font-semibold min-h-[44px] ${
-                  viewMode === 'by-mat' 
-                    ? 'bg-brand-blue text-white' 
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
+                className="w-full"
               >
                 By Mat
-              </button>
+              </Chip>
             </div>
           </div>
 
-          {/* Auto-Assign Actions */}
           {entries.length > 0 && (
-            <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-gray-200">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <button
+            <div className="flex flex-col gap-3 mt-4 pt-4 border-t-2 border-svj-gray-200">
+              <div className="assign-actions">
+                <Button
                   onClick={handleAutoAssign}
                   disabled={saving !== null}
-                  className="btn-primary px-4 py-3 text-sm md:text-base font-semibold disabled:opacity-50 min-h-[48px]"
+                  className="w-full text-sm md:text-base py-3 min-h-[48px]"
                 >
-                  🤖 Auto-Assign Coaches
-                </button>
-                <button
+                  Auto-Assign Coaches
+                </Button>
+                <Button
                   onClick={handleClearAllAssignments}
                   disabled={saving !== null}
-                  className="px-4 py-3 text-sm md:text-base font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 rounded transition-colors disabled:opacity-50 min-h-[48px]"
+                  variant="secondary"
+                  className="w-full text-sm md:text-base py-3 min-h-[48px]"
                 >
                   Clear All (Keep Locked)
-                </button>
+                </Button>
               </div>
-              <p className="text-xs md:text-sm text-gray-600 text-center">
+              <p className="text-xs md:text-sm text-svj-gray-600 text-center">
                 Auto-assign respects locked and exclusive coaches
               </p>
             </div>
           )}
 
           {entries.length === 0 ? (
-            <div className="text-center py-8 text-gray-600">
+            <div className="text-center py-8 text-svj-gray-600">
               No athletes selected for this tournament day.{' '}
-              <Link href="/tournament-day" className="text-brand-blue hover:text-brand-blue-hover font-semibold">
+              <Button as={Link} href="/tournament-day" variant="ghost">
                 Select athletes
-              </Link>
+              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 text-sm">
-              <div className="bg-blue-50 p-3 rounded">
-                <p className="text-xs text-gray-600 mb-1">Total</p>
-                <p className="text-xl md:text-2xl font-bold text-brand-blue">{entries.length}</p>
-              </div>
-              <div className="bg-green-50 p-3 rounded">
-                <p className="text-xs text-gray-600 mb-1">Assigned</p>
-                <p className="text-xl md:text-2xl font-bold text-green-700">
-                  {entries.filter(e => e.assignedCoachId || e.noCoachNeeded).length}
-                </p>
-              </div>
-              <div className="bg-yellow-50 p-3 rounded">
-                <p className="text-xs text-gray-600 mb-1">Unassigned</p>
-                <p className="text-xl md:text-2xl font-bold text-yellow-700">
-                  {entries.filter(e => !e.assignedCoachId && !e.noCoachNeeded).length}
-                </p>
-              </div>
-              <div className="bg-purple-50 p-3 rounded">
-                <p className="text-xs text-gray-600 mb-1">No Coach</p>
-                <p className="text-xl md:text-2xl font-bold text-purple-700">
-                  {entries.filter(e => e.noCoachNeeded).length}
-                </p>
-              </div>
+            <div className="assign-counts">
+              <CountTile label="Total" value={entries.length} />
+              <CountTile label="Assigned" value={assignedCount} />
+              <CountTile label="Unassigned" value={unassignedCount} />
+              <CountTile label="No Coach" value={noCoachCount} />
             </div>
           )}
-        </div>
+        </Card>
 
-        {/* Assignments List */}
         {viewMode === 'all' && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-svj-5">
             {entries.map(entry => {
               const conflicts = getConflicts(entry.id, entry.assignedCoachId, entry.timeWindow);
               const exclusiveWarning = getExclusiveCoachWarning(entry.assignedCoachId, entry.athlete.id);
@@ -407,25 +388,27 @@ export default function AssignmentBoardPage() {
                 : null;
               
               return (
-                <div key={entry.id} className="card p-4 md:p-6">
+                <Card key={entry.id} className="p-4 md:p-6">
                   <div className="flex flex-col md:flex-row items-start justify-between mb-4 gap-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg md:text-xl font-bold text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xl md:text-2xl font-bold text-svj-navy-900">
                         {entry.athlete.firstName} {entry.athlete.lastInitial}.
                       </h3>
                       {entry.athlete.weightClass && (
-                        <p className="text-sm text-gray-600">{entry.athlete.weightClass}</p>
+                        <p className="text-sm text-svj-gray-600">{entry.athlete.weightClass}</p>
                       )}
                       {preferredCoachName && (
-                        <p className="text-xs text-blue-600 mt-1">
-                          Preferred: {preferredCoachName}
-                          {entry.athlete.isCoachLocked && ' 🔒'}
-                          {entry.athlete.coachIsExclusive && ' ⭐ (Exclusive)'}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                          <p className="text-sm text-svj-gray-600">
+                            Preferred: {preferredCoachName}
+                          </p>
+                          {entry.athlete.isCoachLocked && <Pill tone="navy">Locked</Pill>}
+                          {entry.athlete.coachIsExclusive && <Pill>Exclusive</Pill>}
+                        </div>
                       )}
                     </div>
                     
-                    <label className="flex items-center gap-2 text-sm">
+                    <label className="flex items-center gap-2 text-sm min-h-[44px]">
                       <input
                         type="checkbox"
                         checked={entry.noCoachNeeded}
@@ -434,16 +417,16 @@ export default function AssignmentBoardPage() {
                           assignedCoachId: e.target.checked ? null : entry.assignedCoachId
                         })}
                         disabled={saving === entry.id}
-                        className="rounded"
+                        className="rounded-svj-control"
                       />
-                      <span className="text-gray-700">No coach needed (SVJ vs SVJ)</span>
+                      <span className="text-svj-navy-900">No coach needed (SVJ vs SVJ)</span>
                     </label>
                   </div>
 
                   {!entry.noCoachNeeded && (
-                    <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-3 md:gap-4">
+                    <div className="assign-fields">
                       <div>
-                        <label className="eyebrow text-xs text-gray-500 block mb-2">
+                        <label className="eyebrow text-xs block mb-2">
                           Assigned Coach
                         </label>
                         <select
@@ -462,12 +445,12 @@ export default function AssignmentBoardPage() {
                           ))}
                         </select>
                         {exclusiveWarning && (
-                          <p className="text-xs text-orange-600 mt-1">{exclusiveWarning}</p>
+                          <p className="text-xs text-svj-navy-800 mt-1">{exclusiveWarning}</p>
                         )}
                       </div>
 
                       <div>
-                        <label className="eyebrow text-xs text-gray-500 block mb-2">
+                        <label className="eyebrow text-xs block mb-2">
                           Mat Number
                         </label>
                         <input
@@ -483,7 +466,7 @@ export default function AssignmentBoardPage() {
                       </div>
 
                       <div>
-                        <label className="eyebrow text-xs text-gray-500 block mb-2">
+                        <label className="eyebrow text-xs block mb-2">
                           Time Window
                         </label>
                         <input
@@ -501,168 +484,129 @@ export default function AssignmentBoardPage() {
                   )}
 
                   {conflicts.length > 0 && (
-                    <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded">
-                      <p className="text-sm text-orange-800">
-                        ⚠️ Potential conflict: {getCoachName(entry.assignedCoachId)} is also assigned to{' '}
+                    <div className="mt-4 p-3 bg-svj-paper rounded-svj-card border-2 border-svj-navy-800">
+                      <p className="text-sm text-svj-navy-900">
+                        Potential conflict: {getCoachName(entry.assignedCoachId)} is also assigned to{' '}
                         {conflicts.map(c => `${c.athlete.firstName} ${c.athlete.lastInitial}.`).join(', ')} at this time
                       </p>
                     </div>
                   )}
-                </div>
+                </Card>
               );
             })}
           </div>
         )}
 
-        {/* By Coach View */}
         {viewMode === 'by-coach' && (
-          <div className="space-y-6">
+          <div className="flex flex-col gap-svj-5">
             {Object.entries(groupedByCoach()).map(([coachName, coachEntries]) => (
-              <div key={coachName} className="card p-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-900">
-                  {coachName} <span className="text-sm font-normal text-gray-600">({coachEntries.length})</span>
+              <Card key={coachName} className="p-4 md:p-6">
+                <h3 className="text-xl font-bold mb-4 text-svj-navy-900">
+                  {coachName} <span className="text-sm font-normal text-svj-gray-600">({coachEntries.length})</span>
                 </h3>
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   {coachEntries.map(entry => (
-                    <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                      <div>
-                        <p className="font-semibold">
-                          {entry.athlete.firstName} {entry.athlete.lastInitial}.
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {entry.matNumber && `Mat ${entry.matNumber}`}
-                          {entry.matNumber && entry.timeWindow && ' • '}
-                          {entry.timeWindow}
-                        </p>
-                      </div>
-                      <Link
-                        href={`/athletes/${entry.athlete.id}`}
-                        className="text-sm text-brand-blue hover:text-brand-blue-hover font-semibold"
-                      >
-                        View →
-                      </Link>
-                    </div>
+                    <GroupRow
+                      key={entry.id}
+                      name={`${entry.athlete.firstName} ${entry.athlete.lastInitial}.`}
+                      detail={[
+                        entry.matNumber ? `Mat ${entry.matNumber}` : null,
+                        entry.timeWindow,
+                      ].filter(Boolean).join(' • ')}
+                      href={`/athletes/${entry.athlete.id}`}
+                    />
                   ))}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
 
-        {/* By Mat View */}
         {viewMode === 'by-mat' && (
-          <div className="space-y-6">
+          <div className="flex flex-col gap-svj-5">
             {Object.entries(groupedByMat()).map(([matName, matEntries]) => (
-              <div key={matName} className="card p-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-900">
-                  {matName} <span className="text-sm font-normal text-gray-600">({matEntries.length})</span>
+              <Card key={matName} className="p-4 md:p-6">
+                <h3 className="text-xl font-bold mb-4 text-svj-navy-900">
+                  {matName} <span className="text-sm font-normal text-svj-gray-600">({matEntries.length})</span>
                 </h3>
-                <div className="space-y-2">
+                <div className="flex flex-col gap-2">
                   {matEntries.map(entry => (
-                    <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                      <div>
-                        <p className="font-semibold">
-                          {entry.athlete.firstName} {entry.athlete.lastInitial}.
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {entry.assignedCoachId ? getCoachName(entry.assignedCoachId) : 'No coach assigned'}
-                          {entry.timeWindow && ` • ${entry.timeWindow}`}
-                          {entry.noCoachNeeded && ' • No coach needed'}
-                        </p>
-                      </div>
-                      <Link
-                        href={`/athletes/${entry.athlete.id}`}
-                        className="text-sm text-brand-blue hover:text-brand-blue-hover font-semibold"
-                      >
-                        View →
-                      </Link>
-                    </div>
+                    <GroupRow
+                      key={entry.id}
+                      name={`${entry.athlete.firstName} ${entry.athlete.lastInitial}.`}
+                      detail={[
+                        entry.assignedCoachId ? getCoachName(entry.assignedCoachId) : 'No coach assigned',
+                        entry.timeWindow,
+                        entry.noCoachNeeded ? 'No coach needed' : null,
+                      ].filter(Boolean).join(' • ')}
+                      href={`/athletes/${entry.athlete.id}`}
+                    />
                   ))}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
       </div>
 
-      {/* Auto-Assign Preview Modal */}
       {showAutoAssignPreview && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-2xl font-bold text-gray-900">Auto-Assign Preview</h3>
-              <p className="text-sm text-gray-600 mt-1">
+        <div className="assign-modal-overlay">
+          <div className="assign-modal-scrim" aria-hidden />
+          <Card
+            className="assign-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="auto-assign-preview-title"
+          >
+            <div className="assign-modal-sheet">
+            <div className="p-4 md:p-6 border-b-2 border-svj-navy-900 shrink-0">
+              <h3 id="auto-assign-preview-title" className="text-2xl font-bold text-svj-navy-900">Auto-Assign Preview</h3>
+              <p className="text-sm text-svj-gray-600 mt-1">
                 Review proposed assignments before applying
               </p>
             </div>
 
-            <div className="overflow-y-auto flex-1 p-6">
-              {/* Summary Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-blue-50 p-4 rounded">
-                  <p className="text-xs text-gray-600 mb-1">Proposals</p>
-                  <p className="text-2xl font-bold text-brand-blue">{autoAssignProposals.length}</p>
-                </div>
-                <div className="bg-orange-50 p-4 rounded">
-                  <p className="text-xs text-gray-600 mb-1">Conflicts</p>
-                  <p className="text-2xl font-bold text-orange-700">{autoAssignConflicts.length}</p>
-                </div>
-                <div className="bg-green-50 p-4 rounded">
-                  <p className="text-xs text-gray-600 mb-1">Already Assigned</p>
-                  <p className="text-2xl font-bold text-green-700">
-                    {entries.filter(e => e.assignedCoachId && !e.noCoachNeeded).length}
-                  </p>
-                </div>
-                <div className="bg-purple-50 p-4 rounded">
-                  <p className="text-xs text-gray-600 mb-1">No Coach Needed</p>
-                  <p className="text-2xl font-bold text-purple-700">
-                    {entries.filter(e => e.noCoachNeeded).length}
-                  </p>
-                </div>
+            <div className="overflow-y-auto min-h-0 flex-1 p-4 md:p-6">
+              <div className="assign-counts mb-6">
+                <CountTile label="Proposals" value={autoAssignProposals.length} />
+                <CountTile label="Conflicts" value={autoAssignConflicts.length} />
+                <CountTile label="Already Assigned" value={alreadyAssignedCount} />
+                <CountTile label="No Coach Needed" value={noCoachCount} />
               </div>
 
-              {/* Conflicts Warning */}
               {autoAssignConflicts.length > 0 && (
-                <div className="bg-orange-50 border-l-4 border-orange-400 p-4 mb-6">
-                  <div className="flex items-start">
-                    <div className="flex-shrink-0">
-                      <span className="text-2xl">⚠️</span>
-                    </div>
-                    <div className="ml-3 flex-1">
-                      <h4 className="text-sm font-semibold text-orange-800 mb-2">
-                        {autoAssignConflicts.length} Conflict Warning{autoAssignConflicts.length !== 1 ? 's' : ''}
-                      </h4>
-                      <div className="space-y-3">
-                        {autoAssignConflicts.map((conflict, idx) => (
-                          <div key={idx} className="text-sm text-orange-700">
-                            <p className="font-semibold">{conflict.athleteName}</p>
-                            <p>{conflict.message}</p>
-                            {conflict.conflictingEntries.length > 0 && (
-                              <ul className="mt-1 ml-4 text-xs">
-                                {conflict.conflictingEntries.map((ce, i) => (
-                                  <li key={i}>
-                                    • {ce.athleteName} 
-                                    {ce.matNumber && ` (Mat ${ce.matNumber})`}
-                                    {ce.timeWindow && ` - ${ce.timeWindow}`}
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        ))}
+                <div className="bg-svj-paper border-2 border-svj-navy-800 rounded-svj-card p-4 mb-6">
+                  <h4 className="text-sm font-semibold text-svj-navy-900 mb-2">
+                    {autoAssignConflicts.length} Conflict Warning{autoAssignConflicts.length !== 1 ? 's' : ''}
+                  </h4>
+                  <div className="space-y-3">
+                    {autoAssignConflicts.map((conflict, idx) => (
+                      <div key={idx} className="text-sm text-svj-navy-800">
+                        <p className="font-semibold">{conflict.athleteName}</p>
+                        <p>{conflict.message}</p>
+                        {conflict.conflictingEntries.length > 0 && (
+                          <ul className="mt-1 ml-4 text-xs">
+                            {conflict.conflictingEntries.map((ce, i) => (
+                              <li key={i}>
+                                {ce.athleteName}
+                                {ce.matNumber && ` (Mat ${ce.matNumber})`}
+                                {ce.timeWindow && ` - ${ce.timeWindow}`}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
-                      <p className="text-xs text-orange-600 mt-3">
-                        You can still apply these assignments. Review conflicts and adjust manually if needed.
-                      </p>
-                    </div>
+                    ))}
                   </div>
+                  <p className="text-xs text-svj-gray-600 mt-3">
+                    You can still apply these assignments. Review conflicts and adjust manually if needed.
+                  </p>
                 </div>
               )}
 
-              {/* Proposed Assignments */}
               {autoAssignProposals.length > 0 ? (
-                <div className="space-y-3">
-                  <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                <div className="flex flex-col gap-3">
+                  <h4 className="eyebrow text-svj-gray-600">
                     Proposed Assignments ({autoAssignProposals.length})
                   </h4>
                   {autoAssignProposals.map(proposal => {
@@ -672,22 +616,25 @@ export default function AssignmentBoardPage() {
                     const coachName = getCoachName(proposal.proposedCoachId);
                     
                     return (
-                      <div key={proposal.entryId} className="bg-gray-50 p-4 rounded border border-gray-200">
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-900">
+                      <div
+                        key={proposal.entryId}
+                        className="bg-svj-paper p-4 rounded-svj-card border-2 border-svj-gray-200"
+                      >
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-svj-navy-900">
                               {entry.athlete.firstName} {entry.athlete.lastInitial}.
                             </p>
                             {entry.athlete.weightClass && (
-                              <p className="text-xs text-gray-600">{entry.athlete.weightClass}</p>
+                              <p className="text-xs text-svj-gray-600">{entry.athlete.weightClass}</p>
                             )}
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-brand-blue">{coachName}</p>
-                            <p className="text-xs text-gray-600">{proposal.reason}</p>
+                            <p className="font-semibold text-svj-blue-600">{coachName}</p>
+                            <p className="text-xs text-svj-gray-600">{proposal.reason}</p>
                           </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                        <div className="grid grid-cols-2 gap-2 text-xs text-svj-gray-600">
                           {entry.matNumber && (
                             <div>
                               <span className="font-semibold">Mat:</span> {entry.matNumber}
@@ -704,38 +651,73 @@ export default function AssignmentBoardPage() {
                   })}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-600">
-                  <p className="text-lg">✅ All athletes are already assigned!</p>
+                <div className="text-center py-8 text-svj-gray-600">
+                  <p className="text-lg">All athletes are already assigned.</p>
                   <p className="text-sm mt-2">No new assignments needed.</p>
                 </div>
               )}
             </div>
 
-            <div className="p-6 border-t border-gray-200 bg-gray-50 flex gap-3">
-              <button
+            <div className="p-4 md:p-6 border-t-2 border-svj-navy-900 bg-svj-paper assign-preview-actions shrink-0">
+              <Button
                 onClick={() => {
                   setShowAutoAssignPreview(false);
                   setAutoAssignProposals([]);
                   setAutoAssignConflicts([]);
                 }}
                 disabled={applyingAutoAssign}
-                className="px-6 py-3 bg-gray-200 text-gray-700 hover:bg-gray-300 rounded font-semibold transition-colors disabled:opacity-50"
+                variant="secondary"
+                className="min-h-[48px]"
               >
                 Cancel
-              </button>
+              </Button>
               {autoAssignProposals.length > 0 && (
-                <button
+                <Button
                   onClick={handleApplyAutoAssign}
                   disabled={applyingAutoAssign}
-                  className="px-6 py-3 bg-brand-blue text-white hover:bg-brand-blue-hover rounded font-semibold transition-colors disabled:opacity-50 flex-1"
+                  className="flex-1 min-h-[48px]"
                 >
                   {applyingAutoAssign ? 'Applying...' : `Apply ${autoAssignProposals.length} Assignment${autoAssignProposals.length !== 1 ? 's' : ''}`}
-                </button>
+                </Button>
               )}
             </div>
-          </div>
+            </div>
+          </Card>
         </div>
       )}
+    </div>
+  );
+}
+
+function CountTile({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="bg-svj-paper px-3 py-2 rounded-svj-card border-2 border-svj-navy-900">
+      <p className="eyebrow mb-1">{label}</p>
+      <p className="text-2xl font-bold leading-none text-svj-navy-900 tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+function GroupRow({
+  name,
+  detail,
+  href,
+}: {
+  name: string;
+  detail: string;
+  href: string;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 p-3 bg-svj-paper rounded-svj-card border-2 border-svj-gray-200">
+      <div className="min-w-0">
+        <p className="font-semibold text-svj-navy-900">{name}</p>
+        {detail ? (
+          <p className="text-sm text-svj-gray-600">{detail}</p>
+        ) : null}
+      </div>
+      <Button as={Link} href={href} variant="ghost" size="sm" className="flex-shrink-0">
+        View
+      </Button>
     </div>
   );
 }
