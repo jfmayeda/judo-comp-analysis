@@ -71,6 +71,10 @@ export async function smallTouchTargets(page, min = 44) {
       const style = getComputedStyle(el);
       if (r.width === 0 || r.height === 0 || style.visibility === 'hidden') continue;
       if (el.closest('.no-smoke-target')) continue;
+      if (el.matches('input[type="checkbox"]')) {
+        const row = el.closest('label');
+        if (row && row.getBoundingClientRect().height >= floor - 4) continue;
+      }
       if (r.height < floor - 4) {
         out.push({ tag: el.tagName.toLowerCase(), text: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 40), h: Math.round(r.height), w: Math.round(r.width) });
       }
