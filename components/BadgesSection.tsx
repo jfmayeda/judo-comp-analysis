@@ -50,9 +50,13 @@ function BadgeTile({ badge, onOpen }: { badge: BadgeWithProgress; onOpen: () => 
 }
 
 /** Badge grid grouped Earned / In progress, with an accessible detail dialog. Token colours only. */
+const PREVIEW_COUNT = 12;
+
 export default function BadgesSection({ badges }: { badges: BadgeWithProgress[] }) {
   const [selected, setSelected] = useState<BadgeWithProgress | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const { earned, inProgress } = groupBadges(badges);
+  const earnedVisible = showAll ? earned : earned.slice(0, PREVIEW_COUNT);
 
   return (
     <div className="stack">
@@ -60,10 +64,15 @@ export default function BadgesSection({ badges }: { badges: BadgeWithProgress[] 
         <div>
           <span className="meta-key block mb-2">Earned · {earned.length}</span>
           <ul className="badge-grid">
-            {earned.map((badge) => (
+            {earnedVisible.map((badge) => (
               <BadgeTile key={badge.definition.id} badge={badge} onOpen={() => setSelected(badge)} />
             ))}
           </ul>
+          {earned.length > PREVIEW_COUNT ? (
+            <button type="button" className="btn-link mt-2" onClick={() => setShowAll((v) => !v)} aria-expanded={showAll}>
+              {showAll ? 'Show fewer' : `Show all ${earned.length}`}
+            </button>
+          ) : null}
         </div>
       ) : null}
       {inProgress.length > 0 ? (

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { AthleteWithNotes, TournamentDayEntry } from '@/lib/types';
-import { tallyResults } from '@/lib/development';
+import { isSampleAthlete, tallyResults } from '@/lib/development';
+import { SampleDataTag } from '@/components/ui/SampleData';
 import { Card } from '@/components/ui/Card';
 import { BeltMark } from '@/components/ui/BeltMark';
 import { Pill } from '@/components/ui/Chip';
@@ -22,7 +23,10 @@ export function AthleteCard({ athlete, todayEntry }: { athlete: AthleteWithNotes
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="card-title">{athleteDisplayName(athlete)}</h2>
-          <BeltMark belt={athlete.currentBelt} className="mt-1" />
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <BeltMark belt={athlete.currentBelt} />
+            {isSampleAthlete(athlete) ? <SampleDataTag label="Sample" /> : null}
+          </div>
         </div>
         {todayEntry ? (
           <Pill tone="brand" className="flex-none">

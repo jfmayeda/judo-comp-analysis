@@ -63,6 +63,18 @@ npm run build
 npm start
 ```
 
+### Tests and UI verification
+
+```bash
+npm test          # unit tests (node:test via tsx)
+npm run smoke     # browser smoke suite against a running server (Playwright + local Supabase mock)
+npm run screenshots -- --out docs/screenshots/after   # 19 scenes × 390/768/1440
+```
+
+The smoke suite and screenshots never touch Supabase: `scripts/ui-smoke/supabase-mock.mjs` answers the
+REST/auth calls in-browser with demo fixtures, so no credentials are needed. Design rules live in
+`DESIGN.md`; the overhaul record is in `docs/UX_OVERHAUL_*.md` and `docs/PORTFOLIO_CASE_STUDY.md`.
+
 ## 🔐 Authentication & Access
 
 ### Coach Authentication

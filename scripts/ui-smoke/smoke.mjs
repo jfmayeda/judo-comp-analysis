@@ -162,6 +162,7 @@ await withApp({ viewport: VIEWPORTS.desktop, label: 'keyboard' }, async ({ page,
   await goto(page, '/');
   await page.keyboard.press('Tab'); // logo link
   await page.keyboard.press('Tab'); // first header nav link
+  await page.waitForTimeout(250); // let style recalc settle before reading computed values
   const ring = await page.evaluate(() => {
     const el = document.activeElement;
     if (!el) return null;

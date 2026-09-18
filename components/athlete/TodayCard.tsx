@@ -13,10 +13,10 @@ export function TodayCard({ assignment, coachName }: { assignment: TournamentDay
         title="Today"
         action={<Button as={Link} href="/tournament-day/assign" variant="ghost" size="sm">Assignments</Button>}
       />
-      <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}>
+      <div className="stat-grid" style={{ gridTemplateColumns: 'auto minmax(0, 1fr) minmax(0, 1fr)' }}>
         <StatTile label="Mat" value={assignment.matNumber || '—'} tone="accent" />
-        <StatTile label="Coach" value={assignment.noCoachNeeded ? 'Not needed' : coachName || 'Unassigned'} />
-        <StatTile label="Time" value={assignment.timeWindow || '—'} />
+        <StatTile label="Coach" size="sm" value={assignment.noCoachNeeded ? 'Not needed' : coachName || 'Unassigned'} />
+        <StatTile label="Time" size="sm" value={assignment.timeWindow || '—'} />
       </div>
     </section>
   );
