@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "tsx --test \"lib/**/*.test.ts\" \"components/**/*.test.ts\"",
+    "smoke": "node scripts/ui-smoke/smoke.mjs",
+    "screenshots": "node scripts/ui-smoke/screenshots.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -23,6 +26,8 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "playwright": "^1.63.0",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }
