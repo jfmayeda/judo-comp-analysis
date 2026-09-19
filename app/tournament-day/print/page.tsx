@@ -4,6 +4,8 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AthleteWithNotes } from '@/lib/types';
 import { getAthleteWithNotes } from '@/lib/supabase-store';
+import { stripSampleMarker } from '@/lib/development';
+import { Button } from '@/components/ui/Button';
 
 function TournamentPrintPack() {
   const searchParams = useSearchParams();
@@ -46,15 +48,10 @@ function TournamentPrintPack() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-4xl mx-auto p-8">
-        <div className="mb-6 no-print flex justify-between items-center">
+      <div className="max-w-4xl mx-auto p-4 md:p-8">
+        <div className="mb-6 no-print flex flex-wrap justify-between items-center gap-3">
           <h1 className="text-2xl font-bold uppercase tracking-wide">Tournament Pack</h1>
-          <button
-            onClick={() => window.print()}
-            className="btn-primary"
-          >
-            Print All
-          </button>
+          <Button onClick={() => window.print()}>Print all</Button>
         </div>
 
         {athletes.map((athlete, index) => (
@@ -63,13 +60,13 @@ function TournamentPrintPack() {
             <div className="mb-8 pb-6 border-b-2 border-gray-900">
               <div className="mb-4">
                 <p className="eyebrow mb-2">Tournament Day Profile</p>
-                <h1 className="text-5xl mb-3 tracking-wide">
+                <h2 className="text-4xl mb-3">
                   {athlete.firstName} {athlete.lastInitial}.
-                </h1>
+                </h2>
               </div>
               
               {/* Quick Stats Grid */}
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {athlete.stance && (
                   <div>
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Stance</p>
@@ -140,7 +137,7 @@ function TournamentPrintPack() {
                 <h2 className="text-lg font-bold mb-2 uppercase tracking-wide text-gray-900">
                   Coach Notes
                 </h2>
-                <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{athlete.notes}</p>
+                <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{stripSampleMarker(athlete.notes)}</p>
               </div>
             )}
 

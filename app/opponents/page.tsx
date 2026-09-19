@@ -1,504 +1,271 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useCallback, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Opponent, Stance } from '@/lib/types';
-import { getAllOpponents, createOpponent, updateOpponent, deleteOpponent, searchOpponents } from '@/lib/supabase-store';
-import { useAuth } from '@/lib/auth-context';
+import { getAllOpponents, createOpponent, updateOpponent, deleteOpponent } from '@/lib/supabase-store';
+import { useCoachGate } from '@/lib/use-coach-gate';
 import TechniquePicker from '@/components/TechniquePicker';
 import TechniqueDisplay from '@/components/TechniqueDisplay';
-import { AppHeader } from '@/components/AppHeader';
+import { AppFrame } from '@/components/AppFrame';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { Disclosure } from '@/components/ui/Disclosure';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Field } from '@/components/ui/Field';
+import { IconPlus, IconSearch } from '@/components/ui/Icons';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
 import { MetaRow } from '@/components/ui/MetaRow';
+import { Notice } from '@/components/ui/Notice';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SectionHeading } from '@/components/ui/SectionHeading';
+import { StickyActions } from '@/components/ui/StickyActions';
+
+type OpponentFormValues = {
+  firstName: string;
+  lastInitial: string;
+  club: string;
+  stance: Stance | '';
+  kumiKata: string;
+  neWaza: string;
+  commonCounters: string;
+  weightClass: string;
+  ageDivision: string;
+  notes: string;
+  techniqueIds: string[];
+};
+
+const emptyForm = (): OpponentFormValues => ({
+  firstName: '', lastInitial: '', club: '', stance: '', kumiKata: '', neWaza: '', commonCounters: '',
+  weightClass: '', ageDivision: '', notes: '', techniqueIds: [],
+});
+
+function opponentToForm(opponent: Opponent): OpponentFormValues {
+  return {
+    firstName: opponent.firstName, lastInitial: opponent.lastInitial, club: opponent.club, stance: opponent.stance || '',
+    kumiKata: opponent.kumiKata, neWaza: opponent.neWaza, commonCounters: opponent.commonCounters,
+    weightClass: opponent.weightClass, ageDivision: opponent.ageDivision, notes: opponent.notes, techniqueIds: opponent.techniqueIds || [],
+  };
+}
+
+function OpponentForm({ initial, editing, onSubmit, onCancel }: { initial: OpponentFormValues; editing: boolean; onSubmit: (values: OpponentFormValues) => Promise<void>; onCancel: () => void }) {
+  const [values, setValues] = useState(initial);
+  const [errors, setErrors] = useState<{ firstName?: string; lastInitial?: string }>({});
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const set = <K extends keyof OpponentFormValues>(key: K, value: OpponentFormValues[K]) => setValues((c) => ({ ...c, [key]: value }));
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    const next: typeof errors = {};
+    if (!values.firstName.trim()) next.firstName = 'First name is required.';
+    if (values.lastInitial.length !== 1) next.lastInitial = 'One letter only — never the full last name.';
+    setErrors(next);
+    if (Object.keys(next).length) return;
+    setSaving(true);
+    setServerError(null);
+    try {
+      await onSubmit(values);
+    } catch (error) {
+      setServerError(error instanceof Error ? error.message : 'Could not save opponent.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form onSubmit={submit} noValidate className="stack">
+      <div className="form-grid-2">
+        <Field label="First name" required error={errors.firstName}>
+          <input type="text" className="form-input" value={values.firstName} autoComplete="off" onChange={(e) => set('firstName', e.target.value)} />
+        </Field>
+        <Field label="Last initial" required hint="One letter only" error={errors.lastInitial}>
+          <input type="text" className="form-input uppercase" maxLength={1} value={values.lastInitial} autoComplete="off" onChange={(e) => set('lastInitial', e.target.value.replace(/[^a-zA-Z]/g, '').toUpperCase())} />
+        </Field>
+      </div>
+      <Field label="Club" optional>
+        <input type="text" className="form-input" value={values.club} placeholder="e.g. Peninsula Judo" onChange={(e) => set('club', e.target.value)} />
+      </Field>
+      <Field label="What to watch for" optional>
+        <textarea className="form-input" rows={3} value={values.notes} placeholder="General scouting notes about this opponent" onChange={(e) => set('notes', e.target.value)} />
+      </Field>
+      <Disclosure title="Details" hint="Stance, weight, techniques, grips, counters" defaultOpen={editing}>
+        <div className="form-grid-3">
+          <Field label="Stance">
+            <select className="form-input" value={values.stance || ''} onChange={(e) => set('stance', e.target.value as Stance | '')}>
+              <option value="">Not set</option>
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </Field>
+          <Field label="Weight class">
+            <input type="text" className="form-input" value={values.weightClass} placeholder="e.g. -57kg" onChange={(e) => set('weightClass', e.target.value)} />
+          </Field>
+          <Field label="Age division">
+            <input type="text" className="form-input" value={values.ageDivision} placeholder="e.g. Juvenile" onChange={(e) => set('ageDivision', e.target.value)} />
+          </Field>
+        </div>
+        <TechniquePicker label="Tokui-waza" selectedIds={values.techniqueIds} onChange={(ids) => set('techniqueIds', ids)} placeholder="Search techniques…" />
+        <Field label="Kumi-kata (grip style)" optional>
+          <input type="text" className="form-input" value={values.kumiKata} onChange={(e) => set('kumiKata', e.target.value)} />
+        </Field>
+        <Field label="Ne-waza" optional>
+          <input type="text" className="form-input" value={values.neWaza} onChange={(e) => set('neWaza', e.target.value)} />
+        </Field>
+        <Field label="Common counters" optional>
+          <input type="text" className="form-input" value={values.commonCounters} placeholder="e.g. Ko-soto-gake on failed attacks" onChange={(e) => set('commonCounters', e.target.value)} />
+        </Field>
+      </Disclosure>
+      {serverError ? <Notice tone="danger" title="Could not save">{serverError}</Notice> : null}
+      <StickyActions>
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={saving}>Cancel</Button>
+        <Button type="submit" disabled={saving}>{saving ? 'Saving…' : editing ? 'Save changes' : 'Add opponent'}</Button>
+      </StickyActions>
+    </form>
+  );
+}
 
 export default function OpponentsPage() {
-  const router = useRouter();
-  const { user, loading: authLoading, isAllowlisted } = useAuth();
   const [opponents, setOpponents] = useState<Opponent[]>([]);
-  const [filteredOpponents, setFilteredOpponents] = useState<Opponent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const [editingOpponent, setEditingOpponent] = useState<Opponent | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastInitial: '',
-    club: '',
-    stance: '' as Stance | '',
-    kumiKata: '',
-    neWaza: '',
-    commonCounters: '',
-    weightClass: '',
-    ageDivision: '',
-    notes: '',
-    techniqueIds: [] as string[],
-  });
+  const [pendingDelete, setPendingDelete] = useState<Opponent | null>(null);
+  const [query, setQuery] = useState('');
+  const [flash, setFlash] = useState<string | null>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (authLoading) return;
-    
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    if (isAllowlisted === false) {
-      router.push('/unauthorized');
-      return;
-    }
-
-    if (isAllowlisted === true) {
-      loadOpponents();
-    }
-  }, [user, authLoading, isAllowlisted, router]);
-
-  useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredOpponents(opponents);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = opponents.filter(opp => 
-        opp.firstName.toLowerCase().includes(query) ||
-        opp.lastInitial.toLowerCase().includes(query) ||
-        opp.club.toLowerCase().includes(query)
-      );
-      setFilteredOpponents(filtered);
-    }
-  }, [searchQuery, opponents]);
-
-  const loadOpponents = async () => {
+  const loadOpponents = useCallback(async () => {
     try {
-      const data = await getAllOpponents();
-      setOpponents(data);
-      setFilteredOpponents(data);
+      setOpponents(await getAllOpponents());
     } catch (error) {
       console.error('Error loading opponents:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const resetForm = () => {
-    setFormData({
-      firstName: '',
-      lastInitial: '',
-      club: '',
-      stance: '',
-      kumiKata: '',
-      neWaza: '',
-      commonCounters: '',
-      weightClass: '',
-      ageDivision: '',
-      notes: '',
-      techniqueIds: [],
-    });
-    setEditingOpponent(null);
-    setShowAddForm(false);
-  };
+  const { ready, checking } = useCoachGate({ onReady: loadOpponents });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (editingOpponent) {
-        await updateOpponent(editingOpponent.id, {
-          firstName: formData.firstName,
-          lastInitial: formData.lastInitial,
-          club: formData.club,
-          stance: formData.stance || null,
-          kumiKata: formData.kumiKata,
-          neWaza: formData.neWaza,
-          commonCounters: formData.commonCounters,
-          weightClass: formData.weightClass,
-          ageDivision: formData.ageDivision,
-          notes: formData.notes,
-          techniqueIds: formData.techniqueIds,
-        });
-      } else {
-        await createOpponent({
-          firstName: formData.firstName,
-          lastInitial: formData.lastInitial,
-          club: formData.club,
-          stance: formData.stance || null,
-          kumiKata: formData.kumiKata,
-          neWaza: formData.neWaza,
-          commonCounters: formData.commonCounters,
-          weightClass: formData.weightClass,
-          ageDivision: formData.ageDivision,
-          notes: formData.notes,
-          techniqueIds: formData.techniqueIds,
-        });
-      }
-      resetForm();
-      await loadOpponents();
-    } catch (error: any) {
-      console.error('Error saving opponent:', error);
-      alert(`Error: ${error.message || 'Failed to save opponent'}`);
-    }
-  };
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return opponents;
+    return opponents.filter((o) => o.firstName.toLowerCase().includes(q) || o.lastInitial.toLowerCase().includes(q) || o.club.toLowerCase().includes(q));
+  }, [opponents, query]);
 
-  const handleEdit = (opponent: Opponent) => {
-    setFormData({
-      firstName: opponent.firstName,
-      lastInitial: opponent.lastInitial,
-      club: opponent.club,
-      stance: opponent.stance || '',
-      kumiKata: opponent.kumiKata,
-      neWaza: opponent.neWaza,
-      commonCounters: opponent.commonCounters,
-      weightClass: opponent.weightClass,
-      ageDivision: opponent.ageDivision,
-      notes: opponent.notes,
-      techniqueIds: opponent.techniqueIds || [],
-    });
+  const openForm = (opponent: Opponent | null) => {
+    setFlash(null);
     setEditingOpponent(opponent);
-    setShowAddForm(true);
+    setShowForm(true);
+    requestAnimationFrame(() => sheetRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
   };
 
-  const handleDelete = async (opponent: Opponent) => {
-    if (!confirm(`Delete ${opponent.firstName} ${opponent.lastInitial}.? Any scouting notes linked to this opponent will become one-off notes.`)) {
-      return;
-    }
-    try {
-      await deleteOpponent(opponent.id);
-      await loadOpponents();
-    } catch (error: any) {
-      console.error('Error deleting opponent:', error);
-      alert(`Error: ${error.message || 'Failed to delete opponent'}`);
-    }
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingOpponent(null);
   };
 
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen navy-field flex items-center justify-center">
-        <p className="text-white">Loading opponents...</p>
-      </div>
-    );
+  if (!ready || checking || loading) {
+    return <LoadingScreen label="Loading opponents" />;
   }
 
   return (
-    <div className="min-h-screen">
-      <AppHeader />
+    <AppFrame eyebrow="Opponents">
+      <PageHeader
+        kicker="Shared club directory"
+        title="Opponents"
+        lead={`${opponents.length} opponent${opponents.length === 1 ? '' : 's'} · reused across every athlete's scouting notes and captures`}
+        actions={!showForm ? <Button onClick={() => openForm(null)}><IconPlus size={18} /> Add opponent</Button> : null}
+      />
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-4 md:pt-8 has-bottom-chrome">
-        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
-          <div>
-            <p className="eyebrow mb-2">Shared Database</p>
-            <h2 className="text-2xl md:text-3xl mb-2">Opponents</h2>
-            <p className="text-gray-700 text-sm md:text-base">
-              {opponents.length} opponent{opponents.length !== 1 ? 's' : ''} • Club-wide reusable records for scouting notes
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              resetForm();
-              setShowAddForm(!showAddForm);
-            }}
-            className="btn-primary w-full md:w-auto"
-          >
-            {showAddForm ? 'Cancel' : 'Add Opponent'}
-          </button>
-        </div>
+      <div className="stack-lg">
+        {flash ? <Notice tone="success" title={flash} /> : null}
 
-        {showAddForm && (
-          <div className="card p-4 md:p-6 mb-6 md:mb-8">
-            <h3 className="text-lg md:text-xl mb-4 md:mb-6 uppercase tracking-wide">
-              {editingOpponent ? 'Edit Opponent' : 'Add New Opponent'}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    First Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, firstName: e.target.value })
-                    }
-                    className="form-input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Last Initial * (one letter)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={1}
-                    value={formData.lastInitial}
-                    onChange={(e) =>
-                      setFormData({ ...formData, lastInitial: e.target.value.toUpperCase() })
-                    }
-                    className="form-input w-full"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Club
-                </label>
-                <input
-                  type="text"
-                  value={formData.club}
-                  onChange={(e) =>
-                    setFormData({ ...formData, club: e.target.value })
-                  }
-                  placeholder="e.g. Peninsula Judo"
-                  className="form-input w-full"
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Stance
-                  </label>
-                  <select
-                    value={formData.stance || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, stance: e.target.value as Stance | '' })
-                    }
-                    className="form-input w-full"
-                  >
-                    <option value="">Not set</option>
-                    <option value="left">Left</option>
-                    <option value="right">Right</option>
-                    <option value="unknown">Unknown</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Weight Class
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.weightClass}
-                    onChange={(e) =>
-                      setFormData({ ...formData, weightClass: e.target.value })
-                    }
-                    placeholder="e.g. -57kg"
-                    className="form-input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Age Division
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ageDivision}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ageDivision: e.target.value })
-                    }
-                    placeholder="e.g. Junior"
-                    className="form-input w-full"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Kumi-kata (grip style)
-                </label>
-                <input
-                  type="text"
-                  value={formData.kumiKata}
-                  onChange={(e) =>
-                    setFormData({ ...formData, kumiKata: e.target.value })
-                  }
-                  placeholder="e.g. High lapel grip, quick hand changes"
-                  className="form-input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Ne-waza (ground game)
-                </label>
-                <input
-                  type="text"
-                  value={formData.neWaza}
-                  onChange={(e) =>
-                    setFormData({ ...formData, neWaza: e.target.value })
-                  }
-                  placeholder="e.g. Strong pins, working on turtle attacks"
-                  className="form-input w-full"
-                />
-              </div>
-
-              <div>
-                <TechniquePicker
-                  label="Tokui-waza (favorite techniques)"
-                  selectedIds={formData.techniqueIds}
-                  onChange={(techniqueIds) =>
-                    setFormData({ ...formData, techniqueIds })
-                  }
-                  placeholder="Search techniques..."
-                />
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Common Counters
-                </label>
-                <input
-                  type="text"
-                  value={formData.commonCounters}
-                  onChange={(e) =>
-                    setFormData({ ...formData, commonCounters: e.target.value })
-                  }
-                  placeholder="e.g. Ko-soto-gake on failed attacks"
-                  className="form-input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  General Notes
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                  rows={3}
-                  placeholder="General scouting information about this opponent"
-                  className="form-input w-full"
-                />
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  type="submit"
-                  className="btn-primary flex-1 md:flex-initial"
-                >
-                  {editingOpponent ? 'Update Opponent' : 'Create Opponent'}
-                </button>
-                {editingOpponent && (
-                  <button
-                    type="button"
-                    onClick={resetForm}
-                    className="btn-secondary flex-1 md:flex-initial"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-            </form>
-          </div>
-        )}
-
-        {opponents.length > 0 && (
-          <div className="mb-6">
-            <input
-              type="text"
-              placeholder="Search by name or club..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="form-input w-full"
+        {showForm ? (
+          <div ref={sheetRef} className="sheet" role="region" aria-labelledby="opponent-form-title">
+            <div className="sheet-header">
+              <h2 id="opponent-form-title" className="card-title">{editingOpponent ? `Edit ${editingOpponent.firstName} ${editingOpponent.lastInitial}.` : 'New opponent'}</h2>
+            </div>
+            <OpponentForm
+              key={editingOpponent?.id ?? 'new'}
+              initial={editingOpponent ? opponentToForm(editingOpponent) : emptyForm()}
+              editing={editingOpponent !== null}
+              onCancel={closeForm}
+              onSubmit={async (values) => {
+                const payload = { ...values, stance: (values.stance || null) as Stance };
+                if (editingOpponent) await updateOpponent(editingOpponent.id, payload);
+                else await createOpponent(payload);
+                closeForm();
+                setFlash(`${values.firstName} ${values.lastInitial}. ${editingOpponent ? 'updated' : 'added'}`);
+                await loadOpponents();
+              }}
             />
           </div>
-        )}
+        ) : null}
 
-        <div className="card-grid">
-          {filteredOpponents.length === 0 && opponents.length === 0 ? (
-            <div className="col-span-full">
-              <p className="text-gray-600 text-center py-12">
-                No opponents yet. Add shared opponents to reuse across athlete scouting notes.
-              </p>
-            </div>
-          ) : filteredOpponents.length === 0 ? (
-            <div className="col-span-full">
-              <p className="text-gray-600 text-center py-12">
-                No opponents match your search.
-              </p>
-            </div>
-          ) : (
-            filteredOpponents.map((opponent) => (
-              <div
-                key={opponent.id}
-                className="card"
-              >
-                <h3 className="text-xl md:text-2xl font-bold mb-3 text-gray-900">
-                  {opponent.firstName} {opponent.lastInitial}.
-                </h3>
-                
-                {opponent.club && (
-                  <p className="text-sm text-gray-600 mb-3">{opponent.club}</p>
-                )}
-                
-                <div className="space-y-2 mb-4 text-sm">
+        {opponents.length > 0 ? (
+          <div className="search-field">
+            <IconSearch className="search-field-icon" />
+            <label htmlFor="opponent-search" className="visually-hidden">Search opponents</label>
+            <input id="opponent-search" type="search" className="form-input form-input--search" placeholder="Search by name or club…" value={query} onChange={(e) => setQuery(e.target.value)} autoComplete="off" />
+          </div>
+        ) : null}
+
+        {opponents.length === 0 ? (
+          <EmptyState
+            title="No shared opponents yet"
+            body="Add opponents your athletes meet often so scouting notes and captures can reuse them."
+            actions={<Button onClick={() => openForm(null)}><IconPlus size={18} /> Add opponent</Button>}
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState compact title={`No opponents match “${query.trim()}”`} actions={<Button variant="secondary" size="sm" onClick={() => setQuery('')}>Clear search</Button>} />
+        ) : (
+          <section aria-labelledby="opponent-list-heading">
+            <SectionHeading id="opponent-list-heading" title="Directory" count={filtered.length} />
+            <div className="card-grid">
+              {filtered.map((opponent) => (
+                <Card key={opponent.id} as="article" className="flex flex-col gap-3">
+                  <div>
+                    <h2 className="card-title">{opponent.firstName} {opponent.lastInitial}.</h2>
+                    {opponent.club ? <p className="text-sm text-muted">{opponent.club}</p> : null}
+                  </div>
                   <MetaRow
                     items={[
                       { label: 'Stance', value: opponent.stance, capitalize: true },
                       { label: 'Weight', value: opponent.weightClass },
+                      { label: 'Division', value: opponent.ageDivision },
                     ]}
                   />
-                  
-                  {opponent.ageDivision && (
-                    <p>
-                      <span className="font-semibold uppercase tracking-wide text-xs text-gray-500">Division:</span>{' '}
-                      {opponent.ageDivision}
-                    </p>
-                  )}
-
-                  <TechniqueDisplay
-                    techniqueIds={opponent.techniqueIds}
-                    label="Tokui-waza"
-                  />
-
-                  {opponent.kumiKata && (
-                    <p>
-                      <span className="font-semibold uppercase tracking-wide text-xs text-gray-500">Kumi-kata:</span>{' '}
-                      {opponent.kumiKata}
-                    </p>
-                  )}
-
-                  {opponent.neWaza && (
-                    <p>
-                      <span className="font-semibold uppercase tracking-wide text-xs text-gray-500">Ne-waza:</span>{' '}
-                      {opponent.neWaza}
-                    </p>
-                  )}
-
-                  {opponent.commonCounters && (
-                    <p>
-                      <span className="font-semibold uppercase tracking-wide text-xs text-gray-500">Counters:</span>{' '}
-                      {opponent.commonCounters}
-                    </p>
-                  )}
-
-                  {opponent.notes && (
-                    <p className="text-gray-700 pt-2 border-t border-gray-200">
-                      {opponent.notes}
-                    </p>
-                  )}
-                </div>
-
-                <div className="pt-3 border-t border-gray-200 flex gap-2">
-                  <button
-                    onClick={() => handleEdit(opponent)}
-                    className="btn-secondary text-sm flex-1"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(opponent)}
-                    className="btn-secondary border-red-600 text-red-600 hover:bg-red-600 hover:text-white text-sm flex-1"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+                  <TechniqueDisplay techniqueIds={opponent.techniqueIds} label="Tokui-waza" />
+                  {opponent.kumiKata ? <p className="text-sm"><span className="meta-key">Grips</span> <span className="text-body">{opponent.kumiKata}</span></p> : null}
+                  {opponent.neWaza ? <p className="text-sm"><span className="meta-key">Ne-waza</span> <span className="text-body">{opponent.neWaza}</span></p> : null}
+                  {opponent.commonCounters ? <p className="text-sm"><span className="meta-key">Counters</span> <span className="text-body">{opponent.commonCounters}</span></p> : null}
+                  {opponent.notes ? <p className="text-sm text-body">{opponent.notes}</p> : null}
+                  <div className="mt-auto pt-3 border-t border-gray-100 flex gap-2 justify-end">
+                    <Button variant="ghost-danger" size="sm" onClick={() => setPendingDelete(opponent)}>Delete</Button>
+                    <Button variant="secondary" size="sm" onClick={() => openForm(opponent)}>Edit</Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
-    </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        destructive
+        title={pendingDelete ? `Delete ${pendingDelete.firstName} ${pendingDelete.lastInitial}.?` : ''}
+        body="Any scouting notes linked to this opponent become one-off notes. Nothing else is removed."
+        confirmLabel="Delete opponent"
+        onClose={() => setPendingDelete(null)}
+        onConfirm={async () => {
+          if (!pendingDelete) return;
+          await deleteOpponent(pendingDelete.id);
+          await loadOpponents();
+        }}
+      />
+    </AppFrame>
   );
 }

@@ -5,6 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { getSupabaseClient } from '@/lib/supabase';
 import { checkCoachAllowlist } from '@/lib/auth-utils';
+import { AuthShell } from '@/components/AuthShell';
+import { Button } from '@/components/ui/Button';
+import { Field } from '@/components/ui/Field';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
+import { Notice } from '@/components/ui/Notice';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -20,8 +25,7 @@ function LoginForm() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      const redirectTo = searchParams.get('redirectTo') || '/';
-      router.push(redirectTo);
+      router.push(searchParams.get('redirectTo') || '/');
     }
   }, [user, authLoading, router, searchParams]);
 
@@ -30,26 +34,17 @@ function LoginForm() {
     setLoading(true);
     setError(null);
     setMessage(null);
-
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) throw signInError;
-
       if (data.user) {
-        // Check if user is allowlisted
         const isAllowlisted = await checkCoachAllowlist();
         if (!isAllowlisted) {
           await supabase.auth.signOut();
-          setError('ACCESS NOT AUTHORIZED - Your email is not on the coach allowlist. Please contact your administrator.');
+          setError('Your email is not on the coach allowlist. Please contact your administrator.');
           return;
         }
-
-        const redirectTo = searchParams.get('redirectTo') || '/';
-        router.push(redirectTo);
+        router.push(searchParams.get('redirectTo') || '/');
       }
     } catch (err: unknown) {
       console.error('Login error:', err);
@@ -64,18 +59,13 @@ function LoginForm() {
     setLoading(true);
     setError(null);
     setMessage(null);
-
     try {
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email,
-        options: {
-          emailRedirectTo: `${window.location.origin}${searchParams.get('redirectTo') || '/'}`,
-        },
+        options: { emailRedirectTo: `${window.location.origin}${searchParams.get('redirectTo') || '/'}` },
       });
-
       if (signInError) throw signInError;
-
-      setMessage('Check your email for the login link!');
+      setMessage('Check your email for the login link.');
       setEmail('');
     } catch (err: unknown) {
       console.error('Magic link error:', err);
@@ -86,136 +76,50 @@ function LoginForm() {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    );
+    return <LoadingScreen label="Checking session" />;
   }
 
   return (
-    <div className="min-h-screen navy-field flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        {/* Logo Wordmark */}
-        <div className="text-center mb-8">
-          <h1 className="wordmark text-3xl mb-2 tracking-wide">SILICON VALLEY JUDO</h1>
-          <p className="eyebrow text-white">Competitor Analysis</p>
-        </div>
+    <AuthShell title="Coach sign in" lead="Athlete profiles, scouting notes and tournament-day cards.">
+      {error ? <Notice tone="danger">{error}</Notice> : null}
+      {message ? <Notice tone="success">{message}</Notice> : null}
 
-        {/* Login Card */}
-        <div className="card p-8">
-          <div className="mb-6">
-            <h2 className="text-xl mb-2 text-center text-gray-900 font-bold uppercase tracking-wide">Coach Login</h2>
-            <p className="text-center text-gray-600 text-sm">
-              Access athlete profiles and tournament-day scouting notes
-            </p>
-          </div>
+      <form onSubmit={useMagicLink ? handleMagicLinkLogin : handlePasswordLogin} className="stack">
+        <Field label="Email" required>
+          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="form-input" placeholder="coach@svjudo.com" autoComplete="email" inputMode="email" />
+        </Field>
+        {!useMagicLink ? (
+          <Field label="Password" required>
+            <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="form-input" autoComplete="current-password" />
+          </Field>
+        ) : (
+          <p className="text-sm text-muted">We&apos;ll email you a secure sign-in link.</p>
+        )}
+        <Button type="submit" block size="lg" disabled={loading}>
+          {loading ? (useMagicLink ? 'Sending…' : 'Signing in…') : useMagicLink ? 'Send magic link' : 'Sign in'}
+        </Button>
+      </form>
 
-          {error && (
-            <div className="mb-4 p-3 rounded text-sm bg-red-50 text-red-800 border border-red-200">
-              {error}
-            </div>
-          )}
-
-          {message && (
-            <div className="mb-4 p-3 rounded text-sm bg-blue-50 text-blue-800 border border-blue-200">
-              {message}
-            </div>
-          )}
-
-          {!useMagicLink ? (
-            <form onSubmit={handlePasswordLogin} className="space-y-5">
-              <div>
-                <label className="form-label block mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="form-input w-full"
-                  placeholder="coach@svjudo.com"
-                />
-              </div>
-              <div>
-                <label className="form-label block mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="form-input w-full"
-                  placeholder="••••••••"
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary w-full"
-              >
-                {loading ? 'Signing in...' : 'Sign In'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleMagicLinkLogin} className="space-y-5">
-              <div>
-                <label className="form-label block mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="form-input w-full"
-                  placeholder="coach@svjudo.com"
-                />
-              </div>
-              <p className="text-sm text-gray-600">
-                We'll email you a secure login link
-              </p>
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary w-full"
-              >
-                {loading ? 'Sending...' : 'Send Magic Link'}
-              </button>
-            </form>
-          )}
-
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-            <button
-              onClick={() => {
-                setUseMagicLink(!useMagicLink);
-                setError(null);
-                setMessage(null);
-              }}
-              className="btn-link"
-            >
-              {useMagicLink ? '← Use password instead' : 'Use magic link instead →'}
-            </button>
-          </div>
-        </div>
-
-        <p className="text-center text-white text-sm mt-6 opacity-80">
-          Privacy-first competitor analysis for Silicon Valley Judo coaches
-        </p>
+      <div className="pt-4 border-t border-gray-100 text-center">
+        <button
+          type="button"
+          onClick={() => {
+            setUseMagicLink(!useMagicLink);
+            setError(null);
+            setMessage(null);
+          }}
+          className="btn-link"
+        >
+          {useMagicLink ? 'Use a password instead' : 'Email me a magic link instead'}
+        </button>
       </div>
-    </div>
+    </AuthShell>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
-      </div>
-    }>
+    <Suspense fallback={<LoadingScreen label="Loading" />}>
       <LoginForm />
     </Suspense>
   );

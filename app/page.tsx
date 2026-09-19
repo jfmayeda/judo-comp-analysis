@@ -1,426 +1,184 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { AthleteWithNotes, Stance, JudoBelt } from '@/lib/types';
-import { getAllAthletesWithNotes, createAthlete, seedData, ensureMockDemoData } from '@/lib/supabase-store';
-import { useAuth } from '@/lib/auth-context';
-import TechniquePicker from '@/components/TechniquePicker';
-import { formatBeltName, getBeltOptions } from '@/lib/belt-utils';
-import { AppHeader } from '@/components/AppHeader';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { AthleteWithNotes, TournamentDayEntry } from '@/lib/types';
+import {
+  getAllAthletesWithNotes,
+  createAthlete,
+  ensureMockDemoData,
+  getAllTournamentDays,
+  getTournamentDayEntries,
+} from '@/lib/supabase-store';
+import { useCoachGate } from '@/lib/use-coach-gate';
+import { emptyAthleteForm } from '@/lib/athlete-form';
+import { AppFrame } from '@/components/AppFrame';
+import { AthleteCard } from '@/components/athlete/AthleteCard';
+import { AthleteForm } from '@/components/athlete/AthleteForm';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { MetaRow } from '@/components/ui/MetaRow';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { IconPlus, IconSearch } from '@/components/ui/Icons';
+import { LoadingScreen } from '@/components/ui/LoadingScreen';
+import { Notice } from '@/components/ui/Notice';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SectionHeading } from '@/components/ui/SectionHeading';
+
+function matchesQuery(athlete: AthleteWithNotes, query: string): boolean {
+  const haystack = [
+    athlete.firstName,
+    athlete.lastInitial,
+    athlete.weightClass,
+    athlete.ageDivision,
+    athlete.tokuiWaza,
+    athlete.currentBelt,
+  ]
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes(query);
+}
 
 export default function Home() {
-  const router = useRouter();
-  const { user, loading: authLoading, isAllowlisted } = useAuth();
   const [athletes, setAthletes] = useState<AthleteWithNotes[]>([]);
+  const [todayEntries, setTodayEntries] = useState<Map<string, TournamentDayEntry>>(new Map());
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastInitial: '',
-    tokuiWaza: '',
-    developmentAreas: '',
-    notes: '',
-    stance: '' as Stance | '',
-    kumiKata: '',
-    neWaza: '',
-    weightClass: '',
-    ageDivision: '',
-    currentBelt: 'unset' as JudoBelt,
-    techniqueIds: [] as string[],
-    tokuiTechniqueIds: [] as string[],
-    newazaTechniqueIds: [] as string[],
-  });
+  const [savedName, setSavedName] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
+  const sheetRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (authLoading) return;
-    
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-
-    if (isAllowlisted === false) {
-      router.push('/unauthorized');
-      return;
-    }
-
-    if (isAllowlisted === true) {
-      loadAthletes();
-    }
-  }, [user, authLoading, isAllowlisted, router]);
-
-  const loadAthletes = async () => {
+  const loadAthletes = useCallback(async () => {
     try {
+      setLoadError(null);
       await ensureMockDemoData();
-      const data = await getAllAthletesWithNotes();
+      const [data, tournamentDays] = await Promise.all([getAllAthletesWithNotes(), getAllTournamentDays()]);
       setAthletes(data);
+      const today = new Date().toISOString().split('T')[0];
+      const todayDay = tournamentDays.find((day) => day.day === today);
+      if (todayDay) {
+        const entries = await getTournamentDayEntries(todayDay.id);
+        setTodayEntries(new Map(entries.map((entry) => [entry.athleteId, entry])));
+      } else {
+        setTodayEntries(new Map());
+      }
     } catch (error) {
       console.error('Error loading athletes:', error);
+      setLoadError('Could not load the roster. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const { ready, checking } = useCoachGate({ onReady: loadAthletes });
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return q ? athletes.filter((athlete) => matchesQuery(athlete, q)) : athletes;
+  }, [athletes, query]);
+
+  const openAddForm = () => {
+    setSavedName(null);
+    setShowAddForm(true);
+    requestAnimationFrame(() => sheetRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await createAthlete({
-        firstName: formData.firstName,
-        lastInitial: formData.lastInitial,
-        tokuiWaza: formData.tokuiWaza,
-        developmentAreas: formData.developmentAreas,
-        notes: formData.notes,
-        stance: formData.stance || null,
-        kumiKata: formData.kumiKata,
-        neWaza: formData.neWaza,
-        weightClass: formData.weightClass,
-        ageDivision: formData.ageDivision,
-        currentBelt: formData.currentBelt,
-        techniqueIds: formData.techniqueIds,
-        tokuiTechniqueIds: formData.tokuiTechniqueIds,
-        newazaTechniqueIds: formData.newazaTechniqueIds,
-      });
-      setFormData({
-        firstName: '',
-        lastInitial: '',
-        tokuiWaza: '',
-        developmentAreas: '',
-        notes: '',
-        stance: '',
-        kumiKata: '',
-        neWaza: '',
-        weightClass: '',
-        ageDivision: '',
-        currentBelt: 'unset',
-        techniqueIds: [],
-        tokuiTechniqueIds: [],
-        newazaTechniqueIds: [],
-      });
-      setShowAddForm(false);
-      await loadAthletes();
-    } catch (error: any) {
-      console.error('Error creating athlete:', error);
-      setFormData(prev => ({ ...prev, notes: `Error: ${error.message || 'Failed to create athlete'}` }));
-    }
-  };
-
-  const handleSeedData = async () => {
-    if (!confirm('Load sample data? This will add 3 example athletes with scouting notes.')) {
-      return;
-    }
-    try {
-      await seedData();
-      await loadAthletes();
-    } catch (error: any) {
-      console.error('Error seeding data:', error);
-    }
-  };
-
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen navy-field flex items-center justify-center">
-        <p className="text-white">Loading roster...</p>
-      </div>
-    );
+  if (!ready || checking || loading) {
+    return <LoadingScreen label="Loading roster" />;
   }
 
   return (
-    <div className="min-h-screen">
-      <AppHeader />
+    <AppFrame eyebrow="Roster">
+      <PageHeader
+        kicker="Silicon Valley Judo"
+        title="Roster"
+        lead={`${athletes.length} athlete${athletes.length === 1 ? '' : 's'} · tap a card for the matside profile`}
+        actions={
+          !showAddForm ? (
+            <Button onClick={openAddForm}>
+              <IconPlus size={18} /> Add athlete
+            </Button>
+          ) : null
+        }
+      />
 
-      {/* Main Content */}
-      <div className="page-shell">
-        <div className="page-title-row">
-          <div className="page-title-copy">
-            <p className="eyebrow mb-2">Roster</p>
-            <h2 className="text-3xl mb-2">Athletes</h2>
-            <p className="text-svj-gray-600">
-              {athletes.length} athlete{athletes.length !== 1 ? 's' : ''} • Tokui-waza, development areas, and opponent notes for tournament day
-            </p>
-          </div>
-          <Button onClick={() => setShowAddForm(!showAddForm)}>
-            {showAddForm ? 'Cancel' : 'Add Athlete'}
-          </Button>
-        </div>
+      <div className="stack-lg">
+        {loadError ? (
+          <Notice tone="danger" title="Roster unavailable">
+            {loadError}{' '}
+            <button type="button" className="btn-link" onClick={() => { setLoading(true); loadAthletes(); }}>
+              Retry
+            </button>
+          </Notice>
+        ) : null}
 
-        <div className="roster-stack">
-        {showAddForm && (
-          <Card>
-            <h3 className="text-xl mb-6 uppercase tracking-wide">Add New Athlete</h3>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    First Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, firstName: e.target.value })
-                    }
-                    className="form-input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Last Initial * (one letter)
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    maxLength={1}
-                    value={formData.lastInitial}
-                    onChange={(e) =>
-                      setFormData({ ...formData, lastInitial: e.target.value.toUpperCase() })
-                    }
-                    className="form-input w-full"
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Current Belt/Rank
-                  </label>
-                  <select
-                    value={formData.currentBelt}
-                    onChange={(e) =>
-                      setFormData({ ...formData, currentBelt: e.target.value as JudoBelt })
-                    }
-                    className="form-input w-full"
-                  >
-                    {getBeltOptions().map(option => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Stance
-                  </label>
-                  <select
-                    value={formData.stance || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, stance: e.target.value as Stance | '' })
-                    }
-                    className="form-input w-full"
-                  >
-                    <option value="">Not set</option>
-                    <option value="left">Left</option>
-                    <option value="right">Right</option>
-                    <option value="unknown">Unknown</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Weight Class
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.weightClass}
-                    onChange={(e) =>
-                      setFormData({ ...formData, weightClass: e.target.value })
-                    }
-                    placeholder="e.g. -57kg"
-                    className="form-input w-full"
-                  />
-                </div>
-                <div>
-                  <label className="eyebrow block text-gray-700 mb-2">
-                    Age Division
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.ageDivision}
-                    onChange={(e) =>
-                      setFormData({ ...formData, ageDivision: e.target.value })
-                    }
-                    placeholder="e.g. Junior"
-                    className="form-input w-full"
-                  />
-                </div>
-              </div>
+        {savedName ? (
+          <Notice tone="success" title={`${savedName} added to the roster`}>
+            Open the profile to add techniques, opponent notes and captures.
+          </Notice>
+        ) : null}
 
+        {showAddForm ? (
+          <div ref={sheetRef} className="sheet" role="region" aria-labelledby="add-athlete-title">
+            <div className="sheet-header">
               <div>
-                <TechniquePicker
-                  label="Tokui-waza (Tachi-waza) - Standing techniques"
-                  selectedIds={formData.tokuiTechniqueIds}
-                  onChange={(tokuiTechniqueIds) =>
-                    setFormData({ ...formData, tokuiTechniqueIds })
-                  }
-                  categoryFilter="Tachi-waza"
-                  placeholder="Type to search throws, footsweeps..."
-                />
+                <h2 id="add-athlete-title" className="card-title">New athlete</h2>
+                <p className="text-sm text-muted mt-1">Name and initial now; everything else can wait.</p>
               </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Tokui-waza Notes (optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.tokuiWaza}
-                  onChange={(e) =>
-                    setFormData({ ...formData, tokuiWaza: e.target.value })
-                  }
-                  placeholder="e.g., Strong right-sided entries"
-                  className="form-input w-full"
-                />
-              </div>
-
-              <div>
-                <TechniquePicker
-                  label="Ne-waza - Ground techniques"
-                  selectedIds={formData.newazaTechniqueIds}
-                  onChange={(newazaTechniqueIds) =>
-                    setFormData({ ...formData, newazaTechniqueIds })
-                  }
-                  categoryFilter="Ne-waza"
-                  placeholder="Type to search pins, chokes, armbars..."
-                />
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Ne-waza Notes (optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.neWaza}
-                  onChange={(e) =>
-                    setFormData({ ...formData, neWaza: e.target.value })
-                  }
-                  placeholder="e.g. Strong pins, working on turtle attacks"
-                  className="form-input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Kumi-kata (grip style)
-                </label>
-                <input
-                  type="text"
-                  value={formData.kumiKata}
-                  onChange={(e) =>
-                    setFormData({ ...formData, kumiKata: e.target.value })
-                  }
-                  placeholder="e.g. High lapel grip, quick hand changes"
-                  className="form-input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Development Areas
-                </label>
-                <input
-                  type="text"
-                  value={formData.developmentAreas}
-                  onChange={(e) =>
-                    setFormData({ ...formData, developmentAreas: e.target.value })
-                  }
-                  className="form-input w-full"
-                />
-              </div>
-
-              <div>
-                <label className="eyebrow block text-gray-700 mb-2">
-                  Notes
-                </label>
-                <textarea
-                  value={formData.notes}
-                  onChange={(e) =>
-                    setFormData({ ...formData, notes: e.target.value })
-                  }
-                  rows={3}
-                  className="form-input w-full"
-                />
-              </div>
-
-              <Button type="submit">
-                Create Athlete
-              </Button>
-            </form>
-          </Card>
-        )}
-
-        <div className="card-grid">
-          {athletes.length === 0 ? (
-            <div className="col-span-full">
-              <p className="text-gray-600 text-center py-12">
-                No athletes yet. Add your first athlete to get started.
-              </p>
             </div>
-          ) : (
-            athletes.map((athlete) => (
-              <Card
-                key={athlete.id}
-                as={Link}
-                href={`/athletes/${athlete.id}`}
-                className="block group"
-              >
-                <h3 className="text-2xl font-bold mb-3 text-svj-navy-900">
-                  {athlete.firstName} {athlete.lastInitial}.
-                </h3>
-                
-                <div className="space-y-2 mb-4">
-                  {athlete.currentBelt && athlete.currentBelt !== 'unset' && (
-                    <p className="text-gray-700 text-sm">
-                      <span className="font-semibold uppercase tracking-wide text-xs text-gray-500">Belt:</span>{' '}
-                      <span className="text-base">{formatBeltName(athlete.currentBelt)}</span>
-                    </p>
-                  )}
-                  
-                  {athlete.tokuiWaza && (
-                    <p className="text-gray-700 text-sm">
-                      <span className="font-semibold uppercase tracking-wide text-xs text-gray-500">Tokui-waza:</span>{' '}
-                      <span className="text-base">{athlete.tokuiWaza}</span>
-                    </p>
-                  )}
-                  
-                  <MetaRow
-                    items={[
-                      { label: 'Stance', value: athlete.stance, capitalize: true },
-                      { label: 'Weight', value: athlete.weightClass },
-                    ]}
-                  />
-                  
-                  {athlete.ageDivision && (
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold uppercase tracking-wide text-xs text-gray-500">Division:</span>{' '}
-                      {athlete.ageDivision}
-                    </p>
-                  )}
-                </div>
+            <AthleteForm
+              mode="create"
+              initial={emptyAthleteForm()}
+              onCancel={() => setShowAddForm(false)}
+              onSubmit={async (payload) => {
+                await createAthlete(payload);
+                setShowAddForm(false);
+                setSavedName(`${payload.firstName} ${payload.lastInitial}.`);
+                await loadAthletes();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+          </div>
+        ) : null}
 
-                <div className="pt-3 border-t border-svj-gray-200 flex items-center justify-between">
-                  <span className="text-sm text-svj-gray-600">
-                    {athlete.opponentNotes.length} opponent note{athlete.opponentNotes.length !== 1 ? 's' : ''}
-                  </span>
-                  <span className="text-svj-blue-600 group-hover:translate-x-1 transition-transform duration-200">
-                    →
-                  </span>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
-        </div>
+        {athletes.length > 0 ? (
+          <div className="search-field">
+            <IconSearch className="search-field-icon" />
+            <label htmlFor="roster-search" className="visually-hidden">Search athletes</label>
+            <input
+              id="roster-search"
+              type="search"
+              className="form-input form-input--search"
+              placeholder="Search by name, weight class, division…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              autoComplete="off"
+            />
+          </div>
+        ) : null}
+
+        {athletes.length === 0 ? (
+          <EmptyState
+            title="No athletes yet"
+            body="Add your first athlete with just a first name and last initial. Techniques and notes can come later."
+            actions={<Button onClick={openAddForm}><IconPlus size={18} /> Add athlete</Button>}
+          />
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            compact
+            title={`No athletes match “${query.trim()}”`}
+            body="Try a first name, weight class or division."
+            actions={<Button variant="secondary" size="sm" onClick={() => setQuery('')}>Clear search</Button>}
+          />
+        ) : (
+          <section aria-labelledby="roster-list-heading">
+            <SectionHeading id="roster-list-heading" title="Athletes" count={filtered.length} />
+            <div className="card-grid">
+              {filtered.map((athlete) => (
+                <AthleteCard key={athlete.id} athlete={athlete} todayEntry={todayEntries.get(athlete.id)} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
-    </div>
+    </AppFrame>
   );
 }

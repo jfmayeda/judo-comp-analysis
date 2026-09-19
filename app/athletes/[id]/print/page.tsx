@@ -7,6 +7,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { AthleteWithNotes, TournamentDayEntry, Coach } from '@/lib/types';
 import { getAthleteWithNotes, getTodaysTournamentAssignment, getAllCoaches } from '@/lib/supabase-store';
 import { noteCaptureHeadline } from '@/lib/capture-score';
+import { stripSampleMarker } from '@/lib/development';
+import { Button } from '@/components/ui/Button';
 
 export default function PrintProfilePage() {
   const params = useParams();
@@ -61,25 +63,20 @@ export default function PrintProfilePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-4xl mx-auto p-8">
-        <div className="mb-6 no-print flex justify-between items-center">
-          <Link href={`/athletes/${athlete.id}`} className="text-blue-600 hover:text-blue-800 font-semibold uppercase tracking-wide text-sm">
-            ← Back to Athlete
-          </Link>
-          <button
-            onClick={() => window.print()}
-            className="btn-primary"
-          >
-            Print / Save PDF
-          </button>
+      <div className="max-w-4xl mx-auto p-4 md:p-8">
+        <div className="mb-6 no-print flex flex-wrap justify-between items-center gap-3">
+          <Button as={Link} href={`/athletes/${athlete.id}`} variant="secondary" size="sm">
+            Back to athlete
+          </Button>
+          <Button onClick={() => window.print()}>Print / save PDF</Button>
         </div>
 
         <div className="print-page">
           {/* Header Section with QR Code */}
-          <div className="mb-6 pb-6 border-b-2 border-gray-900 flex items-start justify-between">
+          <div className="mb-6 pb-6 border-b-2 border-gray-900 flex flex-wrap items-start justify-between gap-4">
             <div className="flex-1">
               <p className="eyebrow mb-2">MATSIDE COACH CARD</p>
-              <h1 className="text-4xl mb-3 tracking-wide">
+              <h1 className="text-4xl mb-3">
                 {athlete.firstName} {athlete.lastInitial}.
               </h1>
               
@@ -133,7 +130,7 @@ export default function PrintProfilePage() {
             
             {/* QR Code */}
             {profileUrl && (
-              <div className="ml-6 flex flex-col items-center">
+              <div className="flex flex-col items-center">
                 <QRCodeSVG 
                   value={profileUrl} 
                   size={80}
@@ -179,7 +176,7 @@ export default function PrintProfilePage() {
           {athlete.notes && (
             <div className="mb-6 print-section p-3 bg-gray-50 rounded">
               <h3 className="text-sm font-bold mb-2 uppercase tracking-wide text-gray-900">Coach Notes</h3>
-              <p className="text-xs text-gray-900 whitespace-pre-wrap leading-relaxed">{athlete.notes}</p>
+              <p className="text-xs text-gray-900 whitespace-pre-wrap leading-relaxed">{stripSampleMarker(athlete.notes)}</p>
             </div>
           )}
 
@@ -226,7 +223,7 @@ export default function PrintProfilePage() {
                     </div>
 
                     <div className="text-xs text-gray-900 leading-snug">
-                      {note.notes}
+                      {stripSampleMarker(note.notes)}
                     </div>
                   </div>
                 ))}

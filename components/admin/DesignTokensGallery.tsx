@@ -4,7 +4,13 @@ import Link from 'next/link';
 import { DESIGN_TOKEN_GROUPS, type DesignToken, type TokenKind } from '@/lib/design-tokens';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Chip, Pill } from '@/components/ui/Chip';
+import { Chip, Pill, Tag } from '@/components/ui/Chip';
+import { Notice } from '@/components/ui/Notice';
+import { Field } from '@/components/ui/Field';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { SampleDataTag } from '@/components/ui/SampleData';
+import { BeltMark } from '@/components/ui/BeltMark';
+import { StatTile } from '@/components/ui/StatTile';
 
 function Swatch({ token }: { token: DesignToken }) {
   if (token.kind === 'color') {
@@ -166,6 +172,44 @@ export function DesignTokensGallery() {
               <Chip pressed>Pressed</Chip>
               <Pill>Pill brand</Pill>
               <Pill tone="navy">Pill navy</Pill>
+              <Pill tone="success">Success</Pill>
+              <Pill tone="warning">Warning</Pill>
+              <Pill tone="danger">Danger</Pill>
+              <Tag>Seoi-nage</Tag>
+              <Tag tone="navy">Kesa-gatame</Tag>
+              <SampleDataTag />
+            </div>
+          </Card>
+
+          <Card className="p-6 stack">
+            <p className="eyebrow">Feedback & states</p>
+            <Notice tone="info" title="Info">Neutral guidance.</Notice>
+            <Notice tone="success" title="Saved">Confirmation after a write.</Notice>
+            <Notice tone="warning" title="Conflict">Needs a decision, not blocking.</Notice>
+            <Notice tone="danger" title="Not saved">Error text, role=alert.</Notice>
+            <EmptyState compact title="Empty state" body="Explains what goes here and offers the next action." />
+          </Card>
+
+          <Card className="p-6 stack">
+            <p className="eyebrow">Fields & facts</p>
+            <div className="form-grid-2">
+              <Field label="Text field" hint="Hint text" required>
+                <input className="form-input" placeholder="Placeholder" />
+              </Field>
+              <Field label="With error" error="Use one letter only.">
+                <input className="form-input" defaultValue="Hernandez" />
+              </Field>
+            </div>
+            <div className="flex flex-wrap gap-4 items-center">
+              <BeltMark belt="blue" />
+              <BeltMark belt="brown" />
+              <BeltMark belt="unset" />
+            </div>
+            <div className="stat-grid">
+              <StatTile label="Record" value="3–1" tone="accent" />
+              <StatTile label="Wins" value={3} />
+              <StatTile label="Unassigned" value={2} tone="warning" />
+              <StatTile label="Mat" value="1" />
             </div>
           </Card>
         </div>

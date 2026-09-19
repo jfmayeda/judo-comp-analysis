@@ -3,64 +3,42 @@
 import { useEffect, useState } from 'react';
 import { Technique } from '@/lib/types';
 import { getTechniquesByIds } from '@/lib/supabase-store';
+import { Tag } from '@/components/ui/Chip';
 
-type TechniqueDisplayProps = {
-  techniqueIds: string[];
-  label?: string;
-  className?: string;
-};
+type TechniqueDisplayProps = { techniqueIds: string[]; label?: string; className?: string };
 
-export default function TechniqueDisplay({
-  techniqueIds,
-  label,
-  className = '',
-}: TechniqueDisplayProps) {
+/** Resolves technique ids to names and renders them as quiet tags. Renders nothing when empty. */
+export default function TechniqueDisplay({ techniqueIds, label, className = '' }: TechniqueDisplayProps) {
   const [techniques, setTechniques] = useState<Technique[]>([]);
-  const [loading, setLoading] = useState(true);
+  const key = techniqueIds.join(',');
 
   useEffect(() => {
-    if (techniqueIds.length > 0) {
-      loadTechniques();
-    } else {
+    let cancelled = false;
+    if (!key) {
       setTechniques([]);
-      setLoading(false);
+      return;
     }
-  }, [techniqueIds]);
+    getTechniquesByIds(key.split(','))
+      .then((data) => {
+        if (!cancelled) setTechniques(data);
+      })
+      .catch((error) => {
+        console.error('Error loading techniques:', error);
+        if (!cancelled) setTechniques([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [key]);
 
-  const loadTechniques = async () => {
-    try {
-      const data = await getTechniquesByIds(techniqueIds);
-      setTechniques(data);
-    } catch (error) {
-      console.error('Error loading techniques:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return null;
-  }
-
-  if (techniques.length === 0) {
-    return null;
-  }
+  if (techniques.length === 0) return null;
 
   return (
     <div className={className}>
-      {label && (
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-          {label}
-        </p>
-      )}
-      <div className="flex flex-wrap gap-2">
-        {techniques.map(technique => (
-          <span
-            key={technique.id}
-            className="inline-block px-2 py-1 bg-blue-50 border border-blue-200 rounded text-sm text-blue-900"
-          >
-            {technique.name}
-          </span>
+      {label ? <span className="meta-key block mb-1">{label}</span> : null}
+      <div className="tag-row">
+        {techniques.map((technique) => (
+          <Tag key={technique.id}>{technique.name}</Tag>
         ))}
       </div>
     </div>
