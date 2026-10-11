@@ -9,6 +9,7 @@ import { capturedResults, formatResultLabel, tallyResults } from '@/lib/developm
 import BadgesSection from '@/components/BadgesSection';
 import CareerTimeline from '@/components/CareerTimeline';
 import TournamentCard from '@/components/TournamentCard';
+import { Button } from '@/components/ui/Button';
 import { LoadingBlock } from '@/components/ui/LoadingScreen';
 import { SampleBand } from '@/components/ui/SampleData';
 import { SectionHeading } from '@/components/ui/SectionHeading';
@@ -18,6 +19,7 @@ type Props = {
   athlete: AthleteWithNotes;
   isSample: boolean;
   onQuickCapture: () => void;
+  onEditCapture: (noteId: string) => void;
 };
 
 /**
@@ -26,7 +28,7 @@ type Props = {
  *  2. Sample tournament history + sample badges — only for sample athletes, clearly banded.
  * Real athletes without captures get an honest empty state, not a hidden section.
  */
-export function DevelopmentCard({ athlete, isSample, onQuickCapture }: Props) {
+export function DevelopmentCard({ athlete, isSample, onQuickCapture, onEditCapture }: Props) {
   const [activity, setActivity] = useState<AthleteActivity | null>(null);
   const [badges, setBadges] = useState<BadgeWithProgress[]>([]);
   const [loadingSample, setLoadingSample] = useState(isSample);
@@ -86,7 +88,19 @@ export function DevelopmentCard({ athlete, isSample, onQuickCapture }: Props) {
                       {formatResultLabel(result.result)}
                     </span>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-strong">{result.headline}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="text-sm font-semibold text-strong">{result.headline}</p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="no-print flex-none"
+                          onClick={() => onEditCapture(result.id)}
+                          aria-label={`Edit capture vs ${result.opponentLabel}`}
+                          data-testid={`edit-captured-${result.id}`}
+                        >
+                          Edit
+                        </Button>
+                      </div>
                       <p className="text-xs text-muted">
                         vs. {result.opponentLabel}
                         {result.club ? ` · ${result.club}` : ''} ·{' '}

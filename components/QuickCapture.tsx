@@ -10,11 +10,17 @@ import { IconClose, IconPlus } from '@/components/ui/Icons';
 import { Notice } from '@/components/ui/Notice';
 import { StickyActions } from '@/components/ui/StickyActions';
 import {
+  captureOpponentFromNote,
+  defaultScoreRecipient,
   formatCaptureScoreSummary,
+  formatOneEvent,
   SCORE_EVENT_LABELS,
+  seedCaptureNoteText,
+  toDraftScoreEvents,
+  toggleScoreRecipient,
   withSequenceOrders,
 } from '@/lib/capture-score';
-import { CAPTURE_RESULT_LABELS, saveQuickCapture } from '@/lib/quick-capture';
+import { CAPTURE_RESULT_LABELS, saveQuickCapture, updateQuickCapture } from '@/lib/quick-capture';
 import { getAllOpponents, getTechniquesByIds } from '@/lib/supabase-store';
 import {
   CaptureOpponent,
@@ -22,6 +28,8 @@ import {
   CaptureScoreEventType,
   DraftScoreEvent,
   Opponent,
+  OpponentNote,
+  ScoreRecipient,
 } from '@/lib/types';
 
 type OpponentMode = CaptureOpponent['kind'];
@@ -29,6 +37,8 @@ type OpponentMode = CaptureOpponent['kind'];
 type QuickCaptureProps = {
   athleteId: string;
   athleteName?: string;
+  /** When set, the form updates this note instead of creating a new capture. */
+  existingNote?: OpponentNote | null;
   /** Called after a successful save with the human-readable summary. */
   onSaved: (summary: string) => void;
   onCancel: () => void;
@@ -37,39 +47,73 @@ type QuickCaptureProps = {
 const SCORING_ADDS: Array<{ eventType: Exclude<CaptureScoreEventType, 'shido'>; label: string }> = [
   { eventType: 'ippon', label: 'Ippon' },
   { eventType: 'wazari', label: 'Waza-ari' },
+  { eventType: 'yuko', label: 'Yuko' },
   { eventType: 'osaekomi', label: 'Osaekomi' },
   { eventType: 'golden_score', label: 'Golden score' },
 ];
 
-export function draftEventLine(event: DraftScoreEvent, index: number): string {
-  if (event.eventType === 'shido') {
-    const who = event.recipient === 'athlete' ? 'us' : 'them';
-    return `${index + 1}. Shido (${who})`;
+function opponentFields(opponent: CaptureOpponent): {
+  mode: OpponentMode;
+  sharedOpponentId: string;
+  oneOffFirst: string;
+  oneOffInitial: string;
+} {
+  if (opponent.kind === 'shared') {
+    return { mode: 'shared', sharedOpponentId: opponent.opponentId, oneOffFirst: '', oneOffInitial: '' };
   }
-  const label = SCORE_EVENT_LABELS[event.eventType];
-  return event.techniqueLabel ? `${index + 1}. ${label} via ${event.techniqueLabel}` : `${index + 1}. ${label}`;
+  if (opponent.kind === 'oneOff') {
+    return {
+      mode: 'oneOff',
+      sharedOpponentId: '',
+      oneOffFirst: opponent.firstName,
+      oneOffInitial: opponent.lastInitial,
+    };
+  }
+  return { mode: 'unknown', sharedOpponentId: '', oneOffFirst: '', oneOffInitial: '' };
+}
+
+export function draftEventLine(event: DraftScoreEvent, index: number): string {
+  return formatOneEvent(event, index);
+}
+
+function recipientChipLabel(recipient: ScoreRecipient | undefined): string {
+  if (recipient === 'us') return 'Us';
+  if (recipient === 'them') return 'Them';
+  return 'Who?';
 }
 
 /**
  * Post-match capture. Minimum path: Result → Save (opponent defaults to
  * Unknown). Score sequence, technique, opponent identity and notes are
- * optional layers. Persistence contract (saveQuickCapture) is unchanged.
+ * optional layers. Pass existingNote to reuse the same form for edits.
  */
-export default function QuickCapture({ athleteId, athleteName, onSaved, onCancel }: QuickCaptureProps) {
-  const [result, setResult] = useState<CaptureResult | null>(null);
-  const [opponentMode, setOpponentMode] = useState<OpponentMode>('unknown');
+export default function QuickCapture({
+  athleteId,
+  athleteName,
+  existingNote = null,
+  onSaved,
+  onCancel,
+}: QuickCaptureProps) {
+  const seededOpponent = existingNote ? captureOpponentFromNote(existingNote) : null;
+  const seededFields = opponentFields(seededOpponent ?? { kind: 'unknown' });
+
+  const [result, setResult] = useState<CaptureResult | null>(existingNote?.result ?? null);
+  const [opponentMode, setOpponentMode] = useState<OpponentMode>(seededFields.mode);
   const [opponents, setOpponents] = useState<Opponent[]>([]);
   const [opponentQuery, setOpponentQuery] = useState('');
-  const [sharedOpponentId, setSharedOpponentId] = useState('');
-  const [oneOffFirst, setOneOffFirst] = useState('');
-  const [oneOffInitial, setOneOffInitial] = useState('');
-  const [events, setEvents] = useState<DraftScoreEvent[]>([]);
+  const [sharedOpponentId, setSharedOpponentId] = useState(seededFields.sharedOpponentId);
+  const [oneOffFirst, setOneOffFirst] = useState(seededFields.oneOffFirst);
+  const [oneOffInitial, setOneOffInitial] = useState(seededFields.oneOffInitial);
+  const [events, setEvents] = useState<DraftScoreEvent[]>(
+    existingNote ? toDraftScoreEvents(existingNote.scoreEvents) : [],
+  );
   const [techniqueTargetIndex, setTechniqueTargetIndex] = useState<number | null>(null);
   const [howText, setHowText] = useState('');
-  const [note, setNote] = useState('');
+  const [note, setNote] = useState(existingNote ? seedCaptureNoteText(existingNote) : '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const editing = Boolean(existingNote);
 
   useEffect(() => {
     getAllOpponents().then(setOpponents).catch(() => setOpponents([]));
@@ -101,12 +145,12 @@ export default function QuickCapture({ athleteId, athleteName, onSaved, onCancel
   const scoringTarget = techniqueTarget && techniqueTarget.eventType !== 'shido' ? techniqueTarget : null;
 
   const addScoringEvent = (eventType: Exclude<CaptureScoreEventType, 'shido'>) => {
-    const next = [...events, { eventType }];
+    const next = [...events, { eventType, recipient: defaultScoreRecipient(result) }];
     setEvents(next);
     setTechniqueTargetIndex(next.length - 1);
   };
 
-  const addShido = (recipient: 'athlete' | 'opponent') => {
+  const addShido = (recipient: ScoreRecipient) => {
     setEvents((current) => [...current, { eventType: 'shido', recipient }]);
     setTechniqueTargetIndex(null);
   };
@@ -117,6 +161,14 @@ export default function QuickCapture({ athleteId, athleteName, onSaved, onCancel
       if (current === null || current === index) return null;
       return current > index ? current - 1 : current;
     });
+  };
+
+  const flipRecipient = (index: number) => {
+    setEvents((current) =>
+      current.map((event, i) =>
+        i === index ? { ...event, recipient: toggleScoreRecipient(event.recipient, result) } : event,
+      ),
+    );
   };
 
   const handleTechniqueChange = async (ids: string[]) => {
@@ -130,7 +182,11 @@ export default function QuickCapture({ athleteId, athleteName, onSaved, onCancel
     setEvents((current) =>
       current.map((event, index) => {
         if (index !== techniqueTargetIndex || event.eventType === 'shido') return event;
-        return { eventType: event.eventType, ...(techniqueId ? { techniqueId, techniqueLabel } : {}) };
+        return {
+          eventType: event.eventType,
+          recipient: event.recipient,
+          ...(techniqueId ? { techniqueId, techniqueLabel } : {}),
+        };
       }),
     );
   };
@@ -151,7 +207,12 @@ export default function QuickCapture({ athleteId, athleteName, onSaved, onCancel
     setSaving(true);
     setError(null);
     try {
-      await saveQuickCapture({ athleteId, opponent, result, scoreEvents: events, howText, note });
+      const input = { athleteId, opponent, result, scoreEvents: events, howText, note };
+      if (existingNote) {
+        await updateQuickCapture(existingNote.id, input);
+      } else {
+        await saveQuickCapture(input);
+      }
       onSaved(captureSummary ?? CAPTURE_RESULT_LABELS[result]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save capture');
@@ -177,10 +238,11 @@ export default function QuickCapture({ athleteId, athleteName, onSaved, onCancel
       <div className="sheet-header">
         <div className="min-w-0">
           <h2 id="quick-capture-title" ref={headingRef} tabIndex={-1} className="card-title outline-none">
-            Quick capture
+            {editing ? 'Edit capture' : 'Quick capture'}
           </h2>
           <p className="text-sm text-muted mt-1">
-            {athleteName ? `${athleteName} · ` : ''}Result first. Everything else is optional.
+            {athleteName ? `${athleteName} · ` : ''}
+            {editing ? 'Correct the result or sequence, then save.' : 'Result first. Everything else is optional.'}
           </p>
         </div>
         <button type="button" className="btn-icon -mr-2 -mt-1" onClick={onCancel} aria-label="Close quick capture">
@@ -212,15 +274,24 @@ export default function QuickCapture({ athleteId, athleteName, onSaved, onCancel
                 <IconPlus size={14} /> {item.label}
               </Chip>
             ))}
-            <Chip onClick={() => addShido('athlete')}><IconPlus size={14} /> Shido us</Chip>
-            <Chip onClick={() => addShido('opponent')}><IconPlus size={14} /> Shido them</Chip>
+            <Chip onClick={() => addShido('us')}><IconPlus size={14} /> Shido us</Chip>
+            <Chip onClick={() => addShido('them')}><IconPlus size={14} /> Shido them</Chip>
           </div>
 
           {events.length > 0 ? (
             <ol className="mt-3 panel stack" style={{ gap: 'var(--svj-space-1)' }} aria-label="Score sequence">
               {events.map((item, index) => (
-                <li key={`${item.eventType}-${index}`} className="flex items-center gap-2 min-h-11">
+                <li key={`${item.eventType}-${index}`} className="flex items-center gap-2 min-h-11 flex-wrap">
                   <span className="text-sm font-semibold text-strong flex-1 min-w-0">{draftEventLine(item, index)}</span>
+                  <Chip
+                    className="btn-sm"
+                    pressed={Boolean(item.recipient)}
+                    onClick={() => flipRecipient(index)}
+                    data-testid={`recipient-${index}`}
+                    aria-label={`Scored by ${recipientChipLabel(item.recipient)}`}
+                  >
+                    {recipientChipLabel(item.recipient)}
+                  </Chip>
                   {item.eventType !== 'shido' ? (
                     <Chip
                       className="btn-sm"
@@ -237,7 +308,7 @@ export default function QuickCapture({ athleteId, athleteName, onSaved, onCancel
               ))}
             </ol>
           ) : (
-            <p className="field-hint mt-2">Tap scores in the order they happened. Add the technique if you know it.</p>
+            <p className="field-hint mt-2">Tap scores in the order they happened. Flip Us/Them if the other player scored.</p>
           )}
 
           {scoringTarget ? (
@@ -253,7 +324,7 @@ export default function QuickCapture({ athleteId, athleteName, onSaved, onCancel
           ) : null}
         </fieldset>
 
-        <Disclosure title="Opponent" hint={opponentLabel} defaultOpen={false}>
+        <Disclosure title="Opponent" hint={opponentLabel} defaultOpen={editing && opponentMode !== 'unknown'}>
           <div className="grid grid-cols-3 gap-2">
             {(
               [
@@ -322,7 +393,7 @@ export default function QuickCapture({ athleteId, athleteName, onSaved, onCancel
           ) : null}
         </Disclosure>
 
-        <Disclosure title="Add detail" hint="How it happened, a short note" defaultOpen={false}>
+        <Disclosure title="Add detail" hint="How it happened, a short note" defaultOpen={Boolean(note)}>
           <Field label="How" optional>
             <input
               type="text"
@@ -350,7 +421,7 @@ export default function QuickCapture({ athleteId, athleteName, onSaved, onCancel
         }
       >
         <Button type="submit" disabled={!canSave || saving} data-testid="save-capture">
-          {saving ? 'Saving…' : 'Save capture'}
+          {saving ? 'Saving…' : editing ? 'Save changes' : 'Save capture'}
         </Button>
       </StickyActions>
     </form>

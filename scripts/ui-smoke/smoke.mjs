@@ -88,6 +88,7 @@ await withApp({ viewport: VIEWPORTS.phone, label: 'quick capture' }, async ({ pa
     check('quick capture: result=win', row.result === 'win');
     check('quick capture: score_flavor=ippon', row.score_flavor === 'ippon');
     check('quick capture: score_events sequence', Array.isArray(row.score_events) && row.score_events.length === 1 && row.score_events[0].eventType === 'ippon' && row.score_events[0].sequenceOrder === 1);
+    check('quick capture: default recipient is us on a win', row.score_events?.[0]?.recipient === 'us');
     check('quick capture: unknown opponent label', row.opponent_label === 'Unknown' && row.opponent_id === null);
     check('quick capture: athlete_id set', row.athlete_id === fixtures.ids.athletes.maya);
     check('quick capture: no full last name anywhere', !JSON.stringify(row).includes('Hernandez'));
@@ -96,6 +97,55 @@ await withApp({ viewport: VIEWPORTS.phone, label: 'quick capture' }, async ({ pa
   check('quick capture: success notice shown', /capture saved/i.test(notice || ''));
   const captured = await page.getByTestId('captured-results').locator('li').count();
   check('development: captured results include the new capture', captured >= 3, `${captured} rows`);
+
+  await tap(page.getByTestId('open-quick-capture'));
+  check('quick capture: yuko chip is offered', await page.getByTestId('add-yuko').isVisible());
+  await tap(page.getByTestId('result-loss'));
+  await tap(page.getByTestId('add-yuko'));
+  await tap(page.getByTestId('add-wazari'));
+  await tap(page.getByTestId('recipient-1'));
+  const mixedSummary = await page.getByTestId('capture-summary').textContent();
+  check(
+    'quick capture: mixed recipients in summary',
+    /Loss · 1\. Yuko \(them\) · 2\. Waza-ari \(us\)/.test(mixedSummary || ''),
+    mixedSummary || '',
+  );
+  await tap(save);
+  await page.waitForTimeout(600);
+  const mixedWrite = [...mock.writes].reverse().find((w) => w.table === 'opponent_notes' && w.method === 'POST');
+  const mixedRow = mixedWrite?.rows?.[0];
+  check(
+    'quick capture: mixed write stores both recipients',
+    mixedRow?.score_events?.[0]?.recipient === 'them' && mixedRow?.score_events?.[1]?.recipient === 'us' && mixedRow?.score_flavor === 'waza_ari',
+    JSON.stringify(mixedRow?.score_events),
+  );
+
+  const editBtn = page.getByTestId(`edit-captured-${mixedRow?.id}`).first();
+  const editVisible = await editBtn.isVisible().catch(() => false);
+  check('quick capture: edit control on a saved capture', editVisible);
+  if (editVisible) {
+    await tap(editBtn);
+    check('quick capture: edit mode heading', /edit capture/i.test((await page.locator('#quick-capture-title').textContent()) || ''));
+    const seeded = await page.getByTestId('capture-summary').textContent();
+    check('quick capture: edit seeds the existing sequence', /Yuko \(them\)/.test(seeded || ''), seeded || '');
+    await tap(page.getByTestId('add-ippon'));
+    await tap(save);
+    await page.waitForTimeout(600);
+    const patch = [...mock.writes].reverse().find((w) => w.table === 'opponent_notes' && w.method === 'PATCH');
+    check('quick capture: edit PATCHes opponent_notes', Boolean(patch));
+    check(
+      'quick capture: edit persists result, flavor and events',
+      patch?.patch?.result === 'loss' &&
+        patch?.patch?.score_flavor === 'ippon' &&
+        Array.isArray(patch?.patch?.score_events) &&
+        patch.patch.score_events.length === 3 &&
+        patch.patch.score_events[2].eventType === 'ippon' &&
+        patch.patch.score_events[2].recipient === 'them',
+      JSON.stringify(patch?.patch),
+    );
+    const updatedNotice = await page.locator('[role="status"]').first().textContent().catch(() => '');
+    check('quick capture: update notice shown', /capture updated/i.test(updatedNotice || ''), updatedNotice || '');
+  }
 });
 
 // 4. Athlete creation: minimal path and payload shape.
