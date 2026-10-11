@@ -17,9 +17,18 @@ type Props = {
   onToggleAdd: () => void;
   onAdd: (values: OpponentNoteFormValues) => Promise<void>;
   onDelete: (note: OpponentNote) => void;
+  onEditCapture: (note: OpponentNote) => void;
 };
 
-function NoteItem({ note, onDelete }: { note: OpponentNote; onDelete: (note: OpponentNote) => void }) {
+function NoteItem({
+  note,
+  onDelete,
+  onEditCapture,
+}: {
+  note: OpponentNote;
+  onDelete: (note: OpponentNote) => void;
+  onEditCapture: (note: OpponentNote) => void;
+}) {
   const headline = noteCaptureHeadline(note);
   const text = stripSampleMarker(note.notes);
   return (
@@ -39,9 +48,22 @@ function NoteItem({ note, onDelete }: { note: OpponentNote; onDelete: (note: Opp
             {headline ? <p className="text-sm font-semibold text-brand-blue">{headline}</p> : null}
             {note.tournament ? <p className="text-xs text-muted">{note.tournament}</p> : null}
           </div>
-          <Button variant="ghost-danger" size="sm" className="no-print flex-none" onClick={() => onDelete(note)} aria-label={`Delete note about ${note.opponentLabel}`}>
-            Delete
-          </Button>
+          <div className="flex flex-none gap-1 no-print">
+            {note.result ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEditCapture(note)}
+                aria-label={`Edit capture vs ${note.opponentLabel}`}
+                data-testid={`edit-capture-${note.id}`}
+              >
+                Edit
+              </Button>
+            ) : null}
+            <Button variant="ghost-danger" size="sm" onClick={() => onDelete(note)} aria-label={`Delete note about ${note.opponentLabel}`}>
+              Delete
+            </Button>
+          </div>
         </div>
         <MetaRow
           items={[
@@ -63,7 +85,7 @@ function NoteItem({ note, onDelete }: { note: OpponentNote; onDelete: (note: Opp
 }
 
 /** Scouting notes and captured results against specific opponents, newest first. */
-export function OpponentIntelCard({ notes, showAddForm, onToggleAdd, onAdd, onDelete }: Props) {
+export function OpponentIntelCard({ notes, showAddForm, onToggleAdd, onAdd, onDelete, onEditCapture }: Props) {
   return (
     <section id="opponent-notes" className="card" aria-labelledby="opponents-heading">
       <SectionHeading
@@ -93,7 +115,7 @@ export function OpponentIntelCard({ notes, showAddForm, onToggleAdd, onAdd, onDe
       ) : (
         <ul>
           {notes.map((note) => (
-            <NoteItem key={note.id} note={note} onDelete={onDelete} />
+            <NoteItem key={note.id} note={note} onDelete={onDelete} onEditCapture={onEditCapture} />
           ))}
         </ul>
       )}

@@ -357,6 +357,12 @@ export async function updateOpponentNote(
   if (data.weightClass !== undefined) updateData.weight_class = data.weightClass;
   if (data.ageDivision !== undefined) updateData.age_division = data.ageDivision;
   if (data.techniqueIds !== undefined) updateData.technique_ids = data.techniqueIds;
+  if (data.tokuiTechniqueIds !== undefined) updateData.tokui_technique_ids = data.tokuiTechniqueIds;
+  if (data.newazaTechniqueIds !== undefined) updateData.newaza_technique_ids = data.newazaTechniqueIds;
+  if (data.opponentId !== undefined) updateData.opponent_id = data.opponentId;
+  if (data.result !== undefined) updateData.result = data.result;
+  if (data.scoreFlavor !== undefined) updateData.score_flavor = data.scoreFlavor;
+  if (data.scoreEvents !== undefined) updateData.score_events = data.scoreEvents;
 
   const { data: updated, error } = await supabase
     .from('opponent_notes')
@@ -1426,6 +1432,7 @@ function dbOpponentNoteToOpponentNote(dbNote: {
   const scoreFlavor =
     dbNote.score_flavor === 'ippon' ||
     dbNote.score_flavor === 'waza_ari' ||
+    dbNote.score_flavor === 'yuko' ||
     dbNote.score_flavor === 'osaekomi' ||
     dbNote.score_flavor === 'golden_score' ||
     dbNote.score_flavor === 'other'
