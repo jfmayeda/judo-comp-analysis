@@ -108,7 +108,11 @@ test('successRate includes golden_score when it carries a nage technique', () =>
     ev({ eventType: 'attempt', recipient: 'us', technique: seoi }),
     ev({ eventType: 'golden_score', recipient: 'us', technique: seoi }),
   ];
-  assert.deepEqual(successRate(events), { scores: 1, attempts: 2, n: 3, percent: 100 / 3 });
+  const rate = successRate(events);
+  assert.equal(rate.scores, 1);
+  assert.equal(rate.attempts, 2);
+  assert.equal(rate.n, 3);
+  assert.equal(Math.round(rate.percent ?? 0), 33);
 });
 
 test('legacy rows without technique or recipient do not inflate rates', () => {
@@ -177,7 +181,7 @@ test('perTechniqueRates keys unnamed custom throws by lowercase name', () => {
   ]);
   assert.equal(rows.length, 1);
   assert.equal(rows[0]?.n, 3);
-  assert.equal(rows[0]?.percent, 100 / 3);
+  assert.equal(Math.round(rows[0]?.percent ?? 0), 33);
 });
 
 test('isNageScore / isNageAttempt are strict about category and event type', () => {

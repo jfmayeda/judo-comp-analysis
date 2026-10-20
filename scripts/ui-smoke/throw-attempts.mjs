@@ -9,7 +9,8 @@ const outDir = args[args.indexOf('--out') + 1] || 'docs/screenshots/throw-attemp
 mkdirSync(outDir, { recursive: true });
 
 const browser = await launch();
-const { page, mock, fixtures } = await openApp(browser, { viewport: VIEWPORTS.phone });
+const coach = await openApp(browser, { viewport: VIEWPORTS.phone });
+const { page, fixtures } = coach;
 const shot = async (name) => {
   const path = join(outDir, `${name}.png`);
   await page.screenshot({ path, fullPage: true });
@@ -54,7 +55,7 @@ await goto(page, '/opponents');
 await page.getByText('Sarah M.').first().scrollIntoViewIfNeeded();
 await shot('04-opponent-scouting-uchi-mata');
 
-await page.context.close();
+await coach.context.close();
 
 const family = await openApp(browser, {
   viewport: VIEWPORTS.phone,

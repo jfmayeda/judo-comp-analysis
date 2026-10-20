@@ -92,7 +92,7 @@ export default function TechniquePicker({
     const recentSet = new Set(recentIds);
     const recents = recentIds
       .map((id) => filtered.find((t) => t.id === id))
-      .filter((t): t is Technique => Boolean(t) && matchesQuery(t));
+      .filter((t): t is Technique => t !== undefined && matchesQuery(t));
 
     if (!query && !openList) return recents;
 
@@ -104,7 +104,7 @@ export default function TechniquePicker({
     const allowed = new Set(filteredTechniques.map((t) => t.id));
     return recentIds
       .map((id) => techniques.find((t) => t.id === id))
-      .filter((t): t is Technique => Boolean(t) && allowed.has(t.id));
+      .filter((t): t is Technique => t !== undefined && allowed.has(t.id));
   }, [recentIds, techniques, filteredTechniques]);
 
   const groupedTechniques = useMemo(() => {
