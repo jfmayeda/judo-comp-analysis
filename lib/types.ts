@@ -101,7 +101,8 @@ export type CaptureScoreEventType =
   | 'yuko'
   | 'osaekomi'
   | 'shido'
-  | 'golden_score';
+  | 'golden_score'
+  | 'attempt';
 
 export type ScoreRecipient = 'us' | 'them';
 
