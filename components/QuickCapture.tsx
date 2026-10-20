@@ -12,9 +12,13 @@ import { StickyActions } from '@/components/ui/StickyActions';
 import {
   captureOpponentFromNote,
   defaultScoreRecipient,
+  defaultScoreTechniqueCategory,
   formatCaptureScoreSummary,
   formatOneEvent,
   SCORE_EVENT_LABELS,
+  SCORE_TECHNIQUE_CATEGORIES,
+  SCORE_TECHNIQUE_CATEGORY_LABELS,
+  scoreTechniqueFromKodokan,
   seedCaptureNoteText,
   toDraftScoreEvents,
   toggleScoreRecipient,
@@ -30,6 +34,7 @@ import {
   Opponent,
   OpponentNote,
   ScoreRecipient,
+  ScoreTechniqueCategory,
 } from '@/lib/types';
 
 type OpponentMode = CaptureOpponent['kind'];
@@ -108,6 +113,7 @@ export default function QuickCapture({
     existingNote ? toDraftScoreEvents(existingNote.scoreEvents) : [],
   );
   const [techniqueTargetIndex, setTechniqueTargetIndex] = useState<number | null>(null);
+  const [pickerCategory, setPickerCategory] = useState<ScoreTechniqueCategory | null>(null);
   const [howText, setHowText] = useState('');
   const [note, setNote] = useState(existingNote ? seedCaptureNoteText(existingNote) : '');
   const [saving, setSaving] = useState(false);
@@ -144,15 +150,21 @@ export default function QuickCapture({
   const techniqueTarget = techniqueTargetIndex !== null ? events[techniqueTargetIndex] : undefined;
   const scoringTarget = techniqueTarget && techniqueTarget.eventType !== 'shido' ? techniqueTarget : null;
 
+  const openTechniquePicker = (index: number, eventType: CaptureScoreEventType, category?: ScoreTechniqueCategory) => {
+    setTechniqueTargetIndex(index);
+    setPickerCategory(category ?? defaultScoreTechniqueCategory(eventType));
+  };
+
   const addScoringEvent = (eventType: Exclude<CaptureScoreEventType, 'shido'>) => {
     const next = [...events, { eventType, recipient: defaultScoreRecipient(result) }];
     setEvents(next);
-    setTechniqueTargetIndex(next.length - 1);
+    openTechniquePicker(next.length - 1, eventType);
   };
 
   const addShido = (recipient: ScoreRecipient) => {
     setEvents((current) => [...current, { eventType: 'shido', recipient }]);
     setTechniqueTargetIndex(null);
+    setPickerCategory(null);
   };
 
   const removeEvent = (index: number) => {
@@ -160,6 +172,10 @@ export default function QuickCapture({
     setTechniqueTargetIndex((current) => {
       if (current === null || current === index) return null;
       return current > index ? current - 1 : current;
+    });
+    setPickerCategory((currentCategory) => {
+      if (techniqueTargetIndex === null || techniqueTargetIndex === index) return null;
+      return currentCategory;
     });
   };
 
@@ -174,21 +190,19 @@ export default function QuickCapture({
   const handleTechniqueChange = async (ids: string[]) => {
     if (techniqueTargetIndex === null) return;
     const techniqueId = ids[ids.length - 1];
-    let techniqueLabel: string | undefined;
-    if (techniqueId) {
-      const techs = await getTechniquesByIds([techniqueId]);
-      techniqueLabel = techs[0]?.name;
-    }
+    const picked = techniqueId ? (await getTechniquesByIds([techniqueId]))[0] : undefined;
+    const technique = picked ? scoreTechniqueFromKodokan(picked) : undefined;
     setEvents((current) =>
       current.map((event, index) => {
         if (index !== techniqueTargetIndex || event.eventType === 'shido') return event;
         return {
           eventType: event.eventType,
           recipient: event.recipient,
-          ...(techniqueId ? { techniqueId, techniqueLabel } : {}),
+          ...(technique ? { technique } : {}),
         };
       }),
     );
+    if (technique) setPickerCategory(technique.category);
   };
 
   const handleSave = async (event: React.FormEvent) => {
@@ -296,9 +310,17 @@ export default function QuickCapture({
                     <Chip
                       className="btn-sm"
                       pressed={techniqueTargetIndex === index}
-                      onClick={() => setTechniqueTargetIndex((current) => (current === index ? null : index))}
+                      onClick={() => {
+                        if (techniqueTargetIndex === index) {
+                          setTechniqueTargetIndex(null);
+                          setPickerCategory(null);
+                          return;
+                        }
+                        openTechniquePicker(index, item.eventType, item.technique?.category);
+                      }}
+                      data-testid={`how-${index}`}
                     >
-                      {item.techniqueLabel ? 'Change' : 'How?'}
+                      {item.technique?.name ?? 'How?'}
                     </Chip>
                   ) : null}
                   <button type="button" className="btn-icon" onClick={() => removeEvent(index)} aria-label={`Remove ${draftEventLine(item, index)}`}>
@@ -312,13 +334,28 @@ export default function QuickCapture({
           )}
 
           {scoringTarget ? (
-            <div className="mt-3">
+            <div className="mt-3 stack" style={{ gap: 'var(--svj-space-2)' }} data-testid="score-technique-picker">
+              <div className="flex flex-wrap gap-2">
+                {SCORE_TECHNIQUE_CATEGORIES.map((category) => (
+                  <Chip
+                    key={category}
+                    className="btn-sm"
+                    pressed={pickerCategory === category}
+                    onClick={() => setPickerCategory((current) => (current === category ? null : category))}
+                    data-testid={`score-cat-${category}`}
+                  >
+                    {SCORE_TECHNIQUE_CATEGORY_LABELS[category]}
+                  </Chip>
+                ))}
+              </div>
               <TechniquePicker
+                key={`${techniqueTargetIndex}-${pickerCategory ?? 'all'}`}
                 label={`Technique for ${SCORE_EVENT_LABELS[scoringTarget.eventType]}`}
-                selectedIds={scoringTarget.techniqueId ? [scoringTarget.techniqueId] : []}
+                selectedIds={scoringTarget.technique?.id ? [scoringTarget.technique.id] : []}
                 onChange={handleTechniqueChange}
-                placeholder="Search a throw or pin…"
+                placeholder="Search throws, pins, chokes, armlocks…"
                 allowCustom={false}
+                scoreCategory={pickerCategory}
               />
             </div>
           ) : null}

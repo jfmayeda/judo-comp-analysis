@@ -14,7 +14,7 @@ test('capturedResults keeps only notes with a result, newest first', () => {
     { ...base, id: 'scout', notes: 'scouting only' },
     { ...base, id: 'old', result: 'loss', createdAt: '2026-01-02T00:00:00Z' },
     { ...base, id: 'new', result: 'win', scoreFlavor: 'ippon', createdAt: '2026-01-03T00:00:00Z',
-      scoreEvents: [{ eventType: 'ippon', sequenceOrder: 1, techniqueLabel: 'Seoi-nage' }] },
+      scoreEvents: [{ eventType: 'ippon', sequenceOrder: 1, technique: { name: 'Seoi-nage', category: 'nage' } }] },
   ];
   const results = capturedResults(notes);
   assert.deepEqual(results.map((r) => r.id), ['new', 'old']);

@@ -148,6 +148,92 @@ await withApp({ viewport: VIEWPORTS.phone, label: 'quick capture' }, async ({ pa
   }
 });
 
+// 3b. Technique per score: nested jsonb, category default, edit, legacy rows.
+await withApp({ viewport: VIEWPORTS.phone, label: 'score technique' }, async ({ page, mock, fixtures }) => {
+  await goto(page, `/athletes/${fixtures.ids.athletes.maya}`);
+  const body = await page.locator('main').innerText();
+  check(
+    'score technique: legacy capture without technique still renders',
+    /Legacy K\./.test(body) && /Win · 1\. Ippon \(us\)/.test(body) && !/Win · 1\. Ippon \(us\) via/.test(body),
+    /Legacy K\./.test(body) ? 'Legacy K. + Ippon (us) without via' : 'Legacy K. missing from page',
+  );
+  check('score technique: legacy flat techniqueId still shows the name', /Win · 1\. Ippon via Seoi-nage/.test(body));
+
+  let taps = 0;
+  const tap = async (locator) => { await locator.click(); taps += 1; await page.waitForTimeout(150); };
+  await tap(page.getByTestId('open-quick-capture'));
+  await tap(page.getByTestId('result-win'));
+  await tap(page.getByTestId('add-wazari'));
+  const search = page.getByTestId('technique-search');
+  await search.waitFor({ state: 'visible', timeout: 8000 });
+  await search.fill('seoi-nage');
+  await page.getByRole('option', { name: /^Seoi-nage$/ }).click();
+  await page.waitForTimeout(200);
+  const afterThrow = await page.getByTestId('capture-summary').textContent();
+  check('score technique: waza-ari us via seoi-nage on the chip', /Waza-ari \(us\) via Seoi-nage/.test(afterThrow || ''), afterThrow || '');
+
+  await tap(page.getByTestId('add-yuko'));
+  await tap(page.getByTestId('recipient-1'));
+  await tap(page.getByTestId('score-cat-osaekomi'));
+  await page.getByRole('option', { name: /^Kesa-gatame$/ }).waitFor({ state: 'visible', timeout: 8000 });
+  await tap(page.getByRole('option', { name: /^Kesa-gatame$/ }));
+  const mixedSummary = await page.getByTestId('capture-summary').textContent();
+  check(
+    'score technique: yuko them via pin on the chip',
+    /Waza-ari \(us\) via Seoi-nage/.test(mixedSummary || '') && /Yuko \(them\) via Kesa-gatame/.test(mixedSummary || ''),
+    mixedSummary || '',
+  );
+  await tap(page.getByTestId('save-capture'));
+  await page.waitForTimeout(600);
+  const write = [...mock.writes].reverse().find((w) => w.table === 'opponent_notes' && w.method === 'POST');
+  const row = write?.rows?.[0];
+  const seoi = fixtures.techniques.find((t) => t.name === 'Seoi-nage');
+  const kesa = fixtures.techniques.find((t) => t.name === 'Kesa-gatame');
+  check(
+    'score technique: write stores nested technique objects',
+    row?.score_events?.[0]?.technique?.name === 'Seoi-nage' &&
+      row?.score_events?.[0]?.technique?.category === 'nage' &&
+      row?.score_events?.[0]?.technique?.id === seoi?.id &&
+      row?.score_events?.[0]?.recipient === 'us' &&
+      row?.score_events?.[1]?.technique?.name === 'Kesa-gatame' &&
+      row?.score_events?.[1]?.technique?.category === 'osaekomi' &&
+      row?.score_events?.[1]?.technique?.id === kesa?.id &&
+      row?.score_events?.[1]?.recipient === 'them' &&
+      !('techniqueId' in (row?.score_events?.[0] ?? {})) &&
+      !('techniqueLabel' in (row?.score_events?.[0] ?? {})),
+    JSON.stringify(row?.score_events),
+  );
+
+  await goto(page, `/athletes/${fixtures.ids.athletes.maya}`);
+  const reloaded = await page.locator('main').innerText();
+  check('score technique: persisted after reload', /Waza-ari \(us\) via Seoi-nage/.test(reloaded) && /Yuko \(them\) via Kesa-gatame/.test(reloaded));
+
+  const editBtn = page.getByTestId(`edit-captured-${row?.id}`).first();
+  check('score technique: edit control on technique capture', await editBtn.isVisible().catch(() => false));
+  await tap(editBtn);
+  check('score technique: edit seeds techniques', /Seoi-nage/.test((await page.getByTestId('capture-summary').textContent()) || ''));
+  await tap(page.getByTestId('how-0'));
+  const editSearch = page.getByTestId('technique-search');
+  await editSearch.waitFor({ state: 'visible', timeout: 8000 });
+  await editSearch.fill('uchi-mata');
+  await page.getByRole('option', { name: /^Uchi-mata$/ }).click();
+  await page.waitForTimeout(200);
+  await tap(page.getByTestId('save-capture'));
+  await page.waitForTimeout(600);
+  const patch = [...mock.writes].reverse().find((w) => w.table === 'opponent_notes' && w.method === 'PATCH');
+  check(
+    'score technique: edit persists the changed technique',
+    patch?.patch?.score_events?.[0]?.technique?.name === 'Uchi-mata' &&
+      patch?.patch?.score_events?.[0]?.technique?.category === 'nage' &&
+      patch?.patch?.score_events?.[1]?.technique?.name === 'Kesa-gatame',
+    JSON.stringify(patch?.patch?.score_events),
+  );
+  await goto(page, `/athletes/${fixtures.ids.athletes.maya}`);
+  const afterEdit = await page.locator('main').innerText();
+  check('score technique: edited technique survives reload', /Waza-ari \(us\) via Uchi-mata/.test(afterEdit) && /Yuko \(them\) via Kesa-gatame/.test(afterEdit));
+  check('privacy: technique capture still uses first name + last initial', /Maya H\./.test(afterEdit) && !/Hernandez/.test(afterEdit));
+});
+
 // 4. Athlete creation: minimal path and payload shape.
 await withApp({ viewport: VIEWPORTS.phone, label: 'add athlete' }, async ({ page, mock }) => {
   await goto(page, '/');

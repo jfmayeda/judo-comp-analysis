@@ -4,18 +4,23 @@ import {
   captureOpponentFromNote,
   collectTechniqueIds,
   defaultScoreRecipient,
+  defaultScoreTechniqueCategory,
   deriveScoreFlavor,
   formatCaptureScoreSummary,
+  listTechniquesWithoutQuery,
   noteCaptureHeadline,
   parseCaptureScoreEvents,
   parseScoreFlavor,
+  parseScoreTechnique,
+  scoreTechniqueFromKodokan,
   seedCaptureNoteText,
+  techniqueMatchesScoreCategory,
   toggleScoreRecipient,
   toDraftScoreEvents,
   withDefaultRecipients,
   withSequenceOrders,
 } from './capture-score';
-import type { OpponentNote } from './types';
+import type { OpponentNote, Technique } from './types';
 
 test('parseCaptureScoreEvents returns empty for junk', () => {
   assert.deepEqual(parseCaptureScoreEvents(null), []);
@@ -24,7 +29,35 @@ test('parseCaptureScoreEvents returns empty for junk', () => {
   assert.deepEqual(parseCaptureScoreEvents({ eventType: 'ippon' }), []);
 });
 
-test('parseCaptureScoreEvents keeps a scoring sequence with techniques', () => {
+test('parseCaptureScoreEvents keeps a scoring sequence with nested techniques', () => {
+  const events = parseCaptureScoreEvents([
+    {
+      sequenceOrder: 1,
+      eventType: 'wazari',
+      technique: { id: 'tech-1', name: 'Uchi-mata', category: 'nage' },
+    },
+    {
+      sequenceOrder: 2,
+      eventType: 'ippon',
+      technique: { name: 'Kesa-gatame', category: 'osaekomi' },
+    },
+  ]);
+
+  assert.deepEqual(events, [
+    {
+      eventType: 'wazari',
+      sequenceOrder: 1,
+      technique: { id: 'tech-1', name: 'Uchi-mata', category: 'nage' },
+    },
+    {
+      eventType: 'ippon',
+      sequenceOrder: 2,
+      technique: { name: 'Kesa-gatame', category: 'osaekomi' },
+    },
+  ]);
+});
+
+test('parseCaptureScoreEvents maps legacy techniqueId/techniqueLabel into technique', () => {
   const events = parseCaptureScoreEvents([
     {
       sequenceOrder: 1,
@@ -35,7 +68,7 @@ test('parseCaptureScoreEvents keeps a scoring sequence with techniques', () => {
     {
       sequenceOrder: 2,
       eventType: 'ippon',
-      techniqueLabel: 'Osaekomi',
+      techniqueLabel: 'Kesa-gatame',
     },
   ]);
 
@@ -43,15 +76,24 @@ test('parseCaptureScoreEvents keeps a scoring sequence with techniques', () => {
     {
       eventType: 'wazari',
       sequenceOrder: 1,
-      techniqueId: 'tech-1',
-      techniqueLabel: 'Uchi-mata',
+      technique: { id: 'tech-1', name: 'Uchi-mata', category: 'other' },
     },
     {
       eventType: 'ippon',
       sequenceOrder: 2,
-      techniqueLabel: 'Osaekomi',
+      technique: { name: 'Kesa-gatame', category: 'other' },
     },
   ]);
+});
+
+test('parseCaptureScoreEvents keeps scoring events without technique (legacy)', () => {
+  const events = parseCaptureScoreEvents([
+    { sequenceOrder: 1, eventType: 'wazari', recipient: 'us' },
+    { sequenceOrder: 2, eventType: 'osaekomi' },
+  ]);
+  assert.equal(events[0]?.technique, undefined);
+  assert.equal(events[1]?.technique, undefined);
+  assert.deepEqual(events[0], { eventType: 'wazari', sequenceOrder: 1, recipient: 'us' });
 });
 
 test('parseCaptureScoreEvents keeps scoring events without recipient (legacy)', () => {
@@ -105,7 +147,7 @@ test('parseCaptureScoreEvents keeps shido without recipient instead of guessing'
 
 test('withSequenceOrders numbers events from 1', () => {
   const events = withSequenceOrders([
-    { eventType: 'wazari', techniqueLabel: 'Ko-uchi-gari' },
+    { eventType: 'wazari', technique: { name: 'Ko-uchi-gari', category: 'nage' } },
     { eventType: 'shido', recipient: 'us' },
     { eventType: 'ippon' },
   ]);
@@ -148,12 +190,23 @@ test('withDefaultRecipients fills missing recipients on new writes only', () => 
   );
 });
 
-test('toDraftScoreEvents drops sequenceOrder', () => {
+test('toDraftScoreEvents drops sequenceOrder and keeps nested technique', () => {
   assert.deepEqual(
     toDraftScoreEvents([
-      { eventType: 'ippon', sequenceOrder: 1, recipient: 'us', techniqueLabel: 'Seoi-nage' },
+      {
+        eventType: 'ippon',
+        sequenceOrder: 1,
+        recipient: 'us',
+        technique: { id: 't1', name: 'Seoi-nage', category: 'nage' },
+      },
     ]),
-    [{ eventType: 'ippon', recipient: 'us', techniqueLabel: 'Seoi-nage' }]
+    [
+      {
+        eventType: 'ippon',
+        recipient: 'us',
+        technique: { id: 't1', name: 'Seoi-nage', category: 'nage' },
+      },
+    ]
   );
 });
 
@@ -196,7 +249,7 @@ test('formatCaptureScoreSummary lists result then events', () => {
         {
           eventType: 'wazari',
           sequenceOrder: 1,
-          techniqueLabel: 'Uchi-mata',
+          technique: { name: 'Uchi-mata', category: 'nage' },
         },
         { eventType: 'shido', sequenceOrder: 2, recipient: 'them' },
         { eventType: 'ippon', sequenceOrder: 3 },
@@ -212,7 +265,12 @@ test('formatCaptureScoreSummary attributes when recipient is present and skips w
       result: 'win',
       events: [
         { eventType: 'yuko', sequenceOrder: 1, recipient: 'us' },
-        { eventType: 'wazari', sequenceOrder: 2, recipient: 'them', techniqueLabel: 'Uchi-mata' },
+        {
+          eventType: 'wazari',
+          sequenceOrder: 2,
+          recipient: 'them',
+          technique: { name: 'Uchi-mata', category: 'nage' },
+        },
         { eventType: 'osaekomi', sequenceOrder: 3 },
       ],
     }),
@@ -223,10 +281,10 @@ test('formatCaptureScoreSummary attributes when recipient is present and skips w
 test('collectTechniqueIds keeps unique ids in order', () => {
   assert.deepEqual(
     collectTechniqueIds([
-      { eventType: 'wazari', sequenceOrder: 1, techniqueId: 'a' },
+      { eventType: 'wazari', sequenceOrder: 1, technique: { id: 'a', name: 'Uchi-mata', category: 'nage' } },
       { eventType: 'shido', sequenceOrder: 2, recipient: 'us' },
-      { eventType: 'ippon', sequenceOrder: 3, techniqueId: 'a' },
-      { eventType: 'osaekomi', sequenceOrder: 4, techniqueId: 'b' },
+      { eventType: 'ippon', sequenceOrder: 3, technique: { id: 'a', name: 'Seoi-nage', category: 'nage' } },
+      { eventType: 'osaekomi', sequenceOrder: 4, technique: { id: 'b', name: 'Kesa-gatame', category: 'osaekomi' } },
     ]),
     ['a', 'b']
   );
@@ -240,7 +298,7 @@ test('noteCaptureHeadline prefers the event sequence', () => {
         {
           eventType: 'wazari',
           sequenceOrder: 1,
-          techniqueLabel: 'Uchi-mata',
+          technique: { name: 'Uchi-mata', category: 'nage' },
         },
         { eventType: 'ippon', sequenceOrder: 2 },
       ],
@@ -336,4 +394,85 @@ test('noteCaptureHeadline falls back to result and flavor including yuko', () =>
     }),
     null
   );
+});
+
+function kodokan(over: Partial<Technique> & Pick<Technique, 'name' | 'category' | 'subcategory'>): Technique {
+  return {
+    id: over.id ?? 'id',
+    name: over.name,
+    category: over.category,
+    subcategory: over.subcategory,
+    displayOrder: over.displayOrder ?? 1,
+    isCustom: over.isCustom ?? false,
+    createdAt: over.createdAt ?? '2026-01-01T00:00:00Z',
+  };
+}
+
+test('parseScoreTechnique reads nested objects and ignores junk', () => {
+  assert.deepEqual(
+    parseScoreTechnique({ id: 't1', name: 'Seoi-nage', category: 'nage' }),
+    { id: 't1', name: 'Seoi-nage', category: 'nage' }
+  );
+  assert.equal(parseScoreTechnique(null), undefined);
+  assert.equal(parseScoreTechnique('seoi-nage'), undefined);
+  assert.equal(parseScoreTechnique({ category: 'nage' }), undefined);
+  assert.deepEqual(
+    parseScoreTechnique({ name: '  Kesa-gatame  ', category: 'not-a-category' }),
+    { name: 'Kesa-gatame', category: 'other' }
+  );
+});
+
+test('scoreTechniqueFromKodokan maps standing, pins, chokes, armlocks and custom', () => {
+  assert.deepEqual(
+    scoreTechniqueFromKodokan(kodokan({ id: '1', name: 'Seoi-nage', category: 'Tachi-waza', subcategory: 'Te-waza' })),
+    { id: '1', name: 'Seoi-nage', category: 'nage' }
+  );
+  assert.equal(
+    scoreTechniqueFromKodokan(kodokan({ name: 'Kesa-gatame', category: 'Ne-waza', subcategory: 'Osaekomi-waza' })).category,
+    'osaekomi'
+  );
+  assert.equal(
+    scoreTechniqueFromKodokan(kodokan({ name: 'Hadaka-jime', category: 'Ne-waza', subcategory: 'Shime-waza' })).category,
+    'shime'
+  );
+  assert.equal(
+    scoreTechniqueFromKodokan(kodokan({ name: 'Ude-garami', category: 'Ne-waza', subcategory: 'Kansetsu-waza' })).category,
+    'kansetsu'
+  );
+  assert.equal(
+    scoreTechniqueFromKodokan(kodokan({ name: 'Handcuff Turnover', category: 'Ne-waza', subcategory: 'Custom', isCustom: true })).category,
+    'other'
+  );
+});
+
+test('defaultScoreTechniqueCategory only defaults osaekomi to the pin list', () => {
+  assert.equal(defaultScoreTechniqueCategory('osaekomi'), 'osaekomi');
+  assert.equal(defaultScoreTechniqueCategory('wazari'), null);
+  assert.equal(defaultScoreTechniqueCategory('yuko'), null);
+  assert.equal(defaultScoreTechniqueCategory('ippon'), null);
+  assert.equal(defaultScoreTechniqueCategory('golden_score'), null);
+  assert.equal(defaultScoreTechniqueCategory('shido'), null);
+});
+
+test('listTechniquesWithoutQuery is true for small ne-waza buckets', () => {
+  assert.equal(listTechniquesWithoutQuery('osaekomi'), true);
+  assert.equal(listTechniquesWithoutQuery('shime'), true);
+  assert.equal(listTechniquesWithoutQuery('kansetsu'), true);
+  assert.equal(listTechniquesWithoutQuery('other'), true);
+  assert.equal(listTechniquesWithoutQuery('nage'), false);
+  assert.equal(listTechniquesWithoutQuery(null), false);
+});
+
+test('techniqueMatchesScoreCategory includes dojo custom in every Kodokan bucket', () => {
+  const seoi = kodokan({ name: 'Seoi-nage', category: 'Tachi-waza', subcategory: 'Te-waza' });
+  const kesa = kodokan({ name: 'Kesa-gatame', category: 'Ne-waza', subcategory: 'Osaekomi-waza' });
+  const custom = kodokan({ name: 'Handcuff Turnover', category: 'Ne-waza', subcategory: 'Custom', isCustom: true });
+  assert.equal(techniqueMatchesScoreCategory(seoi, 'nage'), true);
+  assert.equal(techniqueMatchesScoreCategory(seoi, 'osaekomi'), false);
+  assert.equal(techniqueMatchesScoreCategory(kesa, 'osaekomi'), true);
+  assert.equal(techniqueMatchesScoreCategory(custom, 'osaekomi'), true);
+  assert.equal(techniqueMatchesScoreCategory(custom, 'nage'), true);
+  assert.equal(techniqueMatchesScoreCategory(custom, 'other'), true);
+  assert.equal(techniqueMatchesScoreCategory(seoi, 'other'), false);
+  assert.equal(techniqueMatchesScoreCategory(seoi, null), true);
 });

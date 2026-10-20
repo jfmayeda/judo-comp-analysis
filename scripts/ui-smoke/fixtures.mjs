@@ -45,6 +45,28 @@ export function buildFixtures({ empty = false } = {}) {
   techniques.forEach((t, i) => {
     TECHNIQUES[i].id = t.id;
   });
+  techniques.push(
+    {
+      id: uuid(1190),
+      name: 'Handcuff Turnover',
+      category: 'Ne-waza',
+      subcategory: 'Custom',
+      display_order: 1000,
+      is_custom: true,
+      created_by: null,
+      created_at: daysAgo(400),
+    },
+    {
+      id: uuid(1191),
+      name: "Cat's Paw",
+      category: 'Ne-waza',
+      subcategory: 'Custom',
+      display_order: 1001,
+      is_custom: true,
+      created_by: null,
+      created_at: daysAgo(400),
+    },
+  );
 
   const coachIds = { jorge: uuid(1), amy: uuid(2), dev: uuid(3) };
   const coach_allowlist = [
@@ -157,6 +179,13 @@ export function buildFixtures({ empty = false } = {}) {
         { eventType: 'osaekomi', sequenceOrder: 4 },
       ],
       technique_ids: [T('Uchi-mata')], created_at: daysAgo(6),
+    }),
+    note({
+      id: uuid(36), athlete_id: A.maya, opponent_label: 'Legacy K.',
+      notes: 'Win · 1. Ippon (us)',
+      result: 'win', score_flavor: 'ippon',
+      score_events: [{ eventType: 'ippon', sequenceOrder: 1, recipient: 'us' }],
+      created_at: daysAgo(1),
     }),
     note({
       id: uuid(33), athlete_id: A.demo, opponent_label: 'Sarah M', club: 'Peninsula Judo', tournament: 'Bay Area Open 2024', stance: 'left',
