@@ -152,7 +152,11 @@ await withApp({ viewport: VIEWPORTS.phone, label: 'quick capture' }, async ({ pa
 await withApp({ viewport: VIEWPORTS.phone, label: 'score technique' }, async ({ page, mock, fixtures }) => {
   await goto(page, `/athletes/${fixtures.ids.athletes.maya}`);
   const body = await page.locator('main').innerText();
-  check('score technique: legacy capture without technique still renders', /Legacy K\./.test(body) && /Win · 1\. Ippon \(us\)/.test(body) && !/Legacy K\.[\s\S]{0,80}via/.test(body), body.slice(0, 400));
+  check(
+    'score technique: legacy capture without technique still renders',
+    /Legacy K\./.test(body) && /Win · 1\. Ippon \(us\)/.test(body) && !/Win · 1\. Ippon \(us\) via/.test(body),
+    /Legacy K\./.test(body) ? 'Legacy K. + Ippon (us) without via' : 'Legacy K. missing from page',
+  );
   check('score technique: legacy flat techniqueId still shows the name', /Win · 1\. Ippon via Seoi-nage/.test(body));
 
   let taps = 0;
