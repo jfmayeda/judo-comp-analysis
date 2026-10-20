@@ -27,6 +27,8 @@ assert(types.includes("export type ScoreRecipient = 'us' | 'them'"), 'recipient 
 assert(types.includes("| 'yuko'"), 'yuko on capture event types');
 assert(types.includes('scoreEvents: CaptureScoreEvent[]'), 'OpponentNote.scoreEvents');
 assert(types.includes("| 'wazari'"), 'wazari aligns with activity mock');
+assert(types.includes('export type ScoreTechniqueCategory'), 'ScoreTechniqueCategory type');
+assert(types.includes('technique?: ScoreTechnique'), 'optional nested technique on score events');
 assert(read('lib/capture-score.ts').includes("yuko: 'Yuko'"), 'yuko label in capture formatter');
 assert(!read('lib/capture-score.ts').includes("'koka'"), 'koka not in capture parser');
 
@@ -61,6 +63,10 @@ assert(ui.includes("eventType: 'ippon'"), 'can log ippon');
 assert(ui.includes("eventType: 'yuko'"), 'can log yuko');
 assert(ui.includes('data-testid={`add-${item.eventType}`}'), 'add chips are testable');
 assert(ui.includes('data-testid={`recipient-${index}`}'), 'recipient toggle on event row');
+assert(ui.includes('data-testid={`how-${index}`}'), 'technique chip on event row');
+assert(ui.includes('scoreCategory={pickerCategory}'), 'picker receives score category');
+assert(read('lib/capture-score.ts').includes('parseScoreTechnique'), 'nested technique parser');
+assert(read('lib/capture-score.ts').includes('event.technique?.name'), 'formatter uses nested technique name');
 
 const css = read('app/globals.css');
 assert(css.includes(".chip-toggle[aria-pressed='true']"), 'pressed chips are filled navy');

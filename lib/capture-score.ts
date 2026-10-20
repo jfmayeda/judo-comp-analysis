@@ -7,6 +7,9 @@ import {
   OpponentNote,
   ScoreFlavor,
   ScoreRecipient,
+  ScoreTechnique,
+  ScoreTechniqueCategory,
+  Technique,
 } from './types';
 
 export type {
@@ -14,6 +17,8 @@ export type {
   CaptureScoreEventType,
   DraftScoreEvent,
   ScoreRecipient,
+  ScoreTechnique,
+  ScoreTechniqueCategory,
 };
 
 export const SCORE_EVENT_LABELS: Record<CaptureScoreEventType, string> = {
@@ -43,6 +48,24 @@ export const SCORE_FLAVOR_LABELS: Record<ScoreFlavor, string> = {
   other: 'Other',
 };
 
+export const SCORE_TECHNIQUE_CATEGORIES: ScoreTechniqueCategory[] = [
+  'nage',
+  'osaekomi',
+  'shime',
+  'kansetsu',
+  'other',
+];
+
+export const SCORE_TECHNIQUE_CATEGORY_LABELS: Record<ScoreTechniqueCategory, string> = {
+  nage: 'Throws',
+  osaekomi: 'Pins',
+  shime: 'Chokes',
+  kansetsu: 'Armlocks',
+  other: 'Other',
+};
+
+const SCORE_TECHNIQUE_CATEGORIES_SET = new Set<ScoreTechniqueCategory>(SCORE_TECHNIQUE_CATEGORIES);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -63,23 +86,93 @@ function optionalString(value: unknown): string | undefined {
   return trimmed === '' ? undefined : trimmed;
 }
 
+function parseScoreTechniqueCategory(value: unknown): ScoreTechniqueCategory | undefined {
+  if (typeof value === 'string' && SCORE_TECHNIQUE_CATEGORIES_SET.has(value as ScoreTechniqueCategory)) {
+    return value as ScoreTechniqueCategory;
+  }
+  return undefined;
+}
+
+/** Nested `technique` object, or legacy flat techniqueId/techniqueLabel. */
+export function parseScoreTechnique(value: unknown, legacy?: unknown): ScoreTechnique | undefined {
+  if (isRecord(value)) {
+    const name = optionalString(value.name);
+    if (!name) return undefined;
+    const id = optionalString(value.id);
+    return {
+      ...(id ? { id } : {}),
+      name,
+      category: parseScoreTechniqueCategory(value.category) ?? 'other',
+    };
+  }
+
+  if (!isRecord(legacy)) return undefined;
+  const name = optionalString(legacy.techniqueLabel);
+  if (!name) return undefined;
+  const id = optionalString(legacy.techniqueId);
+  return {
+    ...(id ? { id } : {}),
+    name,
+    category: 'other',
+  };
+}
+
+function scoreTechniqueCategoryFromKodokan(
+  technique: Pick<Technique, 'category' | 'subcategory' | 'isCustom'>
+): ScoreTechniqueCategory {
+  if (technique.isCustom || technique.subcategory === 'Custom') return 'other';
+  if (technique.category === 'Tachi-waza') return 'nage';
+  if (technique.subcategory === 'Osaekomi-waza') return 'osaekomi';
+  if (technique.subcategory === 'Shime-waza') return 'shime';
+  if (technique.subcategory === 'Kansetsu-waza') return 'kansetsu';
+  return 'other';
+}
+
+export function scoreTechniqueFromKodokan(
+  technique: Pick<Technique, 'id' | 'name' | 'category' | 'subcategory' | 'isCustom'>
+): ScoreTechnique {
+  return {
+    id: technique.id,
+    name: technique.name,
+    category: scoreTechniqueCategoryFromKodokan(technique),
+  };
+}
+
+/** Only osaekomi obviously maps to the pin list. Other scores stay unfiltered. */
+export function defaultScoreTechniqueCategory(
+  eventType: CaptureScoreEventType
+): ScoreTechniqueCategory | null {
+  return eventType === 'osaekomi' ? 'osaekomi' : null;
+}
+
+export function listTechniquesWithoutQuery(
+  category: ScoreTechniqueCategory | null
+): boolean {
+  return category !== null && category !== 'nage';
+}
+
+export function techniqueMatchesScoreCategory(
+  technique: Pick<Technique, 'category' | 'subcategory' | 'isCustom'>,
+  category: ScoreTechniqueCategory | null
+): boolean {
+  if (category === null) return true;
+  const mapped = scoreTechniqueCategoryFromKodokan(technique);
+  if (mapped === category) return true;
+  return mapped === 'other' && category !== 'other';
+}
+
 function parseOneEvent(value: unknown): DraftScoreEvent | null {
   if (!isRecord(value) || !isScoreEventType(value.eventType)) {
     return null;
   }
 
   const recipient = parseScoreRecipient(value.recipient);
-  const techniqueId = optionalString(value.techniqueId);
-  const techniqueLabel = optionalString(value.techniqueLabel);
+  const technique =
+    value.eventType === 'shido' ? undefined : parseScoreTechnique(value.technique, value);
   return {
     eventType: value.eventType,
     ...(recipient ? { recipient } : {}),
-    ...(value.eventType === 'shido'
-      ? {}
-      : {
-          ...(techniqueId ? { techniqueId } : {}),
-          ...(techniqueLabel ? { techniqueLabel } : {}),
-        }),
+    ...(technique ? { technique } : {}),
   };
 }
 
@@ -124,8 +217,8 @@ export function formatOneEvent(
   const order = event.sequenceOrder ?? (index !== undefined ? index + 1 : 1);
   const label = SCORE_EVENT_LABELS[event.eventType];
   const who = recipientSuffix(event);
-  if (event.eventType !== 'shido' && event.techniqueLabel) {
-    return `${order}. ${label}${who} via ${event.techniqueLabel}`;
+  if (event.eventType !== 'shido' && event.technique?.name) {
+    return `${order}. ${label}${who} via ${event.technique.name}`;
   }
   return `${order}. ${label}${who}`;
 }
@@ -144,10 +237,10 @@ export function collectTechniqueIds(events: CaptureScoreEvent[]): string[] {
   const ids: string[] = [];
   const seen = new Set<string>();
   for (const event of events) {
-    if (event.eventType === 'shido' || !event.techniqueId) continue;
-    if (seen.has(event.techniqueId)) continue;
-    seen.add(event.techniqueId);
-    ids.push(event.techniqueId);
+    if (event.eventType === 'shido' || !event.technique?.id) continue;
+    if (seen.has(event.technique.id)) continue;
+    seen.add(event.technique.id);
+    ids.push(event.technique.id);
   }
   return ids;
 }
@@ -197,8 +290,7 @@ export function toDraftScoreEvents(events: CaptureScoreEvent[]): DraftScoreEvent
   return events.map((event) => ({
     eventType: event.eventType,
     ...(event.recipient ? { recipient: event.recipient } : {}),
-    ...(event.techniqueId ? { techniqueId: event.techniqueId } : {}),
-    ...(event.techniqueLabel ? { techniqueLabel: event.techniqueLabel } : {}),
+    ...(event.technique ? { technique: event.technique } : {}),
   }));
 }
 

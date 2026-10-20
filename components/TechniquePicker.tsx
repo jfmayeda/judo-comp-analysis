@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Technique } from '@/lib/types';
+import { Technique, ScoreTechniqueCategory } from '@/lib/types';
+import { listTechniquesWithoutQuery, techniqueMatchesScoreCategory } from '@/lib/capture-score';
 import { getAllTechniques, getTechniquesByIds } from '@/lib/supabase-store';
 
 type TechniquePickerProps = {
@@ -12,6 +13,7 @@ type TechniquePickerProps = {
   placeholder?: string;
   label?: string;
   categoryFilter?: 'Tachi-waza' | 'Ne-waza' | null;
+  scoreCategory?: ScoreTechniqueCategory | null;
 };
 
 export default function TechniquePicker({
@@ -22,6 +24,7 @@ export default function TechniquePicker({
   placeholder = 'Search techniques...',
   label = 'Techniques',
   categoryFilter = null,
+  scoreCategory = null,
 }: TechniquePickerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [techniques, setTechniques] = useState<Technique[]>([]);
@@ -68,20 +71,23 @@ export default function TechniquePicker({
   };
 
   const filteredTechniques = useMemo(() => {
-    if (!searchQuery.trim()) return [];
+    const openList = listTechniquesWithoutQuery(scoreCategory);
+    if (!searchQuery.trim() && !openList) return [];
 
     let filtered = techniques;
 
-    if (categoryFilter) {
-      filtered = filtered.filter(t => t.category === categoryFilter);
+    if (scoreCategory) {
+      filtered = filtered.filter((t) => techniqueMatchesScoreCategory(t, scoreCategory));
+    } else if (categoryFilter) {
+      filtered = filtered.filter((t) => t.category === categoryFilter);
     }
 
-    const query = searchQuery.toLowerCase();
-    return filtered.filter(t =>
-      t.name.toLowerCase().includes(query) ||
-      t.subcategory.toLowerCase().includes(query)
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return filtered;
+    return filtered.filter(
+      (t) => t.name.toLowerCase().includes(query) || t.subcategory.toLowerCase().includes(query)
     );
-  }, [techniques, searchQuery, categoryFilter]);
+  }, [techniques, searchQuery, categoryFilter, scoreCategory]);
 
   const groupedTechniques = useMemo(() => {
     const groups: Record<string, Record<string, Technique[]>> = {
@@ -134,7 +140,11 @@ export default function TechniquePicker({
     onChange(newSelectedIds);
   };
 
-  const showResults = isOpen && searchQuery.trim().length > 0;
+  useEffect(() => {
+    if (listTechniquesWithoutQuery(scoreCategory)) setIsOpen(true);
+  }, [scoreCategory]);
+
+  const showResults = isOpen && (searchQuery.trim().length > 0 || listTechniquesWithoutQuery(scoreCategory));
 
   if (loading) {
     return <div className="text-sm text-svj-gray-600">Loading techniques...</div>;
@@ -182,6 +192,7 @@ export default function TechniquePicker({
           aria-expanded={showResults}
           aria-controls="technique-picker-results"
           autoComplete="off"
+          data-testid="technique-search"
         />
 
         {showResults && (

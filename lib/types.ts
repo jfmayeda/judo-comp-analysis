@@ -105,20 +105,28 @@ export type CaptureScoreEventType =
 
 export type ScoreRecipient = 'us' | 'them';
 
+/** How the score was scored, stored on each score_events jsonb entry. */
+export type ScoreTechniqueCategory = 'nage' | 'osaekomi' | 'shime' | 'kansetsu' | 'other';
+
+export type ScoreTechnique = {
+  id?: string;
+  name: string;
+  category: ScoreTechniqueCategory;
+};
+
 export type CaptureScoreEvent = {
   eventType: CaptureScoreEventType;
   sequenceOrder: number;
   /** Present on new writes. Missing on legacy rows — do not guess. */
   recipient?: ScoreRecipient;
-  techniqueId?: string;
-  techniqueLabel?: string;
+  /** Optional. Missing on legacy rows — do not guess. */
+  technique?: ScoreTechnique;
 };
 
 export type DraftScoreEvent = {
   eventType: CaptureScoreEventType;
   recipient?: ScoreRecipient;
-  techniqueId?: string;
-  techniqueLabel?: string;
+  technique?: ScoreTechnique;
 };
 
 export type CaptureOpponent =
