@@ -25,6 +25,7 @@ assert(types.includes('export type QuickCaptureInput'), 'QuickCaptureInput type'
 assert(types.includes('export type CaptureScoreEvent'), 'CaptureScoreEvent type');
 assert(types.includes("export type ScoreRecipient = 'us' | 'them'"), 'recipient is us|them');
 assert(types.includes("| 'yuko'"), 'yuko on capture event types');
+assert(types.includes("| 'attempt'"), 'attempt on capture event types');
 assert(types.includes('scoreEvents: CaptureScoreEvent[]'), 'OpponentNote.scoreEvents');
 assert(types.includes("| 'wazari'"), 'wazari aligns with activity mock');
 assert(types.includes('export type ScoreTechniqueCategory'), 'ScoreTechniqueCategory type');
@@ -58,6 +59,16 @@ assert(read('components/ui/Chip.tsx').includes('chip-toggle'), 'selected chips u
 assert(ui.includes('list-choice'), 'opponent list uses list-choice');
 assert(ui.includes('data-testid="capture-summary"'), 'pre-save summary');
 assert(ui.includes("addShido('them')"), 'can log opponent shido');
+assert(ui.includes('data-testid="add-attempt"'), 'Attempt chip is testable');
+assert(ui.includes("eventType: 'attempt'"), 'can log attempts');
+assert(ui.includes('recentIds={recentTechniqueIds}'), 'picker gets recent techniques');
+assert(read('lib/throw-rate.ts').includes('export function successRate'), 'successRate()');
+assert(read('lib/throw-rate.ts').includes('export function perTechniqueRates'), 'perTechniqueRates()');
+assert(read('lib/throw-rate.ts').includes('THROW_RATE_MIN_N = 3'), 'hide percent below n=3');
+assert(read('components/athlete/ThrowRatesCard.tsx').includes('data-testid="throw-rates"'), 'throw rates card');
+assert(read('components/athlete/DevelopmentCard.tsx').includes('showThrowRates'), 'athlete rates are gated');
+assert(read('app/athletes/[id]/page.tsx').includes('showThrowRates={isCoach}'), 'family does not get athlete rates');
+assert(read('app/opponents/page.tsx').includes('ThrowRatesCard'), 'opponent scouting rates');
 assert(ui.includes("eventType: 'wazari'"), 'can log waza-ari');
 assert(ui.includes("eventType: 'ippon'"), 'can log ippon');
 assert(ui.includes("eventType: 'yuko'"), 'can log yuko');

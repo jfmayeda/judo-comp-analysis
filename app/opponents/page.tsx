@@ -1,8 +1,10 @@
 'use client';
 
 import { useCallback, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Opponent, Stance } from '@/lib/types';
-import { getAllOpponents, createOpponent, updateOpponent, deleteOpponent } from '@/lib/supabase-store';
+import { Opponent, OpponentNote, Stance } from '@/lib/types';
+import { getAllOpponents, getAllOpponentNotes, createOpponent, updateOpponent, deleteOpponent } from '@/lib/supabase-store';
+import { eventsForRecipient } from '@/lib/throw-rate';
+import { ThrowRatesCard } from '@/components/athlete/ThrowRatesCard';
 import { useCoachGate } from '@/lib/use-coach-gate';
 import TechniquePicker from '@/components/TechniquePicker';
 import TechniqueDisplay from '@/components/TechniqueDisplay';
@@ -128,6 +130,7 @@ function OpponentForm({ initial, editing, onSubmit, onCancel }: { initial: Oppon
 
 export default function OpponentsPage() {
   const [opponents, setOpponents] = useState<Opponent[]>([]);
+  const [notes, setNotes] = useState<OpponentNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingOpponent, setEditingOpponent] = useState<Opponent | null>(null);
@@ -138,7 +141,9 @@ export default function OpponentsPage() {
 
   const loadOpponents = useCallback(async () => {
     try {
-      setOpponents(await getAllOpponents());
+      const [opponentRows, noteRows] = await Promise.all([getAllOpponents(), getAllOpponentNotes()]);
+      setOpponents(opponentRows);
+      setNotes(noteRows);
     } catch (error) {
       console.error('Error loading opponents:', error);
     } finally {
@@ -238,6 +243,14 @@ export default function OpponentsPage() {
                     ]}
                   />
                   <TechniqueDisplay techniqueIds={opponent.techniqueIds} label="Tokui-waza" />
+                  <ThrowRatesCard
+                    compact
+                    heading="Their throw success"
+                    events={eventsForRecipient(
+                      notes.filter((note) => note.opponentId === opponent.id),
+                      'them',
+                    )}
+                  />
                   {opponent.kumiKata ? <p className="text-sm"><span className="meta-key">Grips</span> <span className="text-body">{opponent.kumiKata}</span></p> : null}
                   {opponent.neWaza ? <p className="text-sm"><span className="meta-key">Ne-waza</span> <span className="text-body">{opponent.neWaza}</span></p> : null}
                   {opponent.commonCounters ? <p className="text-sm"><span className="meta-key">Counters</span> <span className="text-body">{opponent.commonCounters}</span></p> : null}

@@ -76,7 +76,7 @@ export function buildFixtures({ empty = false } = {}) {
   ];
 
   if (empty) {
-    return { techniques, coach_allowlist, athletes: [], opponents: [], opponent_notes: [], promotions: [], tournament_days: [], tournament_day_entries: [], coachIds };
+    return { techniques, coach_allowlist, athletes: [], opponents: [], opponent_notes: [], promotions: [], tournament_days: [], tournament_day_entries: [], family_access: [], coachIds };
   }
 
   const A = { maya: uuid(10), demo: uuid(11), sample: uuid(12), kenji: uuid(13), lucas: uuid(14), priya: uuid(15) };
@@ -188,6 +188,17 @@ export function buildFixtures({ empty = false } = {}) {
       created_at: daysAgo(1),
     }),
     note({
+      id: uuid(38), athlete_id: A.maya, opponent_id: O.sarah, opponent_label: 'Sarah M.', club: 'Peninsula Judo',
+      notes: 'She kept attacking uchi-mata.',
+      result: 'loss', score_flavor: 'ippon',
+      score_events: [
+        { eventType: 'attempt', sequenceOrder: 1, recipient: 'them', technique: { id: T('Uchi-mata'), name: 'Uchi-mata', category: 'nage' } },
+        { eventType: 'attempt', sequenceOrder: 2, recipient: 'them', technique: { id: T('Uchi-mata'), name: 'Uchi-mata', category: 'nage' } },
+        { eventType: 'ippon', sequenceOrder: 3, recipient: 'them', technique: { id: T('Uchi-mata'), name: 'Uchi-mata', category: 'nage' } },
+      ],
+      technique_ids: [T('Uchi-mata')], created_at: daysAgo(2),
+    }),
+    note({
       id: uuid(33), athlete_id: A.demo, opponent_label: 'Sarah M', club: 'Peninsula Judo', tournament: 'Bay Area Open 2024', stance: 'left',
       kumi_kata: 'High collar grip, pulls down', ne_waza: 'Strong pins, avoid bottom position', common_counters: 'Ko-soto-gake, tai-otoshi on failed attacks',
       weight_class: '-48kg', age_division: 'Juvenile',
@@ -227,5 +238,15 @@ export function buildFixtures({ empty = false } = {}) {
     { id: uuid(63), tournament_day_id: TD, athlete_id: A.kenji, assigned_coach_id: null, mat_number: null, time_window: null, no_coach_needed: true, created_at: daysAgo(1) },
   ];
 
-  return { techniques, coach_allowlist, athletes, opponents, opponent_notes, promotions, tournament_days, tournament_day_entries, coachIds, ids: { athletes: A, opponents: O, tournamentDay: TD } };
+  const family_access = [
+    {
+      id: uuid(70),
+      athlete_id: A.maya,
+      email: 'parent.maya@svjudo.test',
+      invited_by: coachIds.jorge,
+      created_at: daysAgo(10),
+    },
+  ];
+
+  return { techniques, coach_allowlist, athletes, opponents, opponent_notes, promotions, tournament_days, tournament_day_entries, family_access, coachIds, ids: { athletes: A, opponents: O, tournamentDay: TD } };
 }

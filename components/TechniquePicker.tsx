@@ -14,6 +14,8 @@ type TechniquePickerProps = {
   label?: string;
   categoryFilter?: 'Tachi-waza' | 'Ne-waza' | null;
   scoreCategory?: ScoreTechniqueCategory | null;
+  /** Newest-first ids from recent captures; shown without typing. */
+  recentIds?: string[];
 };
 
 export default function TechniquePicker({
@@ -25,6 +27,7 @@ export default function TechniquePicker({
   label = 'Techniques',
   categoryFilter = null,
   scoreCategory = null,
+  recentIds = [],
 }: TechniquePickerProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [techniques, setTechniques] = useState<Technique[]>([]);
@@ -72,7 +75,8 @@ export default function TechniquePicker({
 
   const filteredTechniques = useMemo(() => {
     const openList = listTechniquesWithoutQuery(scoreCategory);
-    if (!searchQuery.trim() && !openList) return [];
+    const query = searchQuery.trim().toLowerCase();
+    if (!query && !openList && recentIds.length === 0) return [];
 
     let filtered = techniques;
 
@@ -82,20 +86,36 @@ export default function TechniquePicker({
       filtered = filtered.filter((t) => t.category === categoryFilter);
     }
 
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return filtered;
-    return filtered.filter(
-      (t) => t.name.toLowerCase().includes(query) || t.subcategory.toLowerCase().includes(query)
-    );
-  }, [techniques, searchQuery, categoryFilter, scoreCategory]);
+    const matchesQuery = (t: Technique) =>
+      !query || t.name.toLowerCase().includes(query) || t.subcategory.toLowerCase().includes(query);
+
+    const recentSet = new Set(recentIds);
+    const recents = recentIds
+      .map((id) => filtered.find((t) => t.id === id))
+      .filter((t): t is Technique => t !== undefined && matchesQuery(t));
+
+    if (!query && !openList) return recents;
+
+    const rest = filtered.filter((t) => matchesQuery(t) && !recentSet.has(t.id));
+    return [...recents, ...rest];
+  }, [techniques, searchQuery, categoryFilter, scoreCategory, recentIds]);
+
+  const recentTechniques = useMemo(() => {
+    const allowed = new Set(filteredTechniques.map((t) => t.id));
+    return recentIds
+      .map((id) => techniques.find((t) => t.id === id))
+      .filter((t): t is Technique => t !== undefined && allowed.has(t.id));
+  }, [recentIds, techniques, filteredTechniques]);
 
   const groupedTechniques = useMemo(() => {
+    const recentSet = new Set(recentIds);
     const groups: Record<string, Record<string, Technique[]>> = {
       'Tachi-waza': {},
       'Ne-waza': {},
     };
 
     filteredTechniques.forEach(technique => {
+      if (recentSet.has(technique.id)) return;
       if (!groups[technique.category][technique.subcategory]) {
         groups[technique.category][technique.subcategory] = [];
       }
@@ -105,7 +125,7 @@ export default function TechniquePicker({
     return Object.entries(groups).filter(([, subcategories]) =>
       Object.keys(subcategories).length > 0
     );
-  }, [filteredTechniques]);
+  }, [filteredTechniques, recentIds]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -141,10 +161,12 @@ export default function TechniquePicker({
   };
 
   useEffect(() => {
-    if (listTechniquesWithoutQuery(scoreCategory)) setIsOpen(true);
-  }, [scoreCategory]);
+    if (listTechniquesWithoutQuery(scoreCategory) || recentIds.length > 0) setIsOpen(true);
+  }, [scoreCategory, recentIds]);
 
-  const showResults = isOpen && (searchQuery.trim().length > 0 || listTechniquesWithoutQuery(scoreCategory));
+  const showResults =
+    isOpen &&
+    (searchQuery.trim().length > 0 || listTechniquesWithoutQuery(scoreCategory) || recentIds.length > 0);
 
   if (loading) {
     return <div className="text-sm text-svj-gray-600">Loading techniques...</div>;
@@ -201,6 +223,31 @@ export default function TechniquePicker({
             className="technique-picker-panel"
             role="listbox"
           >
+            {recentTechniques.length > 0 ? (
+              <div className="technique-picker-group" data-testid="recent-techniques">
+                <div className="technique-picker-category">Recent</div>
+                {recentTechniques.map((technique) => {
+                  const selected = selectedIds.includes(technique.id);
+                  return (
+                    <button
+                      key={`recent-${technique.id}`}
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      onClick={() => {
+                        handleToggleTechnique(technique.id);
+                        setSearchQuery('');
+                        setIsOpen(false);
+                      }}
+                      className="technique-picker-option"
+                    >
+                      {technique.name}
+                      {selected ? <span aria-hidden> ✓</span> : null}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
             {groupedTechniques.map(([category, subcategories]) => (
               <div key={category} className="technique-picker-group">
                 <div className="technique-picker-category">

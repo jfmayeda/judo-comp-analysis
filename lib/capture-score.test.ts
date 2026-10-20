@@ -105,6 +105,37 @@ test('parseCaptureScoreEvents keeps scoring events without recipient (legacy)', 
   assert.equal(events[1]?.recipient, undefined);
 });
 
+test('parseCaptureScoreEvents keeps attempt events with recipient and technique', () => {
+  const events = parseCaptureScoreEvents([
+    {
+      sequenceOrder: 1,
+      eventType: 'attempt',
+      recipient: 'us',
+      technique: { id: 'tech-1', name: 'Seoi-nage', category: 'nage' },
+    },
+    { sequenceOrder: 2, eventType: 'attempt', recipient: 'them' },
+    { sequenceOrder: 3, eventType: 'wazari', recipient: 'us' },
+  ]);
+  assert.deepEqual(events, [
+    {
+      eventType: 'attempt',
+      sequenceOrder: 1,
+      recipient: 'us',
+      technique: { id: 'tech-1', name: 'Seoi-nage', category: 'nage' },
+    },
+    { eventType: 'attempt', sequenceOrder: 2, recipient: 'them' },
+    { eventType: 'wazari', sequenceOrder: 3, recipient: 'us' },
+  ]);
+});
+
+test('parseCaptureScoreEvents still drops unknown event types next to attempts', () => {
+  const events = parseCaptureScoreEvents([
+    { sequenceOrder: 1, eventType: 'koka' },
+    { sequenceOrder: 2, eventType: 'attempt', recipient: 'us' },
+  ]);
+  assert.deepEqual(events, [{ eventType: 'attempt', sequenceOrder: 1, recipient: 'us' }]);
+});
+
 test('parseCaptureScoreEvents keeps us/them on every event type including yuko', () => {
   const events = parseCaptureScoreEvents([
     { sequenceOrder: 1, eventType: 'yuko', recipient: 'us' },
@@ -215,6 +246,20 @@ test('deriveScoreFlavor uses the last scoring event and skips shido', () => {
   assert.equal(
     deriveScoreFlavor([
       { eventType: 'wazari', sequenceOrder: 1 },
+      { eventType: 'attempt', sequenceOrder: 2, recipient: 'us', technique: { name: 'Seoi-nage', category: 'nage' } },
+      { eventType: 'shido', sequenceOrder: 3, recipient: 'them' },
+    ]),
+    'waza_ari'
+  );
+  assert.equal(
+    deriveScoreFlavor([
+      { eventType: 'attempt', sequenceOrder: 1, recipient: 'us' },
+    ]),
+    null
+  );
+  assert.equal(
+    deriveScoreFlavor([
+      { eventType: 'wazari', sequenceOrder: 1 },
       { eventType: 'shido', sequenceOrder: 2, recipient: 'them' },
     ]),
     'waza_ari'
@@ -247,15 +292,21 @@ test('formatCaptureScoreSummary lists result then events', () => {
       result: 'loss',
       events: [
         {
-          eventType: 'wazari',
+          eventType: 'attempt',
           sequenceOrder: 1,
+          recipient: 'us',
+          technique: { name: 'Seoi-nage', category: 'nage' },
+        },
+        {
+          eventType: 'wazari',
+          sequenceOrder: 2,
           technique: { name: 'Uchi-mata', category: 'nage' },
         },
-        { eventType: 'shido', sequenceOrder: 2, recipient: 'them' },
-        { eventType: 'ippon', sequenceOrder: 3 },
+        { eventType: 'shido', sequenceOrder: 3, recipient: 'them' },
+        { eventType: 'ippon', sequenceOrder: 4 },
       ],
     }),
-    'Loss · 1. Waza-ari via Uchi-mata · 2. Shido (them) · 3. Ippon'
+    'Loss · 1. Attempt (us) via Seoi-nage · 2. Waza-ari via Uchi-mata · 3. Shido (them) · 4. Ippon'
   );
 });
 
@@ -447,6 +498,7 @@ test('scoreTechniqueFromKodokan maps standing, pins, chokes, armlocks and custom
 
 test('defaultScoreTechniqueCategory only defaults osaekomi to the pin list', () => {
   assert.equal(defaultScoreTechniqueCategory('osaekomi'), 'osaekomi');
+  assert.equal(defaultScoreTechniqueCategory('attempt'), 'nage');
   assert.equal(defaultScoreTechniqueCategory('wazari'), null);
   assert.equal(defaultScoreTechniqueCategory('yuko'), null);
   assert.equal(defaultScoreTechniqueCategory('ippon'), null);

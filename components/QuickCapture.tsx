@@ -44,12 +44,14 @@ type QuickCaptureProps = {
   athleteName?: string;
   /** When set, the form updates this note instead of creating a new capture. */
   existingNote?: OpponentNote | null;
+  /** Recent Kodokan/custom ids, newest first — shown at the top of the attempt picker. */
+  recentTechniqueIds?: string[];
   /** Called after a successful save with the human-readable summary. */
   onSaved: (summary: string) => void;
   onCancel: () => void;
 };
 
-const SCORING_ADDS: Array<{ eventType: Exclude<CaptureScoreEventType, 'shido'>; label: string }> = [
+const SCORING_ADDS: Array<{ eventType: Exclude<CaptureScoreEventType, 'shido' | 'attempt'>; label: string }> = [
   { eventType: 'ippon', label: 'Ippon' },
   { eventType: 'wazari', label: 'Waza-ari' },
   { eventType: 'yuko', label: 'Yuko' },
@@ -96,6 +98,7 @@ export default function QuickCapture({
   athleteId,
   athleteName,
   existingNote = null,
+  recentTechniqueIds = [],
   onSaved,
   onCancel,
 }: QuickCaptureProps) {
@@ -155,10 +158,16 @@ export default function QuickCapture({
     setPickerCategory(category ?? defaultScoreTechniqueCategory(eventType));
   };
 
-  const addScoringEvent = (eventType: Exclude<CaptureScoreEventType, 'shido'>) => {
+  const addScoringEvent = (eventType: Exclude<CaptureScoreEventType, 'shido' | 'attempt'>) => {
     const next = [...events, { eventType, recipient: defaultScoreRecipient(result) }];
     setEvents(next);
     openTechniquePicker(next.length - 1, eventType);
+  };
+
+  const addAttempt = () => {
+    const next = [...events, { eventType: 'attempt' as const, recipient: defaultScoreRecipient(result) }];
+    setEvents(next);
+    openTechniquePicker(next.length - 1, 'attempt');
   };
 
   const addShido = (recipient: ScoreRecipient) => {
@@ -288,6 +297,9 @@ export default function QuickCapture({
                 <IconPlus size={14} /> {item.label}
               </Chip>
             ))}
+            <Chip onClick={addAttempt} data-testid="add-attempt">
+              <IconPlus size={14} /> Attempt
+            </Chip>
             <Chip onClick={() => addShido('us')}><IconPlus size={14} /> Shido us</Chip>
             <Chip onClick={() => addShido('them')}><IconPlus size={14} /> Shido them</Chip>
           </div>
@@ -295,8 +307,15 @@ export default function QuickCapture({
           {events.length > 0 ? (
             <ol className="mt-3 panel stack" style={{ gap: 'var(--svj-space-1)' }} aria-label="Score sequence">
               {events.map((item, index) => (
-                <li key={`${item.eventType}-${index}`} className="flex items-center gap-2 min-h-11 flex-wrap">
-                  <span className="text-sm font-semibold text-strong flex-1 min-w-0">{draftEventLine(item, index)}</span>
+                <li
+                  key={`${item.eventType}-${index}`}
+                  className="flex items-center gap-2 min-h-11 flex-wrap"
+                  data-testid={`event-row-${index}`}
+                  data-event-type={item.eventType}
+                >
+                  <span className={`text-sm font-semibold flex-1 min-w-0 ${item.eventType === 'attempt' ? 'text-muted' : 'text-strong'}`}>
+                    {draftEventLine(item, index)}
+                  </span>
                   <Chip
                     className="btn-sm"
                     pressed={Boolean(item.recipient)}
@@ -356,6 +375,7 @@ export default function QuickCapture({
                 placeholder="Search throws, pins, chokes, armlocks…"
                 allowCustom={false}
                 scoreCategory={pickerCategory}
+                recentIds={recentTechniqueIds}
               />
             </div>
           ) : null}

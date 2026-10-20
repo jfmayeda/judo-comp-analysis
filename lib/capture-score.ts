@@ -28,6 +28,7 @@ export const SCORE_EVENT_LABELS: Record<CaptureScoreEventType, string> = {
   osaekomi: 'Osaekomi',
   shido: 'Shido',
   golden_score: 'Golden score',
+  attempt: 'Attempt',
 };
 
 const SCORE_EVENT_TYPES = new Set<CaptureScoreEventType>([
@@ -37,6 +38,7 @@ const SCORE_EVENT_TYPES = new Set<CaptureScoreEventType>([
   'osaekomi',
   'shido',
   'golden_score',
+  'attempt',
 ]);
 
 export const SCORE_FLAVOR_LABELS: Record<ScoreFlavor, string> = {
@@ -142,7 +144,9 @@ export function scoreTechniqueFromKodokan(
 export function defaultScoreTechniqueCategory(
   eventType: CaptureScoreEventType
 ): ScoreTechniqueCategory | null {
-  return eventType === 'osaekomi' ? 'osaekomi' : null;
+  if (eventType === 'osaekomi') return 'osaekomi';
+  if (eventType === 'attempt') return 'nage';
+  return null;
 }
 
 export function listTechniquesWithoutQuery(
@@ -196,7 +200,7 @@ export function deriveScoreFlavor(
 ): ScoreFlavor | null {
   for (let i = events.length - 1; i >= 0; i -= 1) {
     const event = events[i];
-    if (!event || event.eventType === 'shido') continue;
+    if (!event || event.eventType === 'shido' || event.eventType === 'attempt') continue;
     if (event.eventType === 'wazari') return 'waza_ari';
     return event.eventType;
   }
