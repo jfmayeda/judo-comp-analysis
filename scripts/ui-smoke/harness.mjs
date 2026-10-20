@@ -1,7 +1,7 @@
 // Shared browser helpers for the smoke suite and the screenshot script.
 import { chromium } from 'playwright';
 import { buildFixtures } from './fixtures.mjs';
-import { createSupabaseMock, installSupabaseMock } from './supabase-mock.mjs';
+import { createSupabaseMock, installSupabaseMock, MOCK_USER } from './supabase-mock.mjs';
 
 export const BASE_URL = process.env.SMOKE_BASE_URL || 'http://localhost:3000';
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://wnwcxousneqhzlkdzeku.supabase.co';
@@ -25,9 +25,9 @@ export async function launch() {
  * Opens a page with the Supabase mock installed and performs the app's own
  * login flow against the mocked auth endpoint. Returns { page, mock, fixtures, consoleErrors }.
  */
-export async function openApp(browser, { viewport = VIEWPORTS.phone, empty = false, login = true } = {}) {
+export async function openApp(browser, { viewport = VIEWPORTS.phone, empty = false, login = true, user = MOCK_USER } = {}) {
   const fixtures = buildFixtures({ empty });
-  const mock = createSupabaseMock(fixtures, { log: (m) => console.warn('[mock]', m) });
+  const mock = createSupabaseMock(fixtures, { user, log: (m) => console.warn('[mock]', m) });
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
   await installSupabaseMock(context, mock, SUPABASE_URL);
   const page = await context.newPage();

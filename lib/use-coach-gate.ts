@@ -7,6 +7,8 @@ import { useAuth } from './auth-context';
 type GateOptions = {
   /** Require admin as well as allowlist membership. */
   admin?: boolean;
+  /** Let a linked family login view this page. Coach tools stay gated in the UI. */
+  allowFamily?: boolean;
   /** Called once the user is allowed in. */
   onReady?: () => void;
 };
@@ -17,15 +19,16 @@ type GateOptions = {
  * not allowlisted → /unauthorized, (optionally) not admin → /.
  * Returns whether the page may render its data.
  */
-export function useCoachGate({ admin = false, onReady }: GateOptions = {}): {
+export function useCoachGate({ admin = false, allowFamily = false, onReady }: GateOptions = {}): {
   ready: boolean;
   checking: boolean;
 } {
   const router = useRouter();
-  const { user, loading, isAllowlisted, isAdmin } = useAuth();
+  const { user, loading, isAllowlisted, isAdmin, isFamily } = useAuth();
 
+  const familyReady = allowFamily && isFamily === true;
   const ready =
-    !loading && !!user && isAllowlisted === true && (!admin || isAdmin === true);
+    !loading && !!user && (isAllowlisted === true || familyReady) && (!admin || isAdmin === true);
 
   useEffect(() => {
     if (loading) return;
@@ -34,8 +37,11 @@ export function useCoachGate({ admin = false, onReady }: GateOptions = {}): {
       return;
     }
     if (isAllowlisted === false) {
-      router.push('/unauthorized');
-      return;
+      if (allowFamily && isFamily === null) return;
+      if (!familyReady) {
+        router.push('/unauthorized');
+        return;
+      }
     }
     if (admin && isAdmin === false) {
       router.push('/');
@@ -43,10 +49,20 @@ export function useCoachGate({ admin = false, onReady }: GateOptions = {}): {
     }
     if (isAllowlisted === true && (!admin || isAdmin === true)) {
       onReady?.();
+      return;
+    }
+    if (familyReady) {
+      onReady?.();
     }
     // onReady is intentionally excluded: pages pass an inline loader.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, loading, isAllowlisted, isAdmin, admin, router]);
+  }, [user, loading, isAllowlisted, isAdmin, isFamily, admin, allowFamily, router]);
 
-  return { ready, checking: loading || (!!user && isAllowlisted === null) };
+  return {
+    ready,
+    checking:
+      loading ||
+      (!!user && isAllowlisted === null) ||
+      (allowFamily && !!user && isAllowlisted === false && isFamily === null),
+  };
 }

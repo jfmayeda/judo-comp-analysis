@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { getSupabaseClient } from '@/lib/supabase';
-import { checkCoachAllowlist } from '@/lib/auth-utils';
+import { checkCoachAllowlist, checkFamilyAccess } from '@/lib/auth-utils';
 import { AuthShell } from '@/components/AuthShell';
 import { Button } from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
@@ -40,9 +40,12 @@ function LoginForm() {
       if (data.user) {
         const isAllowlisted = await checkCoachAllowlist();
         if (!isAllowlisted) {
-          await supabase.auth.signOut();
-          setError('Your email is not on the coach allowlist. Please contact your administrator.');
-          return;
+          const isFamily = await checkFamilyAccess();
+          if (!isFamily) {
+            await supabase.auth.signOut();
+            setError('Your email is not authorized. Please contact your administrator.');
+            return;
+          }
         }
         router.push(searchParams.get('redirectTo') || '/');
       }

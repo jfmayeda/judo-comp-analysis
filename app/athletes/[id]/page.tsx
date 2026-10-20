@@ -31,6 +31,7 @@ import { OpponentIntelCard } from '@/components/athlete/OpponentIntelCard';
 import { PromotionsCard, type PromotionFormValues } from '@/components/athlete/PromotionsCard';
 import { TechniqueCard } from '@/components/athlete/TechniqueCard';
 import { TodayCard } from '@/components/athlete/TodayCard';
+import { AthleteStatsCard } from '@/components/athlete/AthleteStatsCard';
 import OptOutDeleteModal from '@/components/OptOutDeleteModal';
 import QuickCapture from '@/components/QuickCapture';
 import { Button } from '@/components/ui/Button';
@@ -94,7 +95,7 @@ export default function AthletePage() {
     }
   }, [athleteId]);
 
-  const { ready, checking } = useCoachGate({ onReady: loadAthlete });
+  const { ready, checking } = useCoachGate({ allowFamily: true, onReady: loadAthlete });
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -224,6 +225,8 @@ export default function AthletePage() {
       ) : null}
 
       {todaysAssignment ? <TodayCard assignment={todaysAssignment} coachName={assignedCoachName} /> : null}
+
+      <AthleteStatsCard athleteId={athlete.id} />
 
       <FocusCard athlete={athlete} onEdit={toggleEditing} />
 

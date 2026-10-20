@@ -14,6 +14,16 @@ export const MOCK_USER = {
   created_at: '2026-01-01T00:00:00.000Z',
 };
 
+export const FAMILY_USER = {
+  id: '00000000-0000-4000-8000-000000000009',
+  email: 'parent.maya@svjudo.test',
+  aud: 'authenticated',
+  role: 'authenticated',
+  app_metadata: { provider: 'email' },
+  user_metadata: {},
+  created_at: '2026-01-01T00:00:00.000Z',
+};
+
 function b64url(obj) {
   return Buffer.from(JSON.stringify(obj)).toString('base64url');
 }
@@ -109,6 +119,7 @@ export function createSupabaseMock(fixtures, { user = MOCK_USER, log = () => {} 
     promotions: [...fixtures.promotions],
     tournament_days: [...fixtures.tournament_days],
     tournament_day_entries: [...fixtures.tournament_day_entries],
+    family_access: [...(fixtures.family_access || [])],
   };
   const writes = [];
 
@@ -164,8 +175,10 @@ export function createSupabaseMock(fixtures, { user = MOCK_USER, log = () => {} 
     // ---- PostgREST RPC ----
     if (url.pathname.startsWith('/rest/v1/rpc/')) {
       const fn = url.pathname.replace('/rest/v1/rpc/', '');
-      if (fn === 'is_allowlisted_coach') return json(route, 200, true);
-      if (fn === 'is_admin_coach') return json(route, 200, db.coach_allowlist.some((c) => c.email === user.email && c.is_admin));
+      if (fn === 'is_allowlisted_coach') {
+        return json(route, 200, db.coach_allowlist.some((c) => c.email.toLowerCase() === user.email.toLowerCase()));
+      }
+      if (fn === 'is_admin_coach') return json(route, 200, db.coach_allowlist.some((c) => c.email.toLowerCase() === user.email.toLowerCase() && c.is_admin));
       log(`rpc unhandled ${fn}`);
       return json(route, 200, null);
     }
