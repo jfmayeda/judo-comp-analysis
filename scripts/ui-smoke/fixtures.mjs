@@ -54,7 +54,7 @@ export function buildFixtures({ empty = false } = {}) {
   ];
 
   if (empty) {
-    return { techniques, coach_allowlist, athletes: [], opponents: [], opponent_notes: [], promotions: [], tournament_days: [], tournament_day_entries: [], coachIds };
+    return { techniques, coach_allowlist, athletes: [], opponents: [], opponent_notes: [], promotions: [], tournament_days: [], tournament_day_entries: [], family_access: [], coachIds };
   }
 
   const A = { maya: uuid(10), demo: uuid(11), sample: uuid(12), kenji: uuid(13), lucas: uuid(14), priya: uuid(15) };
@@ -198,5 +198,9 @@ export function buildFixtures({ empty = false } = {}) {
     { id: uuid(63), tournament_day_id: TD, athlete_id: A.kenji, assigned_coach_id: null, mat_number: null, time_window: null, no_coach_needed: true, created_at: daysAgo(1) },
   ];
 
-  return { techniques, coach_allowlist, athletes, opponents, opponent_notes, promotions, tournament_days, tournament_day_entries, coachIds, ids: { athletes: A, opponents: O, tournamentDay: TD } };
+  const family_access = [
+    { id: uuid(70), athlete_id: A.maya, email: 'parent.maya@svjudo.test', invited_by: coachIds.jorge, created_at: daysAgo(10) },
+  ];
+
+  return { techniques, coach_allowlist, athletes, opponents, opponent_notes, promotions, tournament_days, tournament_day_entries, family_access, coachIds, ids: { athletes: A, opponents: O, tournamentDay: TD } };
 }

@@ -191,6 +191,70 @@ export type Database = {
           created_by?: string;
         };
       };
+      athlete_stats: {
+        Row: {
+          athlete_id: string;
+          athleticism: number;
+          athleticism_note: string;
+          strength: number;
+          strength_note: string;
+          speed: number;
+          speed_note: string;
+          technique: number;
+          technique_note: string;
+          rated_at: string;
+          rated_by_email: string;
+        };
+        Insert: {
+          athlete_id: string;
+          athleticism: number;
+          athleticism_note?: string;
+          strength: number;
+          strength_note?: string;
+          speed: number;
+          speed_note?: string;
+          technique: number;
+          technique_note?: string;
+          rated_at?: string;
+          rated_by_email?: string;
+        };
+        Update: {
+          athlete_id?: string;
+          athleticism?: number;
+          athleticism_note?: string;
+          strength?: number;
+          strength_note?: string;
+          speed?: number;
+          speed_note?: string;
+          technique?: number;
+          technique_note?: string;
+          rated_at?: string;
+          rated_by_email?: string;
+        };
+      };
+      family_access: {
+        Row: {
+          id: string;
+          athlete_id: string;
+          email: string;
+          invited_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          athlete_id: string;
+          email: string;
+          invited_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          athlete_id?: string;
+          email?: string;
+          invited_by?: string | null;
+          created_at?: string;
+        };
+      };
       coach_allowlist: {
         Row: {
           id: string;

@@ -9,6 +9,7 @@ import { getAthleteWithNotes, getTodaysTournamentAssignment, getAllCoaches } fro
 import { noteCaptureHeadline } from '@/lib/capture-score';
 import { stripSampleMarker } from '@/lib/development';
 import { Button } from '@/components/ui/Button';
+import { AthleteStatsCard } from '@/components/athlete/AthleteStatsCard';
 
 export default function PrintProfilePage() {
   const params = useParams();
@@ -141,6 +142,8 @@ export default function PrintProfilePage() {
               </div>
             )}
           </div>
+
+          <AthleteStatsCard athleteId={athlete.id} compact />
 
           {/* Core Coaching Intel - Compact Grid */}
           <div className="grid grid-cols-2 gap-4 mb-5 print-section">

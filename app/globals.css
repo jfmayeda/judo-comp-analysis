@@ -1212,6 +1212,115 @@
   .stat-tile-accent { border-color: var(--svj-blue-200); background: var(--svj-blue-50); }
   .stat-tile-warning { border-color: var(--svj-warning-200); background: var(--svj-warning-50); }
 
+  .stat-sheet {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--svj-space-3);
+  }
+
+  @media (min-width: 640px) {
+    .stat-sheet { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+
+  .stat-sheet-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--svj-space-1);
+    min-width: 0;
+    padding: var(--svj-space-2);
+    border: var(--svj-border-width-hairline) solid var(--svj-border-default);
+    border-radius: var(--svj-radius-card);
+    background: var(--svj-paper);
+  }
+
+  .stat-sheet-icon {
+    display: block;
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+  }
+
+  .stat-sheet-label {
+    font-family: var(--font-heading), 'Helvetica Neue', Arial, sans-serif;
+    font-size: 0.6875rem;
+    font-weight: var(--svj-fw-semibold);
+    letter-spacing: var(--svj-ls-label);
+    text-transform: uppercase;
+    color: var(--svj-text-muted);
+  }
+
+  .stat-sheet-score,
+  .stat-sheet-score-input {
+    font-family: var(--font-heading), 'Helvetica Neue', Arial, sans-serif;
+    font-size: var(--svj-fs-h2);
+    font-weight: var(--svj-fw-bold);
+    color: var(--svj-text-strong);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-sheet-score-input {
+    width: 4.5rem;
+    min-height: var(--svj-touch);
+    padding: 0.25rem 0.5rem;
+    text-align: center;
+  }
+
+  .stat-sheet-mod {
+    font-size: 0.8125rem;
+    font-weight: var(--svj-fw-semibold);
+    color: var(--svj-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-sheet-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--svj-gray-200);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .stat-sheet-bar > span {
+    display: block;
+    height: 100%;
+    background: var(--svj-blue-600);
+  }
+
+  .stat-sheet-note,
+  .stat-sheet-note-input {
+    width: 100%;
+    font-size: 0.75rem;
+    color: var(--svj-text-muted);
+    line-height: 1.3;
+  }
+
+  .stat-sheet-note-input {
+    min-height: 2.25rem;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .stat-sheet-meta {
+    margin-top: var(--svj-space-3);
+    font-size: 0.75rem;
+    color: var(--svj-text-muted);
+  }
+
+  .stat-sheet-compact .stat-sheet-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .stat-sheet-compact .stat-sheet-score {
+    font-size: 1.25rem;
+  }
+
+  .stat-sheet-compact .stat-sheet-note-input,
+  .stat-sheet-compact .stat-sheet-score-input {
+    display: none;
+  }
+
   /* ---------- Lists / rows ---------- */
   .list-row {
     display: flex;

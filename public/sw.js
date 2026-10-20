@@ -1,7 +1,7 @@
 // Service Worker for Silicon Valley Judo PWA
 // Implements offline-first caching strategy
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = `shell-${VERSION}`;
 const DATA_CACHE = `data-${VERSION}`;
 
@@ -10,10 +10,18 @@ const SHELL_ASSETS = [
   '/favicon.ico',
   '/svj-logo-white.png',
   '/manifest.json',
+  '/stats/athleticism-128.webp',
+  '/stats/athleticism-256.webp',
+  '/stats/strength-128.webp',
+  '/stats/strength-256.webp',
+  '/stats/speed-128.webp',
+  '/stats/speed-256.webp',
+  '/stats/technique-128.webp',
+  '/stats/technique-256.webp',
 ];
 
 // Supabase API base URL (will be set from env at runtime)
-const SUPABASE_URL_PATTERN = /supabase\.co\/rest\/v1\/(athletes|opponent_notes|tournament_days|tournament_day_entries)/;
+const SUPABASE_URL_PATTERN = /supabase\.co\/rest\/v1\/(athletes|opponent_notes|tournament_days|tournament_day_entries|athlete_stats)/;
 const AUTH_PATTERN = /supabase\.co\/auth/;
 
 // Install: precache shell assets
