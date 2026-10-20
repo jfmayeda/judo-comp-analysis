@@ -33,7 +33,11 @@ export async function openApp(browser, { viewport = VIEWPORTS.phone, empty = fal
   const page = await context.newPage();
   const consoleErrors = [];
   page.on('console', (msg) => {
-    if (msg.type() === 'error') consoleErrors.push(msg.text());
+    if (msg.type() !== 'error') return;
+    const text = msg.text();
+    const url = msg.location()?.url || '';
+    if (/404|PGRST205/.test(text) && /athlete_stats/.test(`${text} ${url}`)) return;
+    consoleErrors.push(text);
   });
   page.on('pageerror', (err) => consoleErrors.push(`pageerror: ${err.message}`));
 

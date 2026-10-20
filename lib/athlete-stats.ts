@@ -120,8 +120,24 @@ function isMissingRelation(error: { code?: string; message?: string } | null): b
   return /could not find the table|does not exist|no table/i.test(error.message ?? '');
 }
 
+const TABLE_MISSING_FLAG = 'svj.athleteStats.tableMissing';
+
 let tableMissing = false;
 let mockCache: Map<string, AthleteStats> | null = null;
+
+function missingTable(): boolean {
+  if (tableMissing) return true;
+  if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(TABLE_MISSING_FLAG) === '1') {
+    tableMissing = true;
+    return true;
+  }
+  return false;
+}
+
+function markTableMissing(): void {
+  tableMissing = true;
+  if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(TABLE_MISSING_FLAG, '1');
+}
 
 function readBrowserStore(): Map<string, AthleteStats> {
   const map = new Map<string, AthleteStats>();
@@ -177,6 +193,7 @@ export function resetAthleteStatsStore(): void {
   tableMissing = false;
   mockCache = new Map();
   if (typeof localStorage !== 'undefined') localStorage.removeItem(MOCK_STATS_STORAGE_KEY);
+  if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(TABLE_MISSING_FLAG);
 }
 
 function toDbPatch(stats: AthleteStats): Record<string, unknown> {
@@ -208,14 +225,14 @@ function statsTable() {
 }
 
 export async function getAthleteStats(athleteId: string): Promise<AthleteStats> {
-  if (!tableMissing) {
+  if (!missingTable()) {
     try {
       const { data, error } = await statsTable()
         .select('*')
         .eq('athlete_id', athleteId)
         .maybeSingle();
       if (isMissingRelation(error)) {
-        tableMissing = true;
+        markTableMissing();
       } else if (error) {
         console.error('Error fetching athlete_stats:', error);
         return readMock(athleteId);
@@ -228,7 +245,7 @@ export async function getAthleteStats(athleteId: string): Promise<AthleteStats> 
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       if (/Missing Supabase/.test(message)) {
-        tableMissing = true;
+        markTableMissing();
       } else {
         console.error('Error fetching athlete_stats:', error);
         return readMock(athleteId);
@@ -257,14 +274,14 @@ export async function saveAthleteStat(input: SaveAthleteStatInput): Promise<Athl
     ratedBy: input.ratedBy,
   };
 
-  if (!tableMissing) {
+  if (!missingTable()) {
     try {
       const { data, error } = await statsTable()
         .upsert(toDbPatch(next) as never, { onConflict: 'athlete_id' })
         .select('*')
         .maybeSingle();
       if (isMissingRelation(error)) {
-        tableMissing = true;
+        markTableMissing();
       } else if (error) {
         console.error('Error saving athlete_stats:', error);
         return writeMock(next);
@@ -277,7 +294,7 @@ export async function saveAthleteStat(input: SaveAthleteStatInput): Promise<Athl
     } catch (error) {
       const message = error instanceof Error ? error.message : '';
       if (/Missing Supabase/.test(message)) {
-        tableMissing = true;
+        markTableMissing();
       } else {
         console.error('Error saving athlete_stats:', error);
         return writeMock(next);

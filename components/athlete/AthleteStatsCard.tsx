@@ -65,7 +65,6 @@ export function AthleteStatsCard({ athleteId, compact = false }: AthleteStatsCar
       await load();
       return;
     }
-    if (next === sheet.stats[key].score) return;
     const saved = await saveAthleteStat({ athleteId, key, score: next, ratedBy: rater });
     setSheet(saved);
   };

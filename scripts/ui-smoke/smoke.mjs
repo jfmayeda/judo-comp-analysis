@@ -221,7 +221,7 @@ await withApp({ viewport: VIEWPORTS.phone, label: 'stats coach' }, async ({ page
   check('stats: strength tile rendered', await strength.count() === 1);
   await strength.fill('15');
   await strength.blur();
-  await page.waitForTimeout(400);
+  await page.getByTestId('stat-last-rated').filter({ hasText: /coach\.dev@svjudo\.test/ }).waitFor({ timeout: 8000 });
   const mod = await page.getByTestId('stat-strength-mod').textContent();
   check('stats: strength 15 shows +2', (mod || '').trim() === '+2', mod);
   await page.reload({ waitUntil: 'networkidle' });
@@ -231,7 +231,7 @@ await withApp({ viewport: VIEWPORTS.phone, label: 'stats coach' }, async ({ page
   check('stats: strength 15 persisted after reload', after === '15', after);
   check('stats: +2 persisted after reload', (modAfter || '').trim() === '+2', modAfter);
   const stored = await page.evaluate(() => localStorage.getItem('svj.athleteStats.v1'));
-  check('stats: mock store has strength 15', Boolean(stored && stored.includes('"score":15')), stored ? stored.slice(0, 180) : 'empty');
+  check('stats: mock store has strength 15', Boolean(stored && /"strength":\{"score":15/.test(stored)), stored ? stored.slice(0, 240) : 'empty');
 });
 
 // 10. Family login can open the linked athlete and must not see the stats card.
