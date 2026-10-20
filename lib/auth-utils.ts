@@ -39,6 +39,26 @@ export async function checkCoachAllowlist(): Promise<boolean> {
   }
 }
 
+export async function checkFamilyAccess(): Promise<boolean> {
+  const supabase = getSupabaseClient();
+
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user?.email) return false;
+
+    const { data, error } = await (supabase as any)
+      .from('family_access')
+      .select('id')
+      .limit(1);
+
+    if (error) return false;
+    return Array.isArray(data) && data.length > 0;
+  } catch (error) {
+    console.error('Error in checkFamilyAccess:', error);
+    return false;
+  }
+}
+
 export async function isAdminCoach(): Promise<boolean> {
   const supabase = getSupabaseClient();
   

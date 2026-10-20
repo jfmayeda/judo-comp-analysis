@@ -109,6 +109,7 @@ export function createSupabaseMock(fixtures, { user = MOCK_USER, log = () => {} 
     promotions: [...fixtures.promotions],
     tournament_days: [...fixtures.tournament_days],
     tournament_day_entries: [...fixtures.tournament_day_entries],
+    family_access: [...(fixtures.family_access ?? [])],
   };
   const writes = [];
 
@@ -164,7 +165,9 @@ export function createSupabaseMock(fixtures, { user = MOCK_USER, log = () => {} 
     // ---- PostgREST RPC ----
     if (url.pathname.startsWith('/rest/v1/rpc/')) {
       const fn = url.pathname.replace('/rest/v1/rpc/', '');
-      if (fn === 'is_allowlisted_coach') return json(route, 200, true);
+      if (fn === 'is_allowlisted_coach') {
+        return json(route, 200, db.coach_allowlist.some((c) => c.email === user.email));
+      }
       if (fn === 'is_admin_coach') return json(route, 200, db.coach_allowlist.some((c) => c.email === user.email && c.is_admin));
       log(`rpc unhandled ${fn}`);
       return json(route, 200, null);

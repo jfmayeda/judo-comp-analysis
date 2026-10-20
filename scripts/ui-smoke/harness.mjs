@@ -25,9 +25,19 @@ export async function launch() {
  * Opens a page with the Supabase mock installed and performs the app's own
  * login flow against the mocked auth endpoint. Returns { page, mock, fixtures, consoleErrors }.
  */
-export async function openApp(browser, { viewport = VIEWPORTS.phone, empty = false, login = true } = {}) {
+export const MOCK_FAMILY_USER = {
+  id: '00000000-0000-4000-8000-000000000099',
+  email: 'parent.maya@svjudo.test',
+  aud: 'authenticated',
+  role: 'authenticated',
+  app_metadata: { provider: 'email' },
+  user_metadata: {},
+  created_at: '2026-01-01T00:00:00.000Z',
+};
+
+export async function openApp(browser, { viewport = VIEWPORTS.phone, empty = false, login = true, user, redirectTo } = {}) {
   const fixtures = buildFixtures({ empty });
-  const mock = createSupabaseMock(fixtures, { log: (m) => console.warn('[mock]', m) });
+  const mock = createSupabaseMock(fixtures, { user: user ?? undefined, log: (m) => console.warn('[mock]', m) });
   const context = await browser.newContext({ viewport, deviceScaleFactor: 1, reducedMotion: 'reduce' });
   await installSupabaseMock(context, mock, SUPABASE_URL);
   const page = await context.newPage();
@@ -38,7 +48,8 @@ export async function openApp(browser, { viewport = VIEWPORTS.phone, empty = fal
   page.on('pageerror', (err) => consoleErrors.push(`pageerror: ${err.message}`));
 
   if (login) {
-    await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
+    const suffix = redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : '';
+    await page.goto(`${BASE_URL}/login${suffix}`, { waitUntil: 'networkidle' });
     await page.locator('input[type="email"]').first().fill(mock.user.email);
     await page.locator('input[type="password"]').first().fill('local-mock-password');
     await page.getByRole('button', { name: /sign in/i }).click();

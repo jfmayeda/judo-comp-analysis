@@ -1,7 +1,7 @@
 // Browser smoke suite: runs against a server (default http://localhost:3000)
 // with the Supabase mock. Exit code 1 on any failure.
 //   npm run smoke
-import { launch, openApp, goto, VIEWPORTS, hasHorizontalOverflow, smallTouchTargets } from './harness.mjs';
+import { launch, openApp, goto, VIEWPORTS, hasHorizontalOverflow, smallTouchTargets, MOCK_FAMILY_USER } from './harness.mjs';
 
 const results = [];
 const check = (name, ok, detail = '') => {
@@ -232,6 +232,124 @@ await withApp({ viewport: VIEWPORTS.phone, label: 'score technique' }, async ({ 
   const afterEdit = await page.locator('main').innerText();
   check('score technique: edited technique survives reload', /Waza-ari \(us\) via Uchi-mata/.test(afterEdit) && /Yuko \(them\) via Kesa-gatame/.test(afterEdit));
   check('privacy: technique capture still uses first name + last initial', /Maya H\./.test(afterEdit) && !/Hernandez/.test(afterEdit));
+});
+
+async function pickSeoiNage(page) {
+  const recent = page.getByTestId('recent-techniques').getByRole('option', { name: /^Seoi-nage$/ });
+  if (await recent.isVisible().catch(() => false)) {
+    await recent.click();
+    await page.waitForTimeout(150);
+    return;
+  }
+  const search = page.getByTestId('technique-search');
+  await search.waitFor({ state: 'visible', timeout: 8000 });
+  await search.fill('seoi-nage');
+  await page.getByRole('option', { name: /^Seoi-nage$/ }).click();
+  await page.waitForTimeout(150);
+}
+
+// 3c. Throw attempts + success rate (nage scores / attempts+scores).
+await withApp({ viewport: VIEWPORTS.phone, label: 'throw attempts' }, async ({ page, mock, fixtures }) => {
+  await goto(page, `/athletes/${fixtures.ids.athletes.maya}`);
+  let taps = 0;
+  const tap = async (locator) => { await locator.click(); taps += 1; await page.waitForTimeout(150); };
+  await tap(page.getByTestId('open-quick-capture'));
+  check('throw attempts: Attempt chip is offered', await page.getByTestId('add-attempt').isVisible());
+  await tap(page.getByTestId('result-win'));
+  for (let i = 0; i < 3; i += 1) {
+    await tap(page.getByTestId('add-attempt'));
+    await pickSeoiNage(page);
+  }
+  await tap(page.getByTestId('add-wazari'));
+  await pickSeoiNage(page);
+  const summary = await page.getByTestId('capture-summary').textContent();
+  check(
+    'throw attempts: summary lists three attempts then waza-ari',
+    /Attempt \(us\) via Seoi-nage/.test(summary || '') && /Waza-ari \(us\) via Seoi-nage/.test(summary || ''),
+    summary || '',
+  );
+  const attemptRow = page.getByTestId('event-row-0');
+  check('throw attempts: attempt row is muted', await attemptRow.evaluate((el) => el.querySelector('.text-muted') !== null));
+  await tap(page.getByTestId('save-capture'));
+  await page.waitForTimeout(600);
+  const write = [...mock.writes].reverse().find((w) => w.table === 'opponent_notes' && w.method === 'POST');
+  const row = write?.rows?.[0];
+  const seoi = fixtures.techniques.find((t) => t.name === 'Seoi-nage');
+  check(
+    'throw attempts: write stores three attempts and one nage score',
+    row?.score_events?.filter((e) => e.eventType === 'attempt').length === 3 &&
+      row?.score_events?.[3]?.eventType === 'wazari' &&
+      row?.score_events?.every((e) => e.recipient === 'us' && e.technique?.name === 'Seoi-nage' && e.technique?.category === 'nage') &&
+      row?.score_events?.[0]?.technique?.id === seoi?.id &&
+      row?.score_flavor === 'waza_ari',
+    JSON.stringify(row?.score_events),
+  );
+
+  await goto(page, `/athletes/${fixtures.ids.athletes.maya}`);
+  const rates = page.getByTestId('throw-rates');
+  check('throw attempts: coach sees throw rates after reload', await rates.count() === 1);
+  const rateText = await rates.innerText();
+  check(
+    'throw attempts: Seoi-nage 1/4 = 25% with n=4',
+    /Seoi-nage/.test(rateText) && /1\/4/.test(rateText) && /25%/.test(rateText) && /n=4/.test(rateText),
+    rateText,
+  );
+
+  const editBtn = page.getByTestId(`edit-captured-${row?.id}`).first();
+  await tap(editBtn);
+  check('throw attempts: edit-capture seeds muted attempts', await page.getByTestId('event-row-0').getAttribute('data-event-type') === 'attempt');
+  check('throw attempts: edit heading', /edit capture/i.test((await page.locator('#quick-capture-title').textContent()) || ''));
+
+  await goto(page, '/opponents');
+  const opponentText = await page.locator('main').innerText();
+  check(
+    'throw attempts: opponent scouting shows their nage rate',
+    /Uchi-mata/.test(opponentText) && /1\/3/.test(opponentText) && /n=3/.test(opponentText),
+    opponentText.includes('Sarah') ? 'Sarah card includes Uchi-mata 1/3' : 'Sarah/Uchi-mata missing',
+  );
+});
+
+// 3d. Family must not see throw rates even when nage sample is large enough.
+await withApp({
+  viewport: VIEWPORTS.phone,
+  label: 'family throw rates',
+  user: MOCK_FAMILY_USER,
+  redirectTo: '/athletes/00000000-0000-4000-8000-000000000010',
+}, async ({ page, mock, fixtures }) => {
+  const seoi = fixtures.techniques.find((t) => t.name === 'Seoi-nage');
+  mock.db.opponent_notes.push({
+    id: '00000000-0000-4000-8000-000000000080',
+    athlete_id: fixtures.ids.athletes.maya,
+    opponent_id: null,
+    opponent_label: 'Rate K.',
+    club: null,
+    notes: 'Win · attempts',
+    tournament: null,
+    stance: null,
+    kumi_kata: '',
+    ne_waza: '',
+    common_counters: '',
+    weight_class: '',
+    age_division: '',
+    technique_ids: seoi ? [seoi.id] : [],
+    tokui_technique_ids: [],
+    newaza_technique_ids: [],
+    result: 'win',
+    score_flavor: 'waza_ari',
+    score_events: [
+      { eventType: 'attempt', sequenceOrder: 1, recipient: 'us', technique: { id: seoi?.id, name: 'Seoi-nage', category: 'nage' } },
+      { eventType: 'attempt', sequenceOrder: 2, recipient: 'us', technique: { id: seoi?.id, name: 'Seoi-nage', category: 'nage' } },
+      { eventType: 'attempt', sequenceOrder: 3, recipient: 'us', technique: { id: seoi?.id, name: 'Seoi-nage', category: 'nage' } },
+      { eventType: 'wazari', sequenceOrder: 4, recipient: 'us', technique: { id: seoi?.id, name: 'Seoi-nage', category: 'nage' } },
+    ],
+    created_by: fixtures.coachIds.dev,
+    created_at: new Date().toISOString(),
+  });
+  await goto(page, `/athletes/${fixtures.ids.athletes.maya}`);
+  check('family: athlete profile loaded', /Maya H\./.test((await page.locator('main').innerText().catch(() => '')) || ''));
+  check('family: throw rates hidden', (await page.getByTestId('throw-rates').count()) === 0);
+  const familyText = await page.locator('main').innerText();
+  check('family: no throw success copy', !/Throw success/i.test(familyText) && !/1\/4 = 25%/.test(familyText), familyText.slice(0, 200));
 });
 
 // 4. Athlete creation: minimal path and payload shape.

@@ -6,6 +6,8 @@ import type { BadgeWithProgress } from '@/lib/badge-store';
 import { getAthleteActivity } from '@/lib/activity-store';
 import { getAthleteBadgeProgress } from '@/lib/badge-store';
 import { capturedResults, formatResultLabel, tallyResults } from '@/lib/development';
+import { eventsForRecipient } from '@/lib/throw-rate';
+import { ThrowRatesCard } from '@/components/athlete/ThrowRatesCard';
 import BadgesSection from '@/components/BadgesSection';
 import CareerTimeline from '@/components/CareerTimeline';
 import TournamentCard from '@/components/TournamentCard';
@@ -20,6 +22,8 @@ type Props = {
   isSample: boolean;
   onQuickCapture: () => void;
   onEditCapture: (noteId: string) => void;
+  /** Coach/admin only. Family must not see throw rates. */
+  showThrowRates?: boolean;
 };
 
 /**
@@ -28,7 +32,7 @@ type Props = {
  *  2. Sample tournament history + sample badges — only for sample athletes, clearly banded.
  * Real athletes without captures get an honest empty state, not a hidden section.
  */
-export function DevelopmentCard({ athlete, isSample, onQuickCapture, onEditCapture }: Props) {
+export function DevelopmentCard({ athlete, isSample, onQuickCapture, onEditCapture, showThrowRates = false }: Props) {
   const [activity, setActivity] = useState<AthleteActivity | null>(null);
   const [badges, setBadges] = useState<BadgeWithProgress[]>([]);
   const [loadingSample, setLoadingSample] = useState(isSample);
@@ -81,6 +85,11 @@ export function DevelopmentCard({ athlete, isSample, onQuickCapture, onEditCaptu
                 <StatTile label="Ippon wins" value={tally.ipponWins} />
                 <StatTile label="Losses" value={tally.losses} />
               </div>
+              {showThrowRates ? (
+                <div className="mb-3">
+                  <ThrowRatesCard events={eventsForRecipient(athlete.opponentNotes, 'us')} />
+                </div>
+              ) : null}
               <ul data-testid="captured-results">
                 {results.slice(0, 6).map((result) => (
                   <li key={result.id} className="result-row">

@@ -17,7 +17,7 @@ import {
   getTodaysTournamentAssignment,
 } from '@/lib/supabase-store';
 import { useAuth } from '@/lib/auth-context';
-import { useCoachGate } from '@/lib/use-coach-gate';
+import { collectRecentTechniqueIds } from '@/lib/throw-rate';
 import { athleteToForm } from '@/lib/athlete-form';
 import { isSampleAthlete } from '@/lib/development';
 import { AppFrame } from '@/components/AppFrame';
@@ -45,7 +45,8 @@ export default function AthletePage() {
   const params = useParams();
   const router = useRouter();
   const athleteId = params.id as string;
-  const { isAdmin } = useAuth();
+  const { user, loading: authLoading, isAllowlisted, isAdmin, isFamily } = useAuth();
+  const isCoach = isAllowlisted === true;
 
   const [athlete, setAthlete] = useState<AthleteWithNotes | null>(null);
   const [coaches, setCoaches] = useState<Coach[]>([]);
@@ -95,7 +96,22 @@ export default function AthletePage() {
     }
   }, [athleteId]);
 
-  const { ready, checking } = useCoachGate({ onReady: loadAthlete });
+  const roleResolved = !authLoading && !!user && isAllowlisted !== null && isFamily !== null;
+  const canView = isCoach || isFamily === true;
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+    if (isAllowlisted === null || isFamily === null) return;
+    if (!canView) {
+      router.push('/unauthorized');
+      return;
+    }
+    loadAthlete();
+  }, [authLoading, user, isAllowlisted, isFamily, canView, loadAthlete, router]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -147,7 +163,7 @@ export default function AthletePage() {
     await loadAthlete();
   };
 
-  if (!ready || checking || loading) {
+  if (!roleResolved || !canView || loading) {
     return <LoadingScreen label="Loading athlete" />;
   }
 
@@ -196,6 +212,7 @@ export default function AthletePage() {
             athleteId={athlete.id}
             athleteName={athleteDisplayName(athlete)}
             existingNote={editingNote}
+            recentTechniqueIds={collectRecentTechniqueIds(athlete.opponentNotes)}
             onCancel={() => {
               setShowQuickCapture(false);
               setEditingNote(null);
@@ -274,6 +291,7 @@ export default function AthletePage() {
       <DevelopmentCard
         athlete={athlete}
         isSample={isSample}
+        showThrowRates={isCoach}
         onQuickCapture={() => openQuickCapture()}
         onEditCapture={(noteId) => {
           const note = athlete.opponentNotes.find((item) => item.id === noteId);
