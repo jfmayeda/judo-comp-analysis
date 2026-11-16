@@ -6,6 +6,7 @@ import { AthleteWithNotes } from '@/lib/types';
 import { getAthleteWithNotes } from '@/lib/supabase-store';
 import { stripSampleMarker } from '@/lib/development';
 import { Button } from '@/components/ui/Button';
+import { AthleteStatsCard } from '@/components/athlete/AthleteStatsCard';
 
 function TournamentPrintPack() {
   const searchParams = useSearchParams();
@@ -91,6 +92,8 @@ function TournamentPrintPack() {
                 </div>
               </div>
             </div>
+
+            <AthleteStatsCard athleteId={athlete.id} compact />
 
             {/* Core Info Section */}
             {athlete.tokuiWaza && (

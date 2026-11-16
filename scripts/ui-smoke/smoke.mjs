@@ -2,6 +2,7 @@
 // with the Supabase mock. Exit code 1 on any failure.
 //   npm run smoke
 import { launch, openApp, goto, VIEWPORTS, hasHorizontalOverflow, smallTouchTargets } from './harness.mjs';
+import { FAMILY_USER } from './supabase-mock.mjs';
 
 const results = [];
 const check = (name, ok, detail = '') => {
@@ -205,10 +206,40 @@ await withApp({ viewport: VIEWPORTS.phone, empty: true, label: 'empty' }, async 
 // 8. Privacy: no full last names or photos rendered anywhere in the athlete page.
 await withApp({ viewport: VIEWPORTS.phone, label: 'privacy' }, async ({ page, fixtures }) => {
   await goto(page, `/athletes/${fixtures.ids.athletes.maya}`);
-  const imgs = await page.locator('main img').count();
+  const imgs = await page.locator('main img:not([data-stat-icon])').count();
   check('privacy: no photos on athlete page', imgs === 0, `${imgs} images`);
   const text = await page.locator('main').innerText();
   check('privacy: athlete rendered as First L.', /Maya H\./.test(text) && !/Hernandez/.test(text));
+  check('stats: character sheet visible to coach', (await page.getByTestId('athlete-stats').count()) === 1);
+});
+
+// 9. Stats sheet: coach can edit Strength to 15 (+2) and the mock store keeps it after reload.
+await withApp({ viewport: VIEWPORTS.phone, label: 'stats coach' }, async ({ page, fixtures }) => {
+  await goto(page, `/athletes/${fixtures.ids.athletes.maya}`);
+  await page.getByTestId('athlete-stats').waitFor({ timeout: 10000 });
+  const strength = page.getByTestId('stat-strength-score');
+  check('stats: strength tile rendered', await strength.count() === 1);
+  await strength.fill('15');
+  await strength.blur();
+  await page.getByTestId('stat-last-rated').filter({ hasText: /coach\.dev@svjudo\.test/ }).waitFor({ timeout: 8000 });
+  const mod = await page.getByTestId('stat-strength-mod').textContent();
+  check('stats: strength 15 shows +2', (mod || '').trim() === '+2', mod);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.getByTestId('athlete-stats').waitFor({ timeout: 10000 });
+  const after = await page.getByTestId('stat-strength-score').inputValue();
+  const modAfter = await page.getByTestId('stat-strength-mod').textContent();
+  check('stats: strength 15 persisted after reload', after === '15', after);
+  check('stats: +2 persisted after reload', (modAfter || '').trim() === '+2', modAfter);
+  const stored = await page.evaluate(() => localStorage.getItem('svj.athleteStats.v1'));
+  check('stats: mock store has strength 15', Boolean(stored && /"strength":\{"score":15/.test(stored)), stored ? stored.slice(0, 240) : 'empty');
+});
+
+// 10. Family login can open the linked athlete and must not see the stats card.
+await withApp({ viewport: VIEWPORTS.phone, label: 'stats family', user: FAMILY_USER }, async ({ page, fixtures }) => {
+  await goto(page, `/athletes/${fixtures.ids.athletes.maya}`);
+  check('family: still on the athlete profile', page.url().includes(`/athletes/${fixtures.ids.athletes.maya}`));
+  check('family: stats card hidden', (await page.getByTestId('athlete-stats').count()) === 0);
+  check('family: no character sheet copy', !(await page.locator('main').innerText()).includes('Character sheet'));
 });
 
 await browser.close();

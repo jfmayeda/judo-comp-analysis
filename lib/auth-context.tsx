@@ -10,6 +10,7 @@ type AuthContextType = {
   loading: boolean;
   isAllowlisted: boolean | null;
   isAdmin: boolean | null;
+  isFamily: boolean | null;
   signOut: () => Promise<void>;
 };
 
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isAllowlisted: null,
   isAdmin: null,
+  isFamily: null,
   signOut: async () => {},
 });
 
@@ -28,12 +30,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isAllowlisted, setIsAllowlisted] = useState<boolean | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  const [isFamily, setIsFamily] = useState<boolean | null>(null);
   const supabase = getSupabaseClient();
 
   const checkAllowlist = async (userId: string, userEmail: string | undefined) => {
     if (!userEmail) {
       setIsAllowlisted(false);
       setIsAdmin(false);
+      setIsFamily(false);
       return;
     }
 
@@ -44,24 +48,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('email', userEmail.toLowerCase())
         .maybeSingle() as { data: { is_admin: boolean } | null; error: any };
 
-      if (error) {
+      if (error && error.code !== 'PGRST116') {
         console.error('Error checking allowlist:', error);
         setIsAllowlisted(false);
         setIsAdmin(false);
+        setIsFamily(false);
         return;
       }
 
       if (data) {
         setIsAllowlisted(true);
         setIsAdmin(data.is_admin);
-      } else {
-        setIsAllowlisted(false);
-        setIsAdmin(false);
+        setIsFamily(false);
+        return;
       }
+
+      const { data: familyRows, error: familyError } = await supabase
+        .from('family_access')
+        .select('id')
+        .eq('email', userEmail.toLowerCase())
+        .limit(1);
+
+      setIsAllowlisted(false);
+      setIsAdmin(false);
+      setIsFamily(!familyError && (familyRows?.length ?? 0) > 0);
     } catch (error) {
       console.error('Error checking allowlist:', error);
       setIsAllowlisted(false);
       setIsAdmin(false);
+      setIsFamily(false);
     }
   };
 
@@ -94,6 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setIsAllowlisted(null);
           setIsAdmin(null);
+          setIsFamily(null);
         }
         
         setLoading(false);
@@ -112,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(null);
       setIsAllowlisted(null);
       setIsAdmin(null);
+      setIsFamily(null);
       
       // Clear offline cache on logout for user isolation
       if (typeof window !== 'undefined' && 'serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -135,7 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAllowlisted, isAdmin, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, isAllowlisted, isAdmin, isFamily, signOut }}>
       {children}
     </AuthContext.Provider>
   );
