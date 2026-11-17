@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "title": "Silicon Valley Judo competitor analysis — launch film",
+    "durationSec": 32,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "narrativeStructure": "problem-solution",
+    "skill": "product-launch-motion (AbubakrChan) as the motion playbook, built in Remotion because the brief requires a Remotion project. memex product-launch-video storyboard + Remotion frame rules used as the supplement.",
+    "fonts": {
+      "display": { "family": "Michroma", "weights": ["400"] },
+      "ui": { "family": "Archivo", "weights": ["600", "700"] },
+      "body": { "family": "Source Sans 3", "weights": ["400", "600"] }
+    },
+    "colors": {
+      "background": "#0b1e2e navy field",
+      "surface": "#ffffff cards on #f5f7f9 paper",
+      "primary": "#0b1e2e",
+      "muted": "#54646f",
+      "accent": "#005e9b",
+      "highlight": "#005e9b"
+    },
+    "decisions": [
+      "One card morphs through every state. Cuts are blur swaps inside that card.",
+      "Camera is a damped spring on pan and a 2% push, not a cut.",
+      "A coach cursor drives the clicks: open, quick capture, win, ippon, save, Today, print pack.",
+      "Copy and names come from scripts/ui-smoke/fixtures.mjs. No invented athletes, results, or features.",
+      "Brand type and the single blue accent. No second hue, no emoji, no purple gradient.",
+      "Voice is espeak-ng en-us+m3 because that is the offline TTS on the machine. Captions carry the same lines.",
+      "Score, clicks, and whooshes are synthesized in-repo. No stock music."
+    ]
+  },
+  "voice": {
+    "enabled": true,
+    "engine": "espeak-ng en-us+m3",
+    "tone": ["direct", "coach", "short"],
+    "pace": "moderate"
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "act": "hook",
+      "startSec": 0,
+      "durationSec": 3.25,
+      "purpose": "The matside problem, with today's real assignment already on the card.",
+      "voiceover": "Four minutes to the match.",
+      "camera": "Card slams from a smaller rect to 1180×600, centered on the navy field."
+    },
+    {
+      "id": "profile",
+      "act": "reveal",
+      "startSec": 3.25,
+      "durationSec": 4.9,
+      "purpose": "Maya H.'s matside profile: belt, mat, coach, focus, techniques.",
+      "voiceover": "Maya's card. Mat one.",
+      "camera": "Card morphs to a 520×900 phone and pans right so the headline can sit in the left field."
+    },
+    {
+      "id": "capture",
+      "act": "showcase",
+      "startSec": 8.15,
+      "durationSec": 5.3,
+      "purpose": "The real four-tap capture: Win, Ippon, Save. Summary reads Win · 1. Ippon.",
+      "voiceover": "Win. Ippon. Saved.",
+      "camera": "Same phone. Cursor moves. Win chip stretches in from the leading edge."
+    },
+    {
+      "id": "intel",
+      "act": "showcase",
+      "startSec": 13.45,
+      "durationSec": 3.8,
+      "purpose": "The stored notes: Elena K. ippon via Seoi-nage, Sarah M. scouting. Privacy is the naming rule.",
+      "voiceover": "Scouting notes stay private.",
+      "camera": "Content blur-swap inside the same phone."
+    },
+    {
+      "id": "roster",
+      "act": "showcase",
+      "startSec": 17.25,
+      "durationSec": 3.9,
+      "purpose": "Pull back to the shared roster of six, including sample tags.",
+      "voiceover": "One roster. Every coach.",
+      "camera": "Card widens to 1680×900 and the pan returns to center."
+    },
+    {
+      "id": "today",
+      "act": "climax",
+      "startSec": 21.15,
+      "durationSec": 3.7,
+      "purpose": "Bay Area Open, four competing, print pack and offline cache.",
+      "voiceover": "Bay Area Open. Print the pack.",
+      "camera": "Same wide card. Cursor clicks Print pack (4)."
+    },
+    {
+      "id": "print",
+      "act": "climax",
+      "startSec": 24.85,
+      "durationSec": 3.6,
+      "purpose": "Maya's matside coach card, marked pack 1 of 4.",
+      "voiceover": "One page. It works offline.",
+      "camera": "Content swap to the print sheet. Three other names peek as pack tabs."
+    },
+    {
+      "id": "end",
+      "act": "close",
+      "startSec": 28.45,
+      "durationSec": 3.55,
+      "purpose": "Wordmark and the product name.",
+      "voiceover": "Silicon Valley Judo.",
+      "camera": "Card fills the frame, fill springs to navy, logo resolves, a light sweep crosses it."
+    }
+  ]
+}
