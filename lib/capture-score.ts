@@ -1,8 +1,10 @@
 import {
+  CaptureOpponent,
   CaptureResult,
   CaptureScoreEvent,
   CaptureScoreEventType,
   DraftScoreEvent,
+  OpponentNote,
   ScoreFlavor,
   ScoreRecipient,
 } from './types';
@@ -17,6 +19,7 @@ export type {
 export const SCORE_EVENT_LABELS: Record<CaptureScoreEventType, string> = {
   ippon: 'Ippon',
   wazari: 'Waza-ari',
+  yuko: 'Yuko',
   osaekomi: 'Osaekomi',
   shido: 'Shido',
   golden_score: 'Golden score',
@@ -25,10 +28,20 @@ export const SCORE_EVENT_LABELS: Record<CaptureScoreEventType, string> = {
 const SCORE_EVENT_TYPES = new Set<CaptureScoreEventType>([
   'ippon',
   'wazari',
+  'yuko',
   'osaekomi',
   'shido',
   'golden_score',
 ]);
+
+export const SCORE_FLAVOR_LABELS: Record<ScoreFlavor, string> = {
+  ippon: 'Ippon',
+  waza_ari: 'Waza-ari',
+  yuko: 'Yuko',
+  osaekomi: 'Osaekomi',
+  golden_score: 'Golden score',
+  other: 'Other',
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -38,8 +51,10 @@ function isScoreEventType(value: unknown): value is CaptureScoreEventType {
   return typeof value === 'string' && SCORE_EVENT_TYPES.has(value as CaptureScoreEventType);
 }
 
-function isRecipient(value: unknown): value is ScoreRecipient {
-  return value === 'athlete' || value === 'opponent';
+export function parseScoreRecipient(value: unknown): ScoreRecipient | undefined {
+  if (value === 'us' || value === 'athlete') return 'us';
+  if (value === 'them' || value === 'opponent') return 'them';
+  return undefined;
 }
 
 function optionalString(value: unknown): string | undefined {
@@ -53,17 +68,18 @@ function parseOneEvent(value: unknown): DraftScoreEvent | null {
     return null;
   }
 
-  if (value.eventType === 'shido') {
-    if (!isRecipient(value.recipient)) return null;
-    return { eventType: 'shido', recipient: value.recipient };
-  }
-
+  const recipient = parseScoreRecipient(value.recipient);
   const techniqueId = optionalString(value.techniqueId);
   const techniqueLabel = optionalString(value.techniqueLabel);
   return {
     eventType: value.eventType,
-    ...(techniqueId ? { techniqueId } : {}),
-    ...(techniqueLabel ? { techniqueLabel } : {}),
+    ...(recipient ? { recipient } : {}),
+    ...(value.eventType === 'shido'
+      ? {}
+      : {
+          ...(techniqueId ? { techniqueId } : {}),
+          ...(techniqueLabel ? { techniqueLabel } : {}),
+        }),
   };
 }
 
@@ -94,17 +110,24 @@ export function deriveScoreFlavor(
   return null;
 }
 
-function formatOneEvent(event: CaptureScoreEvent): string {
-  if (event.eventType === 'shido') {
-    const who = event.recipient === 'athlete' ? 'us' : 'them';
-    return `${event.sequenceOrder}. Shido (${who})`;
+function recipientSuffix(event: CaptureScoreEvent | DraftScoreEvent): string {
+  if (event.recipient === 'us' || event.recipient === 'them') {
+    return ` (${event.recipient})`;
   }
+  return '';
+}
 
+export function formatOneEvent(
+  event: CaptureScoreEvent | (DraftScoreEvent & { sequenceOrder?: number }),
+  index?: number
+): string {
+  const order = event.sequenceOrder ?? (index !== undefined ? index + 1 : 1);
   const label = SCORE_EVENT_LABELS[event.eventType];
-  if (event.techniqueLabel) {
-    return `${event.sequenceOrder}. ${label} via ${event.techniqueLabel}`;
+  const who = recipientSuffix(event);
+  if (event.eventType !== 'shido' && event.techniqueLabel) {
+    return `${order}. ${label}${who} via ${event.techniqueLabel}`;
   }
-  return `${event.sequenceOrder}. ${label}`;
+  return `${order}. ${label}${who}`;
 }
 
 export function formatCaptureScoreSummary(input: {
@@ -129,14 +152,6 @@ export function collectTechniqueIds(events: CaptureScoreEvent[]): string[] {
   return ids;
 }
 
-const FLAVOR_LABELS: Record<ScoreFlavor, string> = {
-  ippon: 'Ippon',
-  waza_ari: 'Waza-ari',
-  osaekomi: 'Osaekomi',
-  golden_score: 'Golden score',
-  other: 'Other',
-};
-
 export function noteCaptureHeadline(note: {
   result: CaptureResult | null;
   scoreEvents: CaptureScoreEvent[];
@@ -151,8 +166,77 @@ export function noteCaptureHeadline(note: {
 
   const parts = [
     note.result === 'win' ? 'Win' : note.result === 'loss' ? 'Loss' : note.result === 'other' ? 'Other' : null,
-    note.scoreFlavor ? FLAVOR_LABELS[note.scoreFlavor] : null,
+    note.scoreFlavor ? SCORE_FLAVOR_LABELS[note.scoreFlavor] : null,
   ].filter((part): part is string => part !== null);
 
   return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+export function defaultScoreRecipient(result: CaptureResult | null): ScoreRecipient {
+  return result === 'loss' ? 'them' : 'us';
+}
+
+export function toggleScoreRecipient(
+  current: ScoreRecipient | undefined,
+  result: CaptureResult | null
+): ScoreRecipient {
+  if (current === 'us') return 'them';
+  if (current === 'them') return 'us';
+  return defaultScoreRecipient(result);
+}
+
+export function withDefaultRecipients(
+  events: DraftScoreEvent[],
+  result: CaptureResult
+): DraftScoreEvent[] {
+  const recipient = defaultScoreRecipient(result);
+  return events.map((event) => (event.recipient ? event : { ...event, recipient }));
+}
+
+export function toDraftScoreEvents(events: CaptureScoreEvent[]): DraftScoreEvent[] {
+  return events.map((event) => ({
+    eventType: event.eventType,
+    ...(event.recipient ? { recipient: event.recipient } : {}),
+    ...(event.techniqueId ? { techniqueId: event.techniqueId } : {}),
+    ...(event.techniqueLabel ? { techniqueLabel: event.techniqueLabel } : {}),
+  }));
+}
+
+export function parseScoreFlavor(value: unknown): ScoreFlavor | null {
+  if (
+    value === 'ippon' ||
+    value === 'waza_ari' ||
+    value === 'yuko' ||
+    value === 'osaekomi' ||
+    value === 'golden_score' ||
+    value === 'other'
+  ) {
+    return value;
+  }
+  return null;
+}
+
+export function captureOpponentFromNote(note: {
+  opponentId: string | null;
+  opponentLabel: string;
+}): CaptureOpponent {
+  if (note.opponentId) {
+    return { kind: 'shared', opponentId: note.opponentId };
+  }
+  const label = note.opponentLabel.trim();
+  if (!label || /^unknown$/i.test(label)) {
+    return { kind: 'unknown' };
+  }
+  const match = label.match(/^(.+?)\s+([A-Za-z])\.?$/);
+  if (match && match[1] && match[2]) {
+    return { kind: 'oneOff', firstName: match[1].trim(), lastInitial: match[2].toUpperCase() };
+  }
+  return { kind: 'unknown' };
+}
+
+export function seedCaptureNoteText(note: Pick<OpponentNote, 'notes' | 'result' | 'scoreEvents' | 'scoreFlavor'>): string {
+  const headline = noteCaptureHeadline(note);
+  const text = note.notes.trim();
+  if (!text || (headline && text === headline)) return '';
+  return note.notes;
 }

@@ -57,6 +57,7 @@ export default function AthletePage() {
   const [editing, setEditing] = useState(false);
   const [showAddNote, setShowAddNote] = useState(false);
   const [showQuickCapture, setShowQuickCapture] = useState(false);
+  const [editingNote, setEditingNote] = useState<OpponentNote | null>(null);
   const [flash, setFlash] = useState<{ tone: 'success' | 'danger'; title: string; body?: string } | null>(null);
   const [pendingDelete, setPendingDelete] = useState<PendingDelete>(null);
 
@@ -118,9 +119,11 @@ export default function AthletePage() {
     loadPreview();
   }, [showDeleteModal, athleteId]);
 
-  const openQuickCapture = () => {
+  const openQuickCapture = (note?: OpponentNote) => {
     setFlash(null);
     setEditing(false);
+    setShowAddNote(false);
+    setEditingNote(note ?? null);
     setShowQuickCapture(true);
     requestAnimationFrame(() => captureRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
   };
@@ -180,7 +183,7 @@ export default function AthletePage() {
       <AthleteHero
         athlete={athlete}
         isSample={isSample}
-        onQuickCapture={openQuickCapture}
+        onQuickCapture={() => openQuickCapture()}
         onEdit={toggleEditing}
         captureOpen={showQuickCapture}
         editing={editing}
@@ -189,12 +192,23 @@ export default function AthletePage() {
       {showQuickCapture ? (
         <div ref={captureRef} className="scroll-mt-20">
           <QuickCapture
+            key={editingNote?.id ?? 'new'}
             athleteId={athlete.id}
             athleteName={athleteDisplayName(athlete)}
-            onCancel={() => setShowQuickCapture(false)}
-            onSaved={async (summary) => {
+            existingNote={editingNote}
+            onCancel={() => {
               setShowQuickCapture(false);
-              setFlash({ tone: 'success', title: 'Capture saved', body: summary });
+              setEditingNote(null);
+            }}
+            onSaved={async (summary) => {
+              const wasEdit = Boolean(editingNote);
+              setShowQuickCapture(false);
+              setEditingNote(null);
+              setFlash({
+                tone: 'success',
+                title: wasEdit ? 'Capture updated' : 'Capture saved',
+                body: summary,
+              });
               await loadAthlete();
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
@@ -254,9 +268,18 @@ export default function AthletePage() {
           await loadAthlete();
         }}
         onDelete={(note) => setPendingDelete({ kind: 'note', note })}
+        onEditCapture={(note) => openQuickCapture(note)}
       />
 
-      <DevelopmentCard athlete={athlete} isSample={isSample} onQuickCapture={openQuickCapture} />
+      <DevelopmentCard
+        athlete={athlete}
+        isSample={isSample}
+        onQuickCapture={() => openQuickCapture()}
+        onEditCapture={(noteId) => {
+          const note = athlete.opponentNotes.find((item) => item.id === noteId);
+          if (note) openQuickCapture(note);
+        }}
+      />
 
       <PromotionsCard
         promotions={promotions}

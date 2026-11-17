@@ -4,11 +4,15 @@ import {
   deriveScoreFlavor,
   formatCaptureScoreSummary,
   parseCaptureScoreEvents,
+  parseScoreFlavor,
+  SCORE_FLAVOR_LABELS,
+  withDefaultRecipients,
   withSequenceOrders,
 } from './capture-score';
 import {
   createOpponentNote,
   getOpponentById,
+  updateOpponentNote,
 } from './supabase-store';
 import {
   CaptureOpponent,
@@ -18,15 +22,9 @@ import {
   ScoreFlavor,
 } from './types';
 
-export const UNKNOWN_OPPONENT_LABEL = 'Unknown';
+export { parseScoreFlavor, SCORE_FLAVOR_LABELS };
 
-export const SCORE_FLAVOR_LABELS: Record<ScoreFlavor, string> = {
-  ippon: 'Ippon',
-  waza_ari: 'Waza-ari',
-  osaekomi: 'Osaekomi',
-  golden_score: 'Golden score',
-  other: 'Other',
-};
+export const UNKNOWN_OPPONENT_LABEL = 'Unknown';
 
 export const CAPTURE_RESULT_LABELS: Record<CaptureResult, string> = {
   win: 'Win',
@@ -42,19 +40,6 @@ export function formatOpponentLabel(firstName: string, lastInitial: string): str
 
 export function parseCaptureResult(value: unknown): CaptureResult | null {
   if (value === 'win' || value === 'loss' || value === 'other') {
-    return value;
-  }
-  return null;
-}
-
-export function parseScoreFlavor(value: unknown): ScoreFlavor | null {
-  if (
-    value === 'ippon' ||
-    value === 'waza_ari' ||
-    value === 'osaekomi' ||
-    value === 'golden_score' ||
-    value === 'other'
-  ) {
     return value;
   }
   return null;
@@ -105,8 +90,9 @@ async function resolveOpponent(opponent: CaptureOpponent): Promise<{
   };
 }
 
-export async function saveQuickCapture(
-  input: QuickCaptureInput
+async function persistCapture(
+  input: QuickCaptureInput,
+  mode: { kind: 'create' } | { kind: 'update'; noteId: string }
 ): Promise<OpponentNote> {
   const isCoach = await checkCoachAllowlist();
   if (!isCoach) {
@@ -117,7 +103,11 @@ export async function saveQuickCapture(
     input.opponent
   );
 
-  const scoreEvents = withSequenceOrders(input.scoreEvents ?? []);
+  const drafted =
+    mode.kind === 'create'
+      ? withDefaultRecipients(input.scoreEvents ?? [], input.result)
+      : (input.scoreEvents ?? []);
+  const scoreEvents = withSequenceOrders(drafted);
   const howText = input.howText?.trim() ?? '';
   const note = input.note.trim();
   const summary = formatCaptureScoreSummary({
@@ -125,9 +115,7 @@ export async function saveQuickCapture(
     events: scoreEvents,
   });
   const notes = [howText, note].filter(Boolean).join('\n') || summary;
-
-  return createOpponentNote({
-    athleteId: input.athleteId,
+  const payload = {
     opponentId,
     opponentLabel,
     club,
@@ -136,5 +124,29 @@ export async function saveQuickCapture(
     result: input.result,
     scoreFlavor: deriveScoreFlavor(scoreEvents),
     scoreEvents: parseCaptureScoreEvents(scoreEvents),
+  };
+
+  if (mode.kind === 'update') {
+    return updateOpponentNote(mode.noteId, payload);
+  }
+
+  return createOpponentNote({
+    athleteId: input.athleteId,
+    ...payload,
   });
 }
+
+export async function saveQuickCapture(
+  input: QuickCaptureInput
+): Promise<OpponentNote> {
+  return persistCapture(input, { kind: 'create' });
+}
+
+export async function updateQuickCapture(
+  noteId: string,
+  input: QuickCaptureInput
+): Promise<OpponentNote> {
+  return persistCapture(input, { kind: 'update', noteId });
+}
+
+export type { ScoreFlavor };

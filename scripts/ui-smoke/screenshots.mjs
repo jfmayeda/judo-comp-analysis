@@ -30,6 +30,23 @@ const SCENES = [
       await click(p, /^win$/i);
       await click(p, /^ippon$/i);
     } },
+  { id: 'athlete-capture-yuko', path: (f) => `/athletes/${f.ids.athletes.maya}`, setup: async (p) => {
+      await click(p, /quick capture|capture match|log match/i);
+      await p.getByTestId('add-yuko').click();
+      await p.waitForTimeout(400);
+    } },
+  { id: 'athlete-capture-mixed', path: (f) => `/athletes/${f.ids.athletes.maya}`, setup: async (p) => {
+      await click(p, /quick capture|capture match|log match/i);
+      await click(p, /^win$/i);
+      await p.getByTestId('add-yuko').click();
+      await p.getByTestId('add-wazari').click();
+      await p.getByTestId('recipient-1').click();
+      await p.waitForTimeout(400);
+    } },
+  { id: 'athlete-capture-edit', path: (f) => `/athletes/${f.ids.athletes.maya}`, setup: async (p) => {
+      await p.getByRole('button', { name: /edit capture vs Elena/i }).first().click();
+      await p.waitForTimeout(400);
+    } },
   { id: 'athlete-edit', path: (f) => `/athletes/${f.ids.athletes.maya}`, setup: (p) => click(p, /^edit( athlete| profile)?$/i) },
   { id: 'athlete-demo', path: (f) => `/athletes/${f.ids.athletes.demo}` },
   { id: 'athlete-sparse', path: (f) => `/athletes/${f.ids.athletes.kenji}` },

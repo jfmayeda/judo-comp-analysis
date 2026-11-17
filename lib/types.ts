@@ -90,6 +90,7 @@ export type CaptureResult = 'win' | 'loss' | 'other';
 export type ScoreFlavor =
   | 'ippon'
   | 'waza_ari'
+  | 'yuko'
   | 'osaekomi'
   | 'golden_score'
   | 'other';
@@ -97,39 +98,28 @@ export type ScoreFlavor =
 export type CaptureScoreEventType =
   | 'ippon'
   | 'wazari'
+  | 'yuko'
   | 'osaekomi'
   | 'shido'
   | 'golden_score';
 
-export type ScoreRecipient = 'athlete' | 'opponent';
+export type ScoreRecipient = 'us' | 'them';
 
-type ScoringEventType = Exclude<CaptureScoreEventType, 'shido'>;
-
-export type ScoringCaptureEvent = {
-  eventType: ScoringEventType;
+export type CaptureScoreEvent = {
+  eventType: CaptureScoreEventType;
   sequenceOrder: number;
+  /** Present on new writes. Missing on legacy rows — do not guess. */
+  recipient?: ScoreRecipient;
   techniqueId?: string;
   techniqueLabel?: string;
 };
 
-export type ShidoCaptureEvent = {
-  eventType: 'shido';
-  sequenceOrder: number;
-  recipient: ScoreRecipient;
+export type DraftScoreEvent = {
+  eventType: CaptureScoreEventType;
+  recipient?: ScoreRecipient;
+  techniqueId?: string;
+  techniqueLabel?: string;
 };
-
-export type CaptureScoreEvent = ScoringCaptureEvent | ShidoCaptureEvent;
-
-export type DraftScoreEvent =
-  | {
-      eventType: ScoringEventType;
-      techniqueId?: string;
-      techniqueLabel?: string;
-    }
-  | {
-      eventType: 'shido';
-      recipient: ScoreRecipient;
-    };
 
 export type CaptureOpponent =
   | { kind: 'shared'; opponentId: string }
