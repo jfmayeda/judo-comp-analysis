@@ -1,0 +1,38 @@
+{
+  "fps": 30,
+  "bpm": 120,
+  "duration": 38,
+  "sections": {
+    "hook": 0,
+    "reveal": 4,
+    "roster": 8,
+    "athlete": 12,
+    "capture": 16,
+    "assign": 22,
+    "print": 26,
+    "privacy": 30,
+    "end": 34
+  },
+  "vo": {
+    "hook": 0.3,
+    "reveal": 4.4,
+    "roster": 8.3,
+    "athlete": 12.2,
+    "capture": 17.45,
+    "assign": 22.25,
+    "print": 26.3,
+    "privacy": 30.0,
+    "end": 34.75
+  },
+  "taps": {
+    "maya": 11.5,
+    "quick": 17.0,
+    "win": 18.0,
+    "ippon": 18.75,
+    "save": 19.5,
+    "autoassign": 23.0,
+    "apply": 25.0,
+    "offline": 29.25
+  },
+  "whoosh": [4, 8, 12, 16, 22, 26, 28.5, 30, 34]
+}

@@ -1,0 +1,8 @@
+node_modules
+dist
+.DS_Store
+.env
+
+# Only the final master is committed.
+out/*
+!out/judo-comp-launch.mp4
