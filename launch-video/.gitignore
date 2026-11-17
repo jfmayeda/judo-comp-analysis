@@ -1,0 +1,7 @@
+node_modules
+.remotion
+out/stills
+out/frames
+out/qa
+public/audio/stems
+*.log

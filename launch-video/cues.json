@@ -1,0 +1,18 @@
+{
+  "durationSec": 32,
+  "fps": 30,
+  "clicks": [3.05, 7.9, 8.95, 9.9, 11.25, 20.9, 24.55],
+  "whooshes": [3.25, 17.25, 28.45],
+  "voice": [
+    { "t": 0.35, "text": "Four minutes to the match.", "rate": 150 },
+    { "t": 3.6, "text": "Maya's card. Mat one.", "rate": 150 },
+    { "t": 8.55, "text": "Win.", "rate": 145 },
+    { "t": 9.55, "text": "Ippon.", "rate": 145 },
+    { "t": 11.05, "text": "Saved.", "rate": 145 },
+    { "t": 13.7, "text": "Scouting notes stay private.", "rate": 150 },
+    { "t": 17.55, "text": "One roster. Every coach.", "rate": 150 },
+    { "t": 21.45, "text": "Bay Area Open. Print the pack.", "rate": 150 },
+    { "t": 25.15, "text": "One page. It works offline.", "rate": 148 },
+    { "t": 28.85, "text": "Silicon Valley Judo.", "rate": 138 }
+  ]
+}
